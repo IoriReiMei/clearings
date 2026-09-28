@@ -59,6 +59,11 @@ jobs:
           if ($installed.ExitCode -ne 0 -or -not (Test-Path -LiteralPath (Join-Path $testInstall 'Clearings.exe'))) {
             throw 'Silent per-user install failed'
           }
+          $desktopLink = Join-Path ([Environment]::GetFolderPath('DesktopDirectory')) 'Clearings.lnk'
+          $startLink = Join-Path ([Environment]::GetFolderPath('Programs')) 'Clearings\Clearings.lnk'
+          if ((Test-Path -LiteralPath $desktopLink) -or (Test-Path -LiteralPath $startLink)) {
+            throw 'Default install unexpectedly created a shortcut'
+          }
           $launched = Start-Process -FilePath (Join-Path $testInstall 'Clearings.exe') -ArgumentList '--version' -PassThru -Wait -WindowStyle Hidden
           if ($launched.ExitCode -ne 0) { throw 'Installed binary failed' }
           $removed = Start-Process -FilePath (Join-Path $testInstall 'Uninstall.exe') -ArgumentList '/S' -PassThru -Wait -WindowStyle Hidden

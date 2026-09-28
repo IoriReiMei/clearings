@@ -14,6 +14,9 @@ ShowInstDetails show
 !define MUI_ABORTWARNING
 !insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_DIRECTORY
+!define MUI_COMPONENTSPAGE_TEXT_TOP "Choose any shortcuts you want. Both are optional and unchecked by default."
+!define MUI_COMPONENTSPAGE_NODESC
+!insertmacro MUI_PAGE_COMPONENTS
 !insertmacro MUI_PAGE_INSTFILES
 !define MUI_FINISHPAGE_RUN "$INSTDIR\Clearings.exe"
 !insertmacro MUI_PAGE_FINISH
@@ -21,17 +24,29 @@ ShowInstDetails show
 !insertmacro MUI_UNPAGE_INSTFILES
 !insertmacro MUI_LANGUAGE "English"
 
-Section "Install"
+Section "-Install Clearings"
   SetShellVarContext current
   SetOutPath "$INSTDIR"
   File /r "${SOURCE_DIR}\Clearings\*"
-  CreateDirectory "$SMPROGRAMS\Clearings"
-  CreateShortCut "$SMPROGRAMS\Clearings\Clearings.lnk" "$INSTDIR\Clearings.exe"
-  CreateShortCut "$DESKTOP\Clearings.lnk" "$INSTDIR\Clearings.exe"
+  ; Replace the previous installer's shortcut choices on an update.
+  Delete "$SMPROGRAMS\Clearings\Clearings.lnk"
+  RMDir "$SMPROGRAMS\Clearings"
+  Delete "$DESKTOP\Clearings.lnk"
   WriteUninstaller "$INSTDIR\Uninstall.exe"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Clearings" "DisplayName" "Clearings"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Clearings" "DisplayVersion" "${VERSION}"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Clearings" "UninstallString" "$\"$INSTDIR\Uninstall.exe$\""
+SectionEnd
+
+Section /o "Start Menu shortcut" SecStartMenu
+  SetShellVarContext current
+  CreateDirectory "$SMPROGRAMS\Clearings"
+  CreateShortCut "$SMPROGRAMS\Clearings\Clearings.lnk" "$INSTDIR\Clearings.exe"
+SectionEnd
+
+Section /o "Desktop shortcut" SecDesktop
+  SetShellVarContext current
+  CreateShortCut "$DESKTOP\Clearings.lnk" "$INSTDIR\Clearings.exe"
 SectionEnd
 
 Section "Uninstall"

@@ -12,7 +12,7 @@ runtime has no separate license file; other versions stop for review.
 
 | System | Review artifact | What installing does |
 | --- | --- | --- |
-| Windows x64 | `Clearings-Setup-0.4.2-Windows-x64.exe` | Installs under the current user's local Programs folder and creates Desktop and Start Menu shortcuts. No administrator rights or separate Python install is intended. |
+| Windows x64 | `Clearings-Setup-0.4.2-Windows-x64.exe` | Installs under the current user's local Programs folder. Desktop and Start Menu shortcuts are separate installer choices, both unchecked by default. No administrator rights or separate Python install is intended. |
 | macOS Apple silicon / Intel | Architecture-specific `.dmg` | Open the image and drag `Clearings.app` into Applications. This is a review image with ad-hoc signing only, not Developer ID signed or notarized. |
 | Linux x64 | `Clearings-Install-0.4.2-Linux-x64.run` | Installs under the current user's local data folder and creates an application-menu entry and, where possible, a Desktop shortcut. Some desktops require “Allow launching” for downloaded files or shortcuts. `sh Clearings-Install-0.4.2-Linux-x64.run` is the fallback. |
 
