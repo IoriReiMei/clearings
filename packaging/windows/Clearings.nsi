@@ -31,7 +31,7 @@ Section "Install"
   WriteUninstaller "$INSTDIR\Uninstall.exe"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Clearings" "DisplayName" "Clearings"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Clearings" "DisplayVersion" "${VERSION}"
-  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Clearings" "UninstallString" '$"$INSTDIR\Uninstall.exe$"'
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Clearings" "UninstallString" "$\"$INSTDIR\Uninstall.exe$\""
 SectionEnd
 
 Section "Uninstall"

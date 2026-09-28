@@ -41,12 +41,21 @@ def main() -> None:
                                   "--port", str(port), "--no-browser"],
                                  stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
         try:
-            deadline = time.monotonic() + 15
+            # Intel macOS runners can take longer to launch an ad-hoc-signed app.
+            deadline = time.monotonic() + 45
             while not (config / "session.json").exists():
                 if child.poll() is not None:
                     raise RuntimeError(f"Clearings exited early with code {child.returncode}")
                 if time.monotonic() > deadline:
-                    raise TimeoutError("Clearings did not create its disposable session")
+                    child.terminate()
+                    try:
+                        child.wait(timeout=5)
+                    except subprocess.TimeoutExpired:
+                        child.kill()
+                        child.wait(timeout=5)
+                    detail = child.stderr.read().decode("utf-8", errors="replace")[-1000:]
+                    raise TimeoutError("Clearings did not create its disposable session within "
+                                       f"45 seconds; stderr tail: {detail or '[empty]'}")
                 time.sleep(0.05)
             session = json.loads((config / "session.json").read_text(encoding="utf-8"))
             headers = {"X-Clearings-Token": session["token"]}

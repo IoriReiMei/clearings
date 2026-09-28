@@ -55,14 +55,14 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Installer compilation failed' }
           $installer = Get-Item -LiteralPath 'artifacts\Clearings-Setup-0.4.2-Windows-x64.exe'
           $testInstall = Join-Path $env:RUNNER_TEMP 'Clearings Installer Check'
-          & $installer.FullName '/S' "/D=$testInstall"
-          if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath (Join-Path $testInstall 'Clearings.exe'))) {
+          $installed = Start-Process -FilePath $installer.FullName -ArgumentList @('/S', "/D=$testInstall") -PassThru -Wait -WindowStyle Hidden
+          if ($installed.ExitCode -ne 0 -or -not (Test-Path -LiteralPath (Join-Path $testInstall 'Clearings.exe'))) {
             throw 'Silent per-user install failed'
           }
-          & (Join-Path $testInstall 'Clearings.exe') '--version'
-          if ($LASTEXITCODE -ne 0) { throw 'Installed binary failed' }
-          & (Join-Path $testInstall 'Uninstall.exe') '/S'
-          if ($LASTEXITCODE -ne 0) { throw 'Uninstall failed' }
+          $launched = Start-Process -FilePath (Join-Path $testInstall 'Clearings.exe') -ArgumentList '--version' -PassThru -Wait -WindowStyle Hidden
+          if ($launched.ExitCode -ne 0) { throw 'Installed binary failed' }
+          $removed = Start-Process -FilePath (Join-Path $testInstall 'Uninstall.exe') -ArgumentList '/S' -PassThru -Wait -WindowStyle Hidden
+          if ($removed.ExitCode -ne 0 -or (Test-Path -LiteralPath (Join-Path $testInstall 'Clearings.exe'))) { throw 'Uninstall failed' }
       - name: Build macOS review image
         if: runner.os == 'macOS'
         run: python -B packaging/build_mac_dmg.py --dist build-output --output artifacts
