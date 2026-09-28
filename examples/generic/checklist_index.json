@@ -1,0 +1,29 @@
+{
+  "format": "checklist-studio-index",
+  "schemaVersion": 1,
+  "libraryId": "checklist-studio-generic-example",
+  "defaultChecklist": "example-overview",
+  "entries": [
+    {
+      "id": "example-overview",
+      "file": "program_overview.json"
+    },
+    {
+      "id": "example-workshop",
+      "file": "weekend_workshop.json"
+    }
+  ],
+  "tracked": [
+    {
+      "id": "example-track-release",
+      "checklistId": "example-overview",
+      "itemId": "share"
+    }
+  ],
+  "preferences": {
+    "library": true,
+    "tracked": true,
+    "map": true,
+    "theme": "system"
+  }
+}

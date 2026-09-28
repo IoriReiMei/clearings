@@ -1,0 +1,56 @@
+#!/bin/sh
+# SPDX-License-Identifier: MPL-2.0
+# Per-user Clearings installer. No sudo, remote fetch, or user-data removal.
+set -eu
+VERSION='@VERSION@'
+APP_ROOT="${XDG_DATA_HOME:-$HOME/.local/share}/clearings"
+VERSIONS="$APP_ROOT/versions"
+DEST="$VERSIONS/$VERSION"
+if [ -e "$DEST" ]; then
+    printf '%s\n' "Clearings $VERSION is already installed at $DEST; nothing was replaced." >&2
+    exit 1
+fi
+if [ -e "$APP_ROOT/current" ] && [ ! -L "$APP_ROOT/current" ]; then
+    printf '%s\n' "Existing Clearings path is not an installer-managed link; nothing was changed." >&2
+    exit 1
+fi
+mkdir -p "$VERSIONS"
+STAGE=$(mktemp -d "$VERSIONS/.incoming.XXXXXX")
+trap 'rm -rf -- "$STAGE"' EXIT HUP INT TERM
+LINE=$(awk '/^__CLEARINGS_PAYLOAD__$/ { print NR + 1; exit }' "$0")
+if [ -z "$LINE" ]; then
+    printf '%s\n' 'Clearings installer payload is missing.' >&2
+    exit 1
+fi
+tail -n "+$LINE" "$0" | base64 -d | tar -xz -C "$STAGE"
+if [ ! -x "$STAGE/Clearings/Clearings" ] || [ ! -f "$STAGE/Clearings/source.zip" ] ||
+   [ ! -f "$STAGE/Clearings/PYTHON_LICENSE.txt" ] || [ ! -f "$STAGE/Clearings/PYINSTALLER_LICENSE.txt" ]; then
+    printf '%s\n' 'Clearings payload is incomplete; nothing was installed.' >&2
+    exit 1
+fi
+mv "$STAGE/Clearings" "$DEST"
+ln -sfn "$DEST" "$APP_ROOT/current"
+BIN="$HOME/.local/bin"
+mkdir -p "$BIN"
+LAUNCHER=$(mktemp "$BIN/.clearings.XXXXXX")
+printf '#!/bin/sh\nexec "%s" "$@"\n' "$APP_ROOT/current/Clearings" > "$LAUNCHER"
+chmod 755 "$LAUNCHER"
+mv -f "$LAUNCHER" "$BIN/clearings"
+MENU="${XDG_DATA_HOME:-$HOME/.local/share}/applications"
+mkdir -p "$MENU"
+DESKTOP=$(mktemp "$MENU/.clearings.XXXXXX")
+{
+    printf '[Desktop Entry]\nType=Application\nName=Clearings\n'
+    printf 'Exec="%s"\n' "$BIN/clearings"
+    printf 'Icon=accessories-text-editor\nTerminal=false\nCategories=Office;\n'
+} > "$DESKTOP"
+chmod 755 "$DESKTOP"
+mv -f "$DESKTOP" "$MENU/Clearings.desktop"
+if [ -d "$HOME/Desktop" ]; then
+    cp "$MENU/Clearings.desktop" "$HOME/Desktop/Clearings.desktop"
+    chmod 755 "$HOME/Desktop/Clearings.desktop"
+fi
+printf 'Installed Clearings %s in %s. Open Clearings from your app menu.\n' "$VERSION" "$DEST"
+printf '%s\n' 'Your browser workspace and Clearings handoff data were not changed.'
+exit 0
+__CLEARINGS_PAYLOAD__

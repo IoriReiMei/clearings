@@ -1,0 +1,259 @@
+{
+  "format": "checklist-studio-document",
+  "schemaVersion": 2,
+  "documentId": "clearings-github-patch-v1",
+  "title": "Clearings · GitHub patch update",
+  "subtitle": "Optional · for a later public update",
+  "description": "A reusable checklist for updating an already published Clearings version. A patch here means a small new version; it does not alter the old archive or publish by itself. All steps start unchecked.",
+  "footer": "The template is planning data, not permission to upload. GitHub's interface may change; check its current guidance before publishing.",
+  "archived": false,
+  "updatedAt": null,
+  "references": [
+    {
+      "title": "GitHub · editing files",
+      "href": "https://docs.github.com/en/repositories/working-with-files/managing-files/editing-files"
+    },
+    {
+      "title": "GitHub · managing releases",
+      "href": "https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository"
+    }
+  ],
+  "model": {
+    "branches": [],
+    "roots": [
+      "protect",
+      "prepare",
+      "publish",
+      "verify"
+    ],
+    "items": [
+      {
+        "id": "protect",
+        "order": 1,
+        "parents": [],
+        "label": "",
+        "tags": [],
+        "text": "Protect the current version",
+        "detail": "Keep a recoverable copy before changing the public app.",
+        "requires": [
+          "export-backup",
+          "save-old-release"
+        ]
+      },
+      {
+        "id": "export-backup",
+        "order": 2,
+        "parents": [],
+        "label": "",
+        "tags": [],
+        "text": "Export your Clearings workspace backup",
+        "detail": "In the currently used browser, choose Export workspace backup. Confirm the downloaded JSON opens locally. Keep it private; do not put it in the public release.",
+        "requires": []
+      },
+      {
+        "id": "save-old-release",
+        "order": 3,
+        "parents": [],
+        "label": "",
+        "tags": [],
+        "text": "Keep the previous public release",
+        "detail": "Confirm the previously published version and its ZIP or release files remain available. Do not overwrite the old tagged release while preparing a new one.",
+        "requires": []
+      },
+      {
+        "id": "prepare",
+        "order": 4,
+        "parents": [],
+        "label": "",
+        "tags": [],
+        "text": "Prepare the patch",
+        "detail": "Define and verify only the changes intended for this update.",
+        "requires": [
+          "describe-change",
+          "edit-working",
+          "update-version",
+          "run-checks",
+          "test-upgrade",
+          "build-copy",
+          "inspect-copy"
+        ]
+      },
+      {
+        "id": "describe-change",
+        "order": 5,
+        "parents": [],
+        "label": "",
+        "tags": [],
+        "text": "Write down the patch goal",
+        "detail": "Name the user-visible behavior being fixed or improved and what should remain unchanged. Record the intended new version.",
+        "requires": []
+      },
+      {
+        "id": "edit-working",
+        "order": 6,
+        "parents": [],
+        "label": "",
+        "tags": [],
+        "text": "Make the change in the working copy",
+        "detail": "Edit the development copy, then inspect the exact changed files. Do not edit the archived release or a private browser workspace to make a public patch.",
+        "requires": []
+      },
+      {
+        "id": "update-version",
+        "order": 7,
+        "parents": [],
+        "label": "",
+        "tags": [],
+        "text": "Update the release version and package rules",
+        "detail": "Set the next version in the app, packager, release notes and versioned tests. Review the package allowlist so the new release includes only intended public files. Keep saved checklist format versions unchanged unless the data contract actually changes.",
+        "requires": []
+      },
+      {
+        "id": "run-checks",
+        "order": 8,
+        "parents": [],
+        "label": "",
+        "tags": [],
+        "text": "Run checks for the changed behavior",
+        "detail": "Run the focused automated checks and open the built app as a new user. Record any failures, skipped checks, and the browser actually used.",
+        "requires": []
+      },
+      {
+        "id": "test-upgrade",
+        "order": 9,
+        "parents": [],
+        "label": "",
+        "tags": [],
+        "text": "Test an existing checklist in the updated app",
+        "detail": "With an exported copy in a disposable browser profile, open the updated app and confirm existing items, checkmarks and exports still work. Do not experiment against the only saved browser copy.",
+        "requires": []
+      },
+      {
+        "id": "build-copy",
+        "order": 10,
+        "parents": [],
+        "label": "",
+        "tags": [],
+        "text": "Build a new release package",
+        "detail": "Use the release packager to make a new versioned ZIP and extract it to a fresh review folder. Keep personal exports, backups, private LC files, credentials and repository history out.",
+        "requires": []
+      },
+      {
+        "id": "inspect-copy",
+        "order": 11,
+        "parents": [],
+        "label": "",
+        "tags": [],
+        "text": "Inspect the exact package",
+        "detail": "Check the extracted files, license notices, README, examples, manifest and the final app. Compare with the previous public version; confirm only intended changes and public material are present.",
+        "requires": []
+      },
+      {
+        "id": "publish",
+        "order": 12,
+        "parents": [],
+        "label": "",
+        "tags": [],
+        "text": "Choose and publish the GitHub update",
+        "detail": "GitHub actions happen only after you decide this version is ready.",
+        "requires": [
+          "approve-publication",
+          "commit-public",
+          "make-release",
+          "check-page"
+        ]
+      },
+      {
+        "id": "approve-publication",
+        "order": 13,
+        "parents": [],
+        "label": "",
+        "tags": [],
+        "text": "Decide whether this patch is ready to publish",
+        "detail": "Review the test notes and package. Stop here if a failure or privacy question remains. Checking this item records your decision; the template itself does not upload anything.",
+        "requires": []
+      },
+      {
+        "id": "commit-public",
+        "order": 14,
+        "parents": [],
+        "label": "",
+        "tags": [],
+        "text": "Commit the reviewed files in the public repository",
+        "detail": "In the separate public Clearings repository, use a branch or proposed change to add only the reviewed files, inspect the GitHub diff and commit with a meaningful message. Do not publish the private LC repository.",
+        "requires": []
+      },
+      {
+        "id": "make-release",
+        "order": 15,
+        "parents": [],
+        "label": "",
+        "tags": [],
+        "text": "Create the new versioned GitHub release",
+        "detail": "After the reviewed change is in the intended public branch, draft a release for a new version tag and attach the matching ZIP if you distribute one. Review the draft, then publish deliberately. Keep the previous release available.",
+        "requires": []
+      },
+      {
+        "id": "check-page",
+        "order": 16,
+        "parents": [],
+        "label": "",
+        "tags": [],
+        "text": "Check the public page if you host Clearings",
+        "detail": "If GitHub Pages is used, open its actual address after the update and confirm the new app loads. If it is not used, leave this optional step unchecked.",
+        "requires": []
+      },
+      {
+        "id": "verify",
+        "order": 17,
+        "parents": [],
+        "label": "",
+        "tags": [],
+        "text": "Verify the delivered patch",
+        "detail": "Check what a recipient actually gets, not only what worked on your machine.",
+        "requires": [
+          "download-public",
+          "check-data-boundary",
+          "record-outcome"
+        ]
+      },
+      {
+        "id": "download-public",
+        "order": 18,
+        "parents": [],
+        "label": "",
+        "tags": [],
+        "text": "Download the published copy",
+        "detail": "From the published GitHub release or repository, download into a fresh folder and inspect the files. Open that copy, not the working app.",
+        "requires": []
+      },
+      {
+        "id": "check-data-boundary",
+        "order": 19,
+        "parents": [],
+        "label": "",
+        "tags": [],
+        "text": "Check how existing checklists carry forward",
+        "detail": "If the app address or file path changed, export from the old location and import the backup into the new location privately. Confirm existing checklist names and checkmarks appear. Never upload the backup to GitHub.",
+        "requires": []
+      },
+      {
+        "id": "record-outcome",
+        "order": 20,
+        "parents": [],
+        "label": "",
+        "tags": [],
+        "text": "Record the patch result",
+        "detail": "Write down the version, public link, tested browser, checks run, remaining limits and any repair needed. Do not mark unresolved behavior as solved.",
+        "requires": []
+      }
+    ]
+  },
+  "state": {},
+  "view": {
+    "collapsed": [
+      "publish",
+      "verify"
+    ]
+  }
+}

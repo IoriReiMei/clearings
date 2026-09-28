@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: MPL-2.0
+# Keep personal libraries under data/ and review before sharing.
+/data/
+/checklist_index.json
+/checklist-*.json
+/program_overview.json
+/build-output/
+/artifacts/
+*.zip
+*.dmg
+*.run
+__pycache__/

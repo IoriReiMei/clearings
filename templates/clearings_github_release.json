@@ -1,0 +1,317 @@
+{
+  "format": "checklist-studio-document",
+  "schemaVersion": 2,
+  "documentId": "clearings-github-release-v1",
+  "title": "Clearings · GitHub release",
+  "subtitle": "Optional · ready to wait until you are",
+  "description": "A small release plan, not a publishing obligation. All checks start unchecked. No deadline, upload, account action or inferred completion is attached to this checklist. Import it into your working library; leave this distributed template unchanged.",
+  "footer": "Preparation can stop at a local folder or a copy for a friend. Publication is always a separate owner decision. Reference pages were consulted September 26, 2026; revisit their current instructions when actually publishing.",
+  "archived": false,
+  "updatedAt": null,
+  "references": [
+    {
+      "title": "Mozilla · applying MPL 2.0",
+      "href": "https://www.mozilla.org/en-US/MPL/2.0/FAQ/"
+    },
+    {
+      "title": "GitHub · create a repository",
+      "href": "https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-new-repository"
+    },
+    {
+      "title": "GitHub · upload files",
+      "href": "https://docs.github.com/en/repositories/working-with-files/managing-files/adding-a-file-to-a-repository"
+    },
+    {
+      "title": "GitHub · commit email privacy",
+      "href": "https://docs.github.com/en/account-and-profile/how-tos/email-preferences/setting-your-commit-email-address"
+    }
+  ],
+  "model": {
+    "branches": [],
+    "roots": [
+      "clean-copy",
+      "release-check",
+      "introduction",
+      "github-later",
+      "visitor-check"
+    ],
+    "items": [
+      {
+        "id": "clean-copy",
+        "order": 1,
+        "parents": [],
+        "label": "",
+        "tags": [],
+        "text": "Keep the public copy separate",
+        "detail": "A folder you can inspect without exposing the project it came from.",
+        "requires": [
+          "build-package",
+          "private-files",
+          "keep-backup"
+        ]
+      },
+      {
+        "id": "build-package",
+        "order": 2,
+        "parents": [],
+        "label": "",
+        "tags": [
+          "prepare"
+        ],
+        "text": "Make a clean release folder",
+        "detail": "Done when: run the supplied packager to create a new ZIP, then extract it into a separate folder outside any private project. The package should contain index.html, documentation, license notices, tools/tests and supplied examples. Never turn the existing private repository public.\n\nFrom the app folder: python tools/make_share_package.py --output clearings-share.zip\n\nThis creates a local ZIP only; it does not publish anything.",
+        "requires": []
+      },
+      {
+        "id": "private-files",
+        "order": 3,
+        "parents": [],
+        "label": "",
+        "tags": [
+          "review"
+        ],
+        "text": "Look through what will be shared",
+        "detail": "Done when: inspect the actual extracted files and screenshot. Remove personal checklists, real library indexes, backups, account details, secrets and private paths. The provided examples/template may be shared; your filled-in copy of this checklist is personal working data. Check hidden files too; do not include a private .git directory. An allowlist helps, but does not inspect notes you later put inside an example.",
+        "requires": []
+      },
+      {
+        "id": "keep-backup",
+        "order": 4,
+        "parents": [],
+        "label": "",
+        "tags": [
+          "prepare"
+        ],
+        "text": "Keep your working library safe",
+        "detail": "Done when: save a dated workspace backup and keep the real library outside the public release folder. Updating the app should not replace your checklist JSON. No need to upload the backup.",
+        "requires": []
+      },
+      {
+        "id": "release-check",
+        "order": 5,
+        "parents": [],
+        "label": "",
+        "tags": [],
+        "text": "Check the copy you will hand over",
+        "detail": "A small verification of the actual release, not another research programme.",
+        "requires": [
+          "try-fresh",
+          "run-checks",
+          "license-notices",
+          "known-inputs"
+        ]
+      },
+      {
+        "id": "try-fresh",
+        "order": 6,
+        "parents": [],
+        "label": "",
+        "tags": [
+          "test"
+        ],
+        "text": "Open it like a new user",
+        "detail": "Done when: open the extracted index.html in a clean browser profile/window, without assuming your recovered library is a new-user default. Confirm fictional examples appear. Add/check/edit an item, export/import a backup, try zoom and Back/Forward. Confirm any file-save mode reports honestly whether it wrote in place or downloaded a copy. Record the browser you actually tried.",
+        "requires": []
+      },
+      {
+        "id": "run-checks",
+        "order": 7,
+        "parents": [],
+        "label": "",
+        "tags": [
+          "test"
+        ],
+        "text": "Run the small release checks",
+        "detail": "Done when: from the extracted release folder, run node tests/contract.test.cjs, node tests/clearings-release.test.cjs and node tools/validate_checklist.cjs examples/generic. Keep the outputs and record anything not run. Optional: python tests/browser_checks.py when Playwright and Chromium are installed. Simulated filesystem tests are not native Windows-dialog verification.",
+        "requires": []
+      },
+      {
+        "id": "license-notices",
+        "order": 8,
+        "parents": [],
+        "label": "",
+        "tags": [
+          "review"
+        ],
+        "text": "Verify the MPL notices are included",
+        "detail": "MPL 2.0 is the selected license for Clearings. Done when: LICENSE, LICENSE_SCOPE.md, the source notices and relevant .license sidecars are present in the package. Keep the standard license text unmodified and leave private checklist data outside its declared scope. Do not let GitHub generate a different license over this one. This is a packaging check, not an originality certificate.\n\nReference: Mozilla MPL application FAQ (see checklist references).",
+        "requires": []
+      },
+      {
+        "id": "known-inputs",
+        "order": 9,
+        "parents": [],
+        "label": "",
+        "tags": [
+          "review"
+        ],
+        "text": "Record known third-party material",
+        "detail": "Done when: review code/assets/dependencies and known sources, retain applicable notices, and record any specific unresolved match or attribution question. Update THIRD_PARTY_NOTES.md to reflect what was actually checked. A second read-only review can help; no paid audit or claim of absolute certainty is a checklist requirement. A clean scan alone is not proof of originality. Resolve concrete findings before calling this review complete.",
+        "requires": []
+      },
+      {
+        "id": "introduction",
+        "order": 10,
+        "parents": [],
+        "label": "",
+        "tags": [],
+        "text": "Give it a simple introduction",
+        "detail": "Enough to let a friend understand what they are opening.",
+        "requires": [
+          "readme",
+          "public-credit",
+          "screenshot"
+        ]
+      },
+      {
+        "id": "readme",
+        "order": 11,
+        "parents": [],
+        "label": "",
+        "tags": [
+          "write"
+        ],
+        "text": "Read the opening instructions",
+        "detail": "Done when: README explains what Clearings does, how to open index.html, where JSON data lives, import/export, supported direct-file saving, one-writer limitations and AI-assisted development. Check the instructions against this exact package. Keep limitations factual and brief.",
+        "requires": []
+      },
+      {
+        "id": "public-credit",
+        "order": 12,
+        "parents": [],
+        "label": "",
+        "tags": [
+          "review"
+        ],
+        "text": "Choose the public-facing credit",
+        "detail": "Done when: choose the name/handle and contact route you want shown publicly. Do not invent a legal identity or claim exclusive rights over third-party material. If using local Git, check the commit email in this new repository before the first commit; a GitHub-provided noreply address is an option. Website email privacy and local Git configuration are separate. Nothing here changes account settings.\n\nReference: GitHub commit-email documentation (see checklist references).",
+        "requires": []
+      },
+      {
+        "id": "screenshot",
+        "order": 13,
+        "parents": [],
+        "label": "",
+        "tags": [
+          "review"
+        ],
+        "text": "Check the preview image",
+        "detail": "Done when: the preview shows Clearings and fictional content with no account address, personal notes or private paths. It should match the interface people will receive.",
+        "requires": []
+      },
+      {
+        "id": "github-later",
+        "order": 14,
+        "parents": [],
+        "label": "",
+        "tags": [],
+        "text": "Publish only when you choose",
+        "detail": "Park this whole section for as long as you like. Preparation is not permission to publish.",
+        "requires": [
+          "owner-decision",
+          "separate-repo",
+          "upload-files"
+        ]
+      },
+      {
+        "id": "owner-decision",
+        "order": 15,
+        "parents": [],
+        "label": "",
+        "tags": [
+          "decision",
+          "later"
+        ],
+        "text": "Choose whether to publish now",
+        "detail": "Done when: you explicitly decide to publish this version. Waiting, keeping it private, or just showing a friend remains a valid choice; this is not a deadline. A checked parent is only your manual scope decision and never runs a GitHub action. An AI must not treat this plan or a checkmark as authorization to upload.",
+        "requires": []
+      },
+      {
+        "id": "separate-repo",
+        "order": 16,
+        "parents": [],
+        "label": "",
+        "tags": [
+          "manual",
+          "later"
+        ],
+        "text": "Create a separate Clearings repository",
+        "detail": "Only after the owner chooses to proceed: use the intended GitHub account, create a new repository and deliberately choose its visibility. It can start private for a final inspection. Do not import the surrounding private repository or its history. If initializing through local Git, avoid GitHub-generated README/license files that would conflict with the prepared ones. No repository URL or handle is assumed by this template.\n\nReference: GitHub creating-a-repository documentation (see checklist references).",
+        "requires": []
+      },
+      {
+        "id": "upload-files",
+        "order": 17,
+        "parents": [],
+        "label": "",
+        "tags": [
+          "manual",
+          "later"
+        ],
+        "text": "Upload the extracted release files",
+        "detail": "Done when: the separate repository contains index.html at its root, README.md, LICENSE, notices, documentation, examples/templates, schema, tests and tools. Use Add file > Upload files for the web route, preserving folders, or Git from only the clean repository. Review the file list before committing. Upload the extracted contents, not only a ZIP, not the update patch and never the private project.\n\nReference: GitHub adding-files documentation (see checklist references).",
+        "requires": []
+      },
+      {
+        "id": "visitor-check",
+        "order": 18,
+        "parents": [],
+        "label": "",
+        "tags": [],
+        "text": "Try the shared copy",
+        "detail": "Stop at a useful small release; everything else can wait.",
+        "requires": [
+          "download-check",
+          "visibility-check",
+          "optional-feedback"
+        ]
+      },
+      {
+        "id": "download-check",
+        "order": 19,
+        "parents": [],
+        "label": "",
+        "tags": [
+          "test",
+          "later"
+        ],
+        "text": "Download and open the repository copy",
+        "detail": "Done when: download/clone the uploaded repository into a fresh folder and open index.html. Confirm the app, examples, README image, license and notices are present. Make a sample edit and save/export it; do not accidentally test your original working copy.",
+        "requires": []
+      },
+      {
+        "id": "visibility-check",
+        "order": 20,
+        "parents": [],
+        "label": "",
+        "tags": [
+          "review",
+          "later"
+        ],
+        "text": "Check what a visitor can see",
+        "detail": "Done when: after your deliberate visibility choice, inspect the repository page and files as the intended audience. Confirm the README renders, source/license are accessible to recipients and private data has not been included. Record the real URL only after it exists; this template contains no invented public link.",
+        "requires": []
+      },
+      {
+        "id": "optional-feedback",
+        "order": 21,
+        "parents": [],
+        "label": "",
+        "tags": [
+          "optional",
+          "later"
+        ],
+        "text": "Share a link or collect feedback",
+        "detail": "Optional. A friend trying it is useful feedback; a launch campaign, GitHub Pages site, stars, paid services and further automation are not required. Record one real suggestion without turning it into an obligation. You can archive this release checklist when its chosen scope is finished.",
+        "requires": []
+      }
+    ]
+  },
+  "state": {},
+  "view": {
+    "collapsed": [
+      "github-later",
+      "visitor-check"
+    ]
+  }
+}

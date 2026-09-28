@@ -1,0 +1,202 @@
+{
+  "format": "checklist-studio-document",
+  "schemaVersion": 2,
+  "documentId": "example-overview",
+  "title": "Program Overview",
+  "subtitle": "A small public project, one manageable step at a time.",
+  "description": "A fictional example. Replace it with your own work. Checks are manual; closing a heading does not check its children.",
+  "footer": "",
+  "archived": false,
+  "updatedAt": null,
+  "references": [],
+  "model": {
+    "branches": [],
+    "roots": [
+      "shape",
+      "make",
+      "share"
+    ],
+    "items": [
+      {
+        "id": "shape",
+        "order": 1,
+        "parents": [],
+        "label": "",
+        "tags": [],
+        "text": "Shape the idea",
+        "detail": "Know who it helps before adding more features.",
+        "requires": [
+          "purpose",
+          "boundaries",
+          "first-look"
+        ]
+      },
+      {
+        "id": "purpose",
+        "order": 2,
+        "parents": [],
+        "label": "",
+        "tags": [],
+        "text": "Describe who it helps",
+        "detail": "Write one sentence about the person and problem.",
+        "requires": []
+      },
+      {
+        "id": "boundaries",
+        "order": 3,
+        "parents": [],
+        "label": "",
+        "tags": [],
+        "text": "Keep the first version small",
+        "detail": "Choose what can wait. A deferred idea is not a failure.",
+        "requires": []
+      },
+      {
+        "id": "first-look",
+        "order": 4,
+        "parents": [],
+        "label": "",
+        "tags": [],
+        "text": "Make something you can try",
+        "detail": "A rough prototype is enough.",
+        "requires": [
+          "build-demo",
+          "feedback"
+        ]
+      },
+      {
+        "id": "build-demo",
+        "order": 5,
+        "parents": [],
+        "label": "",
+        "tags": [
+          "build"
+        ],
+        "text": "Build the smallest useful version",
+        "detail": "Keep a runnable copy.",
+        "requires": []
+      },
+      {
+        "id": "feedback",
+        "order": 6,
+        "parents": [],
+        "label": "",
+        "tags": [
+          "review"
+        ],
+        "text": "Try it with someone",
+        "detail": "Write down what confused them; do not invent a positive result.",
+        "requires": []
+      },
+      {
+        "id": "make",
+        "order": 7,
+        "parents": [],
+        "label": "",
+        "tags": [],
+        "text": "Make it dependable",
+        "detail": "The basics should work without ceremony.",
+        "requires": [
+          "data",
+          "navigation",
+          "access"
+        ]
+      },
+      {
+        "id": "data",
+        "order": 8,
+        "parents": [],
+        "label": "",
+        "tags": [
+          "test"
+        ],
+        "text": "Keep the data portable",
+        "detail": "Save and reopen an example; confirm nothing vanished.",
+        "requires": []
+      },
+      {
+        "id": "navigation",
+        "order": 9,
+        "parents": [],
+        "label": "",
+        "tags": [],
+        "text": "Make navigation feel natural",
+        "detail": "Check names, checkboxes, and browser Back/Forward.",
+        "requires": []
+      },
+      {
+        "id": "access",
+        "order": 10,
+        "parents": [],
+        "label": "",
+        "tags": [
+          "test"
+        ],
+        "text": "Leave an alternative to dragging",
+        "detail": "Try keyboard controls and the item menus.",
+        "requires": []
+      },
+      {
+        "id": "share",
+        "order": 11,
+        "parents": [],
+        "label": "",
+        "tags": [],
+        "text": "Share a small release",
+        "detail": "Publish only what you intend to share.",
+        "requires": [
+          "instructions",
+          "privacy",
+          "license",
+          "release"
+        ]
+      },
+      {
+        "id": "instructions",
+        "order": 12,
+        "parents": [],
+        "label": "",
+        "tags": [
+          "write"
+        ],
+        "text": "Write a short introduction",
+        "detail": "Include one image and an honest description of limitations.",
+        "requires": []
+      },
+      {
+        "id": "privacy",
+        "order": 13,
+        "parents": [],
+        "label": "",
+        "tags": [],
+        "text": "Review the public files",
+        "detail": "No personal checklists, backups, private paths, or account data.",
+        "requires": []
+      },
+      {
+        "id": "license",
+        "order": 14,
+        "parents": [],
+        "label": "",
+        "tags": [],
+        "text": "Choose how others may reuse it",
+        "detail": "The owner chooses the license before a public release.",
+        "requires": []
+      },
+      {
+        "id": "release",
+        "order": 15,
+        "parents": [],
+        "label": "",
+        "tags": [],
+        "text": "Let someone try it",
+        "detail": "Collect actual feedback instead of adding imagined requirements.",
+        "requires": []
+      }
+    ]
+  },
+  "state": {},
+  "view": {
+    "collapsed": []
+  }
+}

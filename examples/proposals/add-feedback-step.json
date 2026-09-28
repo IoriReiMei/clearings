@@ -1,0 +1,24 @@
+{
+  "format": "checklist-studio-changes",
+  "schemaVersion": 1,
+  "documentId": "example-overview",
+  "baseSha256": "sha256:bb11c2392901e78948365b46a54160a9cee3effe15125eb6fad083f5e8457cf1",
+  "operations": [
+    {
+      "op": "add-item",
+      "parentId": "share",
+      "item": {
+        "id": "first-user-notes",
+        "order": 16,
+        "parents": [],
+        "label": "Review",
+        "tags": [
+          "feedback"
+        ],
+        "text": "Record one person’s first impressions",
+        "detail": "Write what they found useful or confusing; negative feedback is welcome. This example adds no completed checkmarks.",
+        "requires": []
+      }
+    }
+  ]
+}

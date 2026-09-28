@@ -1,0 +1,115 @@
+{
+  "format": "checklist-studio-document",
+  "schemaVersion": 2,
+  "documentId": "example-workshop",
+  "title": "Weekend Workshop",
+  "subtitle": "A second checklist to browse without losing your place.",
+  "description": "A fictional example. Replace it with your own work. Checks are manual; closing a heading does not check its children.",
+  "footer": "",
+  "archived": false,
+  "updatedAt": null,
+  "references": [],
+  "model": {
+    "branches": [],
+    "roots": [
+      "plan",
+      "session"
+    ],
+    "items": [
+      {
+        "id": "plan",
+        "order": 1,
+        "parents": [],
+        "label": "",
+        "tags": [],
+        "text": "Plan the afternoon",
+        "detail": "A small creative session with friends.",
+        "requires": [
+          "theme",
+          "materials",
+          "timing"
+        ]
+      },
+      {
+        "id": "theme",
+        "order": 2,
+        "parents": [],
+        "label": "",
+        "tags": [],
+        "text": "Pick a theme",
+        "detail": "Something everyone can try without prior experience.",
+        "requires": []
+      },
+      {
+        "id": "materials",
+        "order": 3,
+        "parents": [],
+        "label": "",
+        "tags": [
+          "prepare"
+        ],
+        "text": "Gather materials",
+        "detail": "Reuse what is already available.",
+        "requires": []
+      },
+      {
+        "id": "timing",
+        "order": 4,
+        "parents": [],
+        "label": "",
+        "tags": [],
+        "text": "Leave time to play",
+        "detail": "Include breaks, not only tasks.",
+        "requires": []
+      },
+      {
+        "id": "session",
+        "order": 5,
+        "parents": [],
+        "label": "",
+        "tags": [],
+        "text": "Run the session",
+        "detail": "An outline, not a rigid schedule.",
+        "requires": [
+          "welcome",
+          "make-something",
+          "tidy"
+        ]
+      },
+      {
+        "id": "welcome",
+        "order": 6,
+        "parents": [],
+        "label": "",
+        "tags": [],
+        "text": "Welcome everyone",
+        "detail": "Explain the idea and show an example.",
+        "requires": []
+      },
+      {
+        "id": "make-something",
+        "order": 7,
+        "parents": [],
+        "label": "",
+        "tags": [],
+        "text": "Make something together",
+        "detail": "Let unfinished experiments count.",
+        "requires": []
+      },
+      {
+        "id": "tidy",
+        "order": 8,
+        "parents": [],
+        "label": "",
+        "tags": [],
+        "text": "Put things away",
+        "detail": "Leave the space ready for next time.",
+        "requires": []
+      }
+    ]
+  },
+  "state": {},
+  "view": {
+    "collapsed": []
+  }
+}

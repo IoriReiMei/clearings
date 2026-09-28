@@ -1,0 +1,82 @@
+# SPDX-License-Identifier: MPL-2.0
+# Copy the reviewed public source snapshot to its own repository before using.
+# Manual build only. Artifacts are for review; this workflow never publishes.
+name: Build Clearings installers for review
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-2025
+            name: windows-x64
+          - os: macos-15
+            name: macos-arm64
+          - os: macos-15-intel
+            name: macos-x64
+          - os: ubuntu-22.04
+            name: linux-x64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify public source and focused checks
+        shell: bash
+        run: |
+          python -B packaging/build_native.py --output build-output --verify-only
+          python -B -m unittest discover -s tests -p test_clearings_local.py
+          PYTHON=python node tests/clearings-release.test.cjs
+      - name: Bundle local helper
+        shell: bash
+        run: |
+          python -m pip install --disable-pip-version-check pyinstaller==6.22.3
+          python -B packaging/build_native.py --output build-output
+          python -B packaging/test_native.py --dist build-output
+      - name: Build Windows per-user installer
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          choco install nsis --version=3.12.0 --yes --no-progress
+          if ($LASTEXITCODE -ne 0) { throw 'NSIS installation failed' }
+          New-Item -ItemType Directory -Path artifacts | Out-Null
+          $compiler = @('C:\Program Files (x86)\NSIS\makensis.exe', 'C:\Program Files\NSIS\makensis.exe') |
+            Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
+          if (-not (Test-Path -LiteralPath $compiler)) { throw 'NSIS compiler missing' }
+          & $compiler /V2 "/DSOURCE_DIR=$pwd\build-output" "/DOUTPUT_DIR=$pwd\artifacts" packaging\windows\Clearings.nsi
+          if ($LASTEXITCODE -ne 0) { throw 'Installer compilation failed' }
+          $installer = Get-Item -LiteralPath 'artifacts\Clearings-Setup-0.4.2-Windows-x64.exe'
+          $testInstall = Join-Path $env:RUNNER_TEMP 'Clearings Installer Check'
+          & $installer.FullName '/S' "/D=$testInstall"
+          if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath (Join-Path $testInstall 'Clearings.exe'))) {
+            throw 'Silent per-user install failed'
+          }
+          & (Join-Path $testInstall 'Clearings.exe') '--version'
+          if ($LASTEXITCODE -ne 0) { throw 'Installed binary failed' }
+          & (Join-Path $testInstall 'Uninstall.exe') '/S'
+          if ($LASTEXITCODE -ne 0) { throw 'Uninstall failed' }
+      - name: Build macOS review image
+        if: runner.os == 'macOS'
+        run: python -B packaging/build_mac_dmg.py --dist build-output --output artifacts
+      - name: Build and test Linux per-user installer
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          python -B packaging/build_linux_run.py --dist build-output --output artifacts
+          test_home="$(mktemp -d)"
+          HOME="$test_home" XDG_DATA_HOME="$test_home/.local/share" sh artifacts/Clearings-Install-0.4.2-Linux-x64.run
+          HOME="$test_home" XDG_DATA_HOME="$test_home/.local/share" "$test_home/.local/bin/clearings" --version
+          test -f "$test_home/.local/share/applications/Clearings.desktop"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: clearings-${{ matrix.name }}-unsigned-review
+          path: artifacts/*
+          if-no-files-found: error
