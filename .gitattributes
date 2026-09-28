@@ -1,0 +1,3 @@
+# SPDX-License-Identifier: MPL-2.0
+# Preserve the manifest's exact bytes on Windows, macOS and Linux checkouts.
+* -text

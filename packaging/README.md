@@ -1,10 +1,13 @@
 <!-- SPDX-License-Identifier: MPL-2.0 -->
 # Clearings native installer preparation
 
-The source ZIP is a reviewed input, not a native installer. The manual
+The source ZIP is a reviewable input, not a native installer. The manual
 `.github/workflows/build-installers.yml` workflow builds four **untrusted review
 artifacts** from that input. It uploads workflow artifacts only; it does not
 create a GitHub Release or modify anyone's Clearings workspace.
+The exact-file manifest and `.gitattributes` preserve source bytes across
+platform checkouts. CI pins Python 3.12.14 and includes its official license
+text when the installed runtime has no separate license file.
 
 | System | Review artifact | What installing does |
 | --- | --- | --- |

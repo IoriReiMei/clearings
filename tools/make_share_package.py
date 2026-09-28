@@ -23,6 +23,7 @@ from sync_templates import assert_current
 ROOT = Path(__file__).resolve().parents[1]
 # Local source -> public package name. The public app gets a generic filename.
 FILES = {
+    '.gitattributes': '.gitattributes',
     'LC_CHECKLIST.html': 'index.html',
     'docs/GITHUB_RELEASE_README.md': 'README.md',
     'AI_CHECKLIST_GUIDE.md': 'AI_CHECKLIST_GUIDE.md',
@@ -48,6 +49,7 @@ FILES = {
     'tools/sync_templates.py': 'tools/sync_templates.py',
     'tests/contract.test.cjs': 'tests/contract.test.cjs',
     'packaging/build_native.py': 'packaging/build_native.py',
+    'packaging/licenses/PYTHON-3.12-LICENSE.txt': 'packaging/licenses/PYTHON-3.12-LICENSE.txt',
     'packaging/README.md': 'packaging/README.md',
     'packaging/build_mac_dmg.py': 'packaging/build_mac_dmg.py',
     'packaging/build_linux_run.py': 'packaging/build_linux_run.py',

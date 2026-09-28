@@ -98,7 +98,7 @@ class BridgeChecks(unittest.TestCase):
         spec.loader.exec_module(module)
         other = ("working", 8765) if expected[0] == "release" else ("release", 18765)
         self.assertEqual((module.CHANNEL, module.PORT), other)
-        self.assertEqual(module.APP, alternate / alternate_app)
+        self.assertEqual(module.APP.resolve(), (alternate / alternate_app).resolve())
 
     def test_only_the_same_installed_program_may_be_reused(self):
         bridge = self.bridge

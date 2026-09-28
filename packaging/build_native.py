@@ -53,7 +53,11 @@ def copy_runtime_licenses(bundle: Path) -> None:
                          ("LICENSE.txt", "LICENSE", "LICENSE.md")]
     python_license = next((path for path in python_candidates if path.is_file()), None)
     if python_license is None:
-        raise ValueError("Cannot find this Python runtime's license; refusing an incomplete bundle")
+        if sys.version_info[:3] != (3, 12, 14):
+            raise ValueError("No installed Python license and no matching reviewed fallback")
+        python_license = ROOT / "packaging" / "licenses" / "PYTHON-3.12-LICENSE.txt"
+        if not python_license.is_file():
+            raise ValueError("Reviewed Python 3.12.14 license fallback is missing")
     distribution = metadata.distribution("pyinstaller")
     notices = [entry for entry in distribution.files or []
                if str(entry).replace("\\", "/").endswith(".dist-info/licenses/COPYING.txt")]

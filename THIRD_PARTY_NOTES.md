@@ -96,3 +96,11 @@ bootloader. The build recipe copies their license texts beside the program and
 refuses a bundle if either is missing. Before public distribution, audit the
 complete collected dependency set and platform installer notices. These sources alone are
 not a completed binary-license audit or a signed release.
+
+Some GitHub-hosted Python 3.12.14 installations omit a separate runtime
+`LICENSE` file. For that exact interpreter version only, the build recipe falls
+back to `packaging/licenses/PYTHON-3.12-LICENSE.txt`, copied from CPython's
+official `v3.12.14/LICENSE` at
+https://raw.githubusercontent.com/python/cpython/v3.12.14/LICENSE
+(SHA-256 `3b2f81fe21d181c499c59a256c8e1968455d6689d269aa85373bfb6af41da3bf`).
+This third-party text is supplied under its own terms, not Clearings' MPL-2.0.
