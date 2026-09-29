@@ -775,8 +775,10 @@ def handler_for(bridge: Bridge, token: str, port: int):
                 elif path == "/api/shutdown":
                     # Serve the acknowledgement before stopping the loop; this
                     # endpoint is protected by the same local session token.
+                    self.send(200, {"stopping": True})
+                    self.wfile.flush()
                     threading.Thread(target=self.server.shutdown, daemon=True).start()
-                    answer = {"stopping": True}
+                    return
                 else:
                     self.send(404, {"error": "Not found"})
                     return

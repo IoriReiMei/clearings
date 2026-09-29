@@ -165,5 +165,37 @@ class DeliveryChecks(unittest.TestCase):
             self.assertEqual(errors,[])
         self.assertEqual(self.bridge.read(),packet)
 
+    def test_shutdown_delivers_acknowledgement_before_server_exits(self):
+        handler=local.handler_for(self.bridge,'fixture-token',0)
+        entered=threading.Event();release=threading.Event();stopping=threading.Event()
+        original_send=handler.send
+        def delayed_send(request,*args,**kwargs):
+            entered.set();release.wait(3)
+            return original_send(request,*args,**kwargs)
+        handler.send=delayed_send
+        server=local.LocalServer(('127.0.0.1',0),handler)
+        original_shutdown=server.shutdown
+        def shutdown():
+            stopping.set();original_shutdown()
+        server.shutdown=shutdown
+        worker=threading.Thread(target=lambda:server.serve_forever(poll_interval=.01),daemon=True)
+        result=[];errors=[]
+        def request_stop():
+            try:
+                req=local.urllib.request.Request(f'http://127.0.0.1:{server.server_port}/api/shutdown',data=b'{}',headers={'X-Clearings-Token':'fixture-token','Content-Type':'application/json'})
+                with local.urllib.request.urlopen(req,timeout=5) as response:result.append(json.load(response))
+            except Exception as exc:errors.append(exc)
+        worker.start();client=threading.Thread(target=request_stop,daemon=True);client.start()
+        try:
+            self.assertTrue(entered.wait(3))
+            self.assertFalse(stopping.wait(.2),'Server exited while its acknowledgement was still pending')
+        finally:
+            release.set();client.join(5)
+            if not stopping.wait(1):server.shutdown()
+            worker.join(3);server.server_close()
+        self.assertEqual(errors,[])
+        self.assertEqual(result,[{'stopping':True}])
+        self.assertFalse(worker.is_alive())
+
 
 if __name__=='__main__':unittest.main()
