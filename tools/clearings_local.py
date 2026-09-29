@@ -22,6 +22,7 @@ import re
 import secrets
 import shutil
 import socket
+import socketserver
 import subprocess
 import sys
 import tempfile
@@ -797,7 +798,10 @@ class LocalServer(ThreadingHTTPServer):
     def server_bind(self):
         if os.name == "nt":
             self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
-        super().server_bind()
+        # HTTPServer additionally resolves getfqdn(host), which can block on
+        # system DNS even for loopback. This local-only server needs no lookup.
+        socketserver.TCPServer.server_bind(self)
+        self.server_name, self.server_port = self.server_address[:2]
 
 
 def run_server(bridge: Bridge, port: int, open_browser: bool):

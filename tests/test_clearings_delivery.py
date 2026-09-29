@@ -136,17 +136,30 @@ class DeliveryChecks(unittest.TestCase):
         def serve():
             try:local.run_server(self.bridge,port,False)
             except Exception as exc:errors.append(exc)
-        with patch.object(local,'CHANNEL','release'):
+        with patch.object(local,'CHANNEL','release'), patch.object(socket,'getfqdn',side_effect=AssertionError('Loopback must not depend on DNS')):
             worker=threading.Thread(target=serve,daemon=True);worker.start()
             deadline=time.monotonic()+10
-            while not (self.bridge.root/'session.json').exists() and time.monotonic()<deadline:time.sleep(.02)
+            ready=False
             try:
-                self.assertTrue((self.bridge.root/'session.json').exists(),repr(errors))
+                while time.monotonic()<deadline and not errors:
+                    if (self.bridge.root/'session.json').exists():
+                        session=local.load_json(self.bridge.root/'session.json')
+                        request=local.urllib.request.Request(f'http://127.0.0.1:{port}/api/identity',headers={'X-Clearings-Token':session['token']})
+                        try:
+                            with local.urllib.request.urlopen(request,timeout=.5) as response:
+                                ready=json.load(response)==local.program_identity(self.bridge)
+                            if ready:break
+                        except (OSError,ValueError):pass
+                    time.sleep(.02)
+                self.assertTrue(ready,repr(errors))
                 with self.assertRaisesRegex(RuntimeError,'different Clearings'):
                     local.stop_server(self.bridge,installation=str(self.bridge.root/'not-this.exe'))
                 self.assertTrue(worker.is_alive())
                 self.assertTrue(local.stop_server(self.bridge))
             finally:
+                if worker.is_alive() and (self.bridge.root/'session.json').exists():
+                    try:local.stop_server(self.bridge)
+                    except (OSError,RuntimeError):pass
                 worker.join(5)
             self.assertFalse(worker.is_alive())
             self.assertEqual(errors,[])
