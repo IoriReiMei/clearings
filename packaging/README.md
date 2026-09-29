@@ -6,9 +6,9 @@ The source ZIP is a reviewable input, not a native installer. The manual
 artifacts from that input. It uploads workflow artifacts only; it does not
 create a GitHub Release or modify anyone's Clearings workspace.
 The exact-file manifest and `.gitattributes` preserve source bytes across
-platform checkouts. CI requests Python 3.12 and includes reviewed official
-license text for its observed 3.12.10/3.12.14 variants when the installed
-runtime has no separate license file; other versions stop for review.
+platform checkouts. CI pins Python 3.14.7 and includes its official license as a fallback when the
+installed runtime has no separate license file. Other missing-license versions
+stop for review. See [toolchain versions](../docs/TOOLCHAIN.md).
 
 | System | Review artifact | What installing does |
 | --- | --- | --- |

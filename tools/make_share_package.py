@@ -54,6 +54,8 @@ FILES = {
     'tests/contract.test.cjs': 'tests/contract.test.cjs',
     'packaging/build_native.py': 'packaging/build_native.py',
     'packaging/licenses/PYTHON-3.12-LICENSE.txt': 'packaging/licenses/PYTHON-3.12-LICENSE.txt',
+    'packaging/licenses/PYTHON-3.14-LICENSE.txt': 'packaging/licenses/PYTHON-3.14-LICENSE.txt',
+    'docs/TOOLCHAIN.md': 'docs/TOOLCHAIN.md',
     'packaging/README.md': 'packaging/README.md',
     'packaging/build_mac_dmg.py': 'packaging/build_mac_dmg.py',
     'packaging/build_linux_run.py': 'packaging/build_linux_run.py',
