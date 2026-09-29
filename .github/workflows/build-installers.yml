@@ -33,7 +33,12 @@ jobs:
         shell: bash
         run: |
           python -B packaging/build_native.py --output build-output --verify-only
-          python -B -m unittest discover -s tests -p test_clearings_local.py
+          python -B -m unittest discover -s tests -p 'test_clearings_*.py'
+          node tests/contract.test.cjs
+          node tests/merge.test.cjs
+          node tests/delivery.test.cjs
+          node tests/plan_changes_cli.test.cjs
+          node tests/preferences.test.cjs
           PYTHON=python node tests/clearings-release.test.cjs
       - name: Bundle local helper
         shell: bash
@@ -53,21 +58,9 @@ jobs:
           if (-not (Test-Path -LiteralPath $compiler)) { throw 'NSIS compiler missing' }
           & $compiler /V2 "/DSOURCE_DIR=$pwd\build-output" "/DOUTPUT_DIR=$pwd\artifacts" packaging\windows\Clearings.nsi
           if ($LASTEXITCODE -ne 0) { throw 'Installer compilation failed' }
-          $installer = Get-Item -LiteralPath 'artifacts\Clearings-Setup-0.4.2-Windows-x64.exe'
-          $testInstall = Join-Path $env:RUNNER_TEMP 'Clearings Installer Check'
-          $installed = Start-Process -FilePath $installer.FullName -ArgumentList @('/S', "/D=$testInstall") -PassThru -Wait -WindowStyle Hidden
-          if ($installed.ExitCode -ne 0 -or -not (Test-Path -LiteralPath (Join-Path $testInstall 'Clearings.exe'))) {
-            throw 'Silent per-user install failed'
-          }
-          $desktopLink = Join-Path ([Environment]::GetFolderPath('DesktopDirectory')) 'Clearings.lnk'
-          $startLink = Join-Path ([Environment]::GetFolderPath('Programs')) 'Clearings\Clearings.lnk'
-          if ((Test-Path -LiteralPath $desktopLink) -or (Test-Path -LiteralPath $startLink)) {
-            throw 'Default install unexpectedly created a shortcut'
-          }
-          $launched = Start-Process -FilePath (Join-Path $testInstall 'Clearings.exe') -ArgumentList '--version' -PassThru -Wait -WindowStyle Hidden
-          if ($launched.ExitCode -ne 0) { throw 'Installed binary failed' }
-          $removed = Start-Process -FilePath (Join-Path $testInstall 'Uninstall.exe') -ArgumentList '/S' -PassThru -Wait -WindowStyle Hidden
-          if ($removed.ExitCode -ne 0 -or (Test-Path -LiteralPath (Join-Path $testInstall 'Clearings.exe'))) { throw 'Uninstall failed' }
+          $installer = Get-Item -LiteralPath 'artifacts\Clearings-Setup-0.4.3-Windows-x64.exe'
+          python -B packaging/test_windows_installer.py --installer $installer.FullName
+          if ($LASTEXITCODE -ne 0) { throw 'Running-helper installer lifecycle failed' }
       - name: Build macOS review image
         if: runner.os == 'macOS'
         run: python -B packaging/build_mac_dmg.py --dist build-output --output artifacts
@@ -77,7 +70,7 @@ jobs:
         run: |
           python -B packaging/build_linux_run.py --dist build-output --output artifacts
           test_home="$(mktemp -d)"
-          HOME="$test_home" XDG_DATA_HOME="$test_home/.local/share" sh artifacts/Clearings-Install-0.4.2-Linux-x64.run
+          HOME="$test_home" XDG_DATA_HOME="$test_home/.local/share" sh artifacts/Clearings-Install-0.4.3-Linux-x64.run
           HOME="$test_home" XDG_DATA_HOME="$test_home/.local/share" "$test_home/.local/bin/clearings" --version
           test -f "$test_home/.local/share/applications/Clearings.desktop"
       - uses: actions/upload-artifact@v4

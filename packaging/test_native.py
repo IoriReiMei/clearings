@@ -34,6 +34,12 @@ def main() -> None:
             raise ValueError(f"Native bundle lacks {name}")
     with tempfile.TemporaryDirectory(prefix="clearings-native-check-") as temp:
         config = Path(temp) / "settings"
+        config.mkdir(exist_ok=True)
+        (Path(temp) / "handoff").mkdir()
+        (config / "settings.json").write_text(json.dumps({"home": str(Path(temp) / "handoff")}), encoding="utf-8")
+        if sys.platform == "win32":
+            result = subprocess.run([str(app.with_name("ClearingsCLI.exe")), "--config-dir", str(config), "status"], check=True, capture_output=True, text=True)
+            assert json.loads(result.stdout)["generation"] == 0
         with socket.socket() as probe:
             probe.bind(("127.0.0.1", 0))
             port = probe.getsockname()[1]
@@ -74,11 +80,21 @@ def main() -> None:
             assert identity["config"] == str(config.resolve()), identity
             with urllib.request.urlopen(f"http://127.0.0.1:{port}/", timeout=2) as response:
                 page = response.read()
-            assert b"appVersion:'0.4.2'" in page
+            assert b"appVersion:'0.4.3'" in page
             assert b"window.__CLEARINGS_LOCAL_TOKEN__" in page
-            print("Bundled Clearings served the 0.4.2 page from disposable settings.")
+            command_app = app.with_name("ClearingsCLI.exe") if sys.platform == "win32" else app
+            if sys.platform == "win32":
+                result = subprocess.run([str(command_app), "--config-dir", str(config), "status"], check=True, capture_output=True, text=True)
+                assert json.loads(result.stdout)["generation"] == 0
+            refused = subprocess.run([str(app), "--config-dir", str(config), "stop", "--installation", str(Path(temp) / "not-this-program")], timeout=10, capture_output=True)
+            assert refused.returncode != 0 and child.poll() is None
+            stopped = subprocess.run([str(command_app), "--config-dir", str(config), "stop"], timeout=20)
+            assert stopped.returncode == 0
+            child.wait(timeout=15)
+            print("Bundled Clearings served the 0.4.3 page from disposable settings.")
         finally:
-            child.terminate()
+            if child.poll() is None:
+                child.terminate()
             try:
                 child.wait(timeout=5)
             except subprocess.TimeoutExpired:

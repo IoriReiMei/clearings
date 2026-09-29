@@ -7,8 +7,8 @@ file, You can obtain one at https://mozilla.org/MPL/2.0/.
 # Two-minute real-browser check
 
 This is a check with fictional data, not a request to risk a real workspace.
-The automated tests in this release simulate IndexedDB because the build browser
-cannot navigate normal URLs. Native persistence has not been certified here.
+The loopback browser test uses real Chromium and IndexedDB in a disposable profile.
+A supplementary UI test simulates storage. Neither certifies every user browser.
 
 1. In a normal (not private) browser window, open the **new versioned**
    `index.html` or your final hosted URL. If you are moving from an older release
@@ -42,8 +42,9 @@ cannot navigate normal URLs. Native persistence has not been certified here.
 7. For the optional assistant flow, choose a freshly made changes JSON with
    **Refresh Clearings**. Inspect the preview and reject it once; nothing should
    change. Apply it after review. NEW/UPDATED/checkmark highlights should appear
-   only for approved incoming changes. Clicking Checklists/Tracked clears the
-   corresponding unread dot; an empty Refresh keeps old highlights by default.
+   only for approved incoming changes. Clicking Checklists/Tracked folds its list without clearing indicators. An empty
+   Refresh preserves highlights; a second empty Refresh after the cooldown clears
+   them, with Undo. Mark indicator as seen clears one checklist explicitly.
    Enable the optional Clear Indicators button in Preferences to clear them manually. Checkmark
    changes require their separate confirmation checkbox. A stale proposal must
    be refused. This requires a real proposal file; skip if you do not have one.

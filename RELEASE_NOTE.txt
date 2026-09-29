@@ -1,10 +1,11 @@
 SPDX-License-Identifier: MPL-2.0
-Clearings 0.4.2 - a local installer-source candidate, not an automatic publication.
-This update separates installed and working helper addresses, and adds Windows, macOS, and Linux build recipes.
-The standalone index.html works without Python. A future native installer can bundle the helper so recipients need no Python install.
-The source ZIP is not itself a native installer; built binaries require platform checks, licensing review, and owner publication.
-The app and designated release files use MPL 2.0; see LICENSE and LICENSE_SCOPE.md.
-Only allowlisted code, docs, tests, fictional examples and blank GitHub planning templates are included.
-Personal exports, browser data, private repository history and the working folder are not collected.
-Native browser persistence at the final address still needs an owner smoke check.
-Review this package before sharing. No originality certification is claimed.
+Clearings 0.4.3 - shared tasks with durable attribution.
+Assistants can create and edit signed shared work before browser Refresh.
+Move to and explicit same-list deletion use shared task rules.
+Windows includes a console CLI and an installer that stops its own helper before upgrade or uninstall.
+The app contains no model, account, telemetry or external runtime download.
+Native binaries bundle Python; this source ZIP is also usable as a standalone browser app.
+Older exports remain readable; attribution-enriched exports need 0.4.3 or newer.
+Signing and platform verification limits are documented in CLEARINGS_VERIFICATION.md.
+Only allowlisted source, docs, tests and fictional examples are included.
+See LICENSE, LICENSE_SCOPE.md and THIRD_PARTY_NOTES.md.

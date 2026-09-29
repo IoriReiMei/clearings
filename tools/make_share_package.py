@@ -27,7 +27,7 @@ FILES = {
     'LC_CHECKLIST.html': 'index.html',
     'docs/GITHUB_RELEASE_README.md': 'README.md',
     'AI_CHECKLIST_GUIDE.md': 'AI_CHECKLIST_GUIDE.md',
-    'docs/RELEASE_VERIFICATION_0_4_2.md': 'CLEARINGS_VERIFICATION.md',
+    'docs/RELEASE_VERIFICATION_0_4_3.md': 'CLEARINGS_VERIFICATION.md',
     'LICENSE': 'LICENSE',
     'LICENSE_SCOPE.md': 'LICENSE_SCOPE.md',
     'THIRD_PARTY_NOTES.md': 'THIRD_PARTY_NOTES.md',
@@ -44,7 +44,11 @@ FILES = {
     'tools/contract.cjs': 'tools/contract.cjs',
     'tools/validate_checklist.cjs': 'tools/validate_checklist.cjs',
     'tools/merge.cjs': 'tools/merge.cjs',
+    'tools/plan_changes.cjs': 'tools/plan_changes.cjs',
+    'tests/delivery.test.cjs': 'tests/delivery.test.cjs',
+    'tests/plan_changes_cli.test.cjs': 'tests/plan_changes_cli.test.cjs',
     'tools/clearings_local.py': 'tools/clearings_local.py',
+    'tools/clearings_commit.py': 'tools/clearings_commit.py',
     'tools/make_share_package.py': 'tools/make_share_package.py',
     'tools/sync_templates.py': 'tools/sync_templates.py',
     'tests/contract.test.cjs': 'tests/contract.test.cjs',
@@ -54,6 +58,7 @@ FILES = {
     'packaging/build_mac_dmg.py': 'packaging/build_mac_dmg.py',
     'packaging/build_linux_run.py': 'packaging/build_linux_run.py',
     'packaging/test_native.py': 'packaging/test_native.py',
+    'packaging/test_windows_installer.py': 'packaging/test_windows_installer.py',
     'packaging/linux/install.sh.in': 'packaging/linux/install.sh.in',
     'packaging/windows/Clearings.nsi': 'packaging/windows/Clearings.nsi',
     '.github/workflows/build-installers.yml': '.github/workflows/build-installers.yml',
@@ -69,6 +74,8 @@ FILES.update({
     'tests/local_handoff_browser.test.cjs':'tests/local_handoff_browser.test.cjs',
     'tests/merge.test.cjs':'tests/merge.test.cjs',
     'tests/test_clearings_local.py':'tests/test_clearings_local.py',
+    'tests/test_clearings_commit.py':'tests/test_clearings_commit.py',
+    'tests/test_clearings_delivery.py':'tests/test_clearings_delivery.py',
 })
 
 # Notices for JSON/image files travel with the exact allowlisted assets.
@@ -109,8 +116,8 @@ def main() -> None:
         parser.error(f'Output exists: {output}. Choose another name or explicitly pass --force.')
     app_source = ROOT/'LC_CHECKLIST.html'
     if not app_source.exists(): app_source = ROOT/'index.html'
-    if b"appVersion:'0.4.2'" not in app_source.read_bytes():
-        raise ValueError('This packager is for Clearings 0.4.2 only; review the allowlist and release note for another version.')
+    if b"appVersion:'0.4.3'" not in app_source.read_bytes():
+        raise ValueError('This packager is for Clearings 0.4.3 only; review the allowlist and release note for another version.')
     assert_current(app_source, ROOT)
     payload: dict[str,bytes]={}
     extracted_release = app_source.name == 'index.html'
@@ -127,7 +134,7 @@ def main() -> None:
         payload[destination]=data
     payload['.gitignore']=b'# SPDX-License-Identifier: MPL-2.0\n# Keep personal libraries under data/ and review before sharing.\n/data/\n/checklist_index.json\n/checklist-*.json\n/program_overview.json\n/build-output/\n/artifacts/\n*.zip\n*.dmg\n*.run\n__pycache__/\n'
     payload['.nojekyll']=b''
-    payload['RELEASE_NOTE.txt']=b'SPDX-License-Identifier: MPL-2.0\nClearings 0.4.2 - a local installer-source candidate, not an automatic publication.\nThis update separates installed and working helper addresses, and adds Windows, macOS, and Linux build recipes.\nThe standalone index.html works without Python. A future native installer can bundle the helper so recipients need no Python install.\nThe source ZIP is not itself a native installer; built binaries require platform checks, licensing review, and owner publication.\nThe app and designated release files use MPL 2.0; see LICENSE and LICENSE_SCOPE.md.\nOnly allowlisted code, docs, tests, fictional examples and blank GitHub planning templates are included.\nPersonal exports, browser data, private repository history and the working folder are not collected.\nNative browser persistence at the final address still needs an owner smoke check.\nReview this package before sharing. No originality certification is claimed.\n'
+    payload['RELEASE_NOTE.txt']=b'SPDX-License-Identifier: MPL-2.0\nClearings 0.4.3 - shared tasks with durable attribution.\nAssistants can create and edit signed shared work before browser Refresh.\nMove to and explicit same-list deletion use shared task rules.\nWindows includes a console CLI and an installer that stops its own helper before upgrade or uninstall.\nThe app contains no model, account, telemetry or external runtime download.\nNative binaries bundle Python; this source ZIP is also usable as a standalone browser app.\nOlder exports remain readable; attribution-enriched exports need 0.4.3 or newer.\nSigning and platform verification limits are documented in CLEARINGS_VERIFICATION.md.\nOnly allowlisted source, docs, tests and fictional examples are included.\nSee LICENSE, LICENSE_SCOPE.md and THIRD_PARTY_NOTES.md.\n'
     manifest={name:hashlib.sha256(data).hexdigest() for name,data in payload.items()}
     payload['MANIFEST.json']=(json.dumps(manifest,indent=2)+'\n').encode()
     output.parent.mkdir(parents=True,exist_ok=True)

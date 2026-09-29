@@ -65,6 +65,7 @@ body.hide-progress .progress-indicator{display:none}
 .save-indicator[data-status=saving] .save-dot{width:11px;height:11px;background:transparent;border:2px solid var(--line);border-top-color:var(--accent);animation:save-spin .75s linear infinite}
 @keyframes save-spin{to{transform:rotate(360deg)}}
 .pref-section{margin:0 0 23px}.pref-section h3{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin:5px 0 9px}
+.settings-sections .pref-section+.pref-section{border-top:1px solid var(--line);padding-top:18px}.settings-section-title{display:flex;align-items:center;justify-content:space-between;gap:12px}.settings-section-title h3{margin-bottom:9px}.settings-help-wrap{position:relative;display:inline-flex;align-items:center;flex:none}.settings-help-button{width:20px;height:20px;border:1px solid var(--thread);border-radius:50%;padding:0;color:var(--muted);font-size:11px;line-height:18px;text-align:center}.settings-help-button:hover,.settings-help-button[aria-expanded=true]{color:var(--accent);border-color:var(--accent);background:var(--soft)}.settings-help-popover{display:none;position:absolute;right:0;top:calc(100% + 6px);z-index:12;width:min(260px,calc(100vw - 70px));padding:10px 12px;border:1px solid var(--thread);border-radius:6px;background:var(--paper);box-shadow:var(--shadow);color:var(--text);font-size:11px;line-height:1.6;font-weight:400;letter-spacing:0;text-transform:none;white-space:normal}.settings-help-wrap:hover .settings-help-popover,.settings-help-button:focus-visible+.settings-help-popover,.settings-help-wrap.is-pinned .settings-help-popover{display:block}.settings-sections .pref-row>label{flex:1;cursor:pointer}.settings-sections .pref-row .settings-help-wrap{margin-left:auto}.settings-sections .pref-row .switch{margin-left:7px}
 .pref-row{display:flex;justify-content:space-between;align-items:center;gap:18px;padding:10px 0;border-bottom:1px solid var(--line);font-size:13px}
 .pref-row>span{flex:1}.pref-row small{display:block;color:var(--muted);font-size:11px;line-height:1.5;margin-top:3px}
 .pref-row select{border:1px solid var(--line);background:var(--bg);padding:5px 7px;border-radius:5px;max-width:160px;font-size:12px}
@@ -87,8 +88,9 @@ html[data-motion=reduce] *,html[data-motion=reduce] *:before,html[data-motion=re
 @media(max-width:500px){.pref-row{gap:9px}.pref-row select{max-width:130px}.save-indicator{bottom:8px;max-width:80vw}.section-block>.rows{margin-left:18px}}
 .library-row{padding-left:2px}.library-row>.grip{width:32px;height:36px;opacity:1}.library-row:hover>.grip,.library-row:focus-within>.grip{opacity:1}.library-row .library-open{padding-left:2px}
 .refresh-clearings{display:flex;align-items:center;width:calc(100% + 20px);min-height:53px;margin:0 0 12px -10px;border:1px solid var(--thread);border-radius:3px;padding:10px 14px;text-align:left;font-size:14px;font-weight:600;letter-spacing:.01em;color:var(--accent);background:var(--bg)}.refresh-clearings:hover{background:var(--soft);border-color:var(--accent)}.refresh-clearings:disabled{opacity:.55}.clear-indicators{display:block;margin-bottom:9px;color:var(--muted);font-size:10px;text-align:left}
-.unread-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--warn);margin-left:5px;vertical-align:middle}.change-tag{display:inline-block;flex:none;font-size:9px;letter-spacing:.03em;border-radius:4px;padding:2px 4px;color:var(--warn);background:var(--soft)}.change-tag.completed{color:var(--accent)}.change-highlight{box-shadow:inset 2px 0 var(--warn)}.check-highlight{outline:2px solid var(--warn);outline-offset:2px}
-.actor-label{display:none;font-size:9px;white-space:nowrap;color:var(--muted)}body.show-attribution .actor-label{display:inline}.actor-label.browser{color:#a7612d}.actor-label.json{color:#406d98}html[data-theme=dark] .actor-label.browser{color:#edb179}html[data-theme=dark] .actor-label.json{color:#9bbfea}
+.unread-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--warn);margin-left:5px;vertical-align:middle}.change-tag{display:inline-block;flex:none;font-size:9px;letter-spacing:.03em;border-radius:4px;padding:2px 4px;color:var(--warn);background:var(--soft)}.change-highlight{box-shadow:inset 2px 0 var(--warn)}.check-highlight{outline:2px solid var(--warn);outline-offset:2px}.unread-dot.ai,.change-tag.ai{color:#406d98;background-color:#dceaf7}.unread-dot.ai{background-color:#406d98}.change-highlight.ai{box-shadow:inset 2px 0 #406d98}.check-highlight.ai{outline-color:#406d98}html[data-theme=dark] .change-tag.ai{color:#9bbfea;background-color:#20384d}html[data-theme=dark] .unread-dot.ai{background-color:#9bbfea}html[data-theme=dark] .change-highlight.ai{box-shadow:inset 2px 0 #9bbfea}html[data-theme=dark] .check-highlight.ai{outline-color:#9bbfea}
+.actor-label{display:none;font-size:9px;white-space:nowrap;color:var(--muted)}body.show-attribution .actor-label,.actor-label.completer{display:inline}.actor-label.completer{font-size:10px;max-width:100px;overflow:hidden;text-overflow:ellipsis}.actor-label.browser{color:#a7612d}.actor-label.json{color:#406d98}html[data-theme=dark] .actor-label.browser{color:#edb179}html[data-theme=dark] .actor-label.json{color:#9bbfea}
+.row-tags{display:none;gap:4px;align-items:center;flex-wrap:wrap}.row-tags .tag{font-size:9px;padding:1px 4px}body.show-tags .row-tags{display:inline-flex}
 .editor-dialog footer .dialog-discard{margin-right:auto;color:var(--warn)}.editor-dialog footer .dialog-discard[hidden]{display:none}
 .page-header.drop-target{outline:2px dashed var(--accent);outline-offset:4px;border-radius:7px}.drag-flight{position:fixed;left:0;top:0;z-index:1101;pointer-events:none}.drag-flight .ghost-grip i{transition:none}
 @media(prefers-reduced-motion:reduce){html[data-motion=system] .grip i,html[data-motion=system] .ghost-grip i{transition:none!important}}
@@ -119,6 +121,16 @@ html[data-motion=reduce] .new-checklist-details[open]>.field{animation:none}
 @media(prefers-color-scheme:dark){html:not([data-theme=light]) .actor-label.browser{color:#edb179}html:not([data-theme=light]) .actor-label.json{color:#9bbfea}}
 .conflict-warning{border:0;background:transparent;color:#ad6523;font-size:16px;cursor:pointer}.conflict-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.conflict-side{min-width:0;border:1px solid var(--line);border-radius:7px;padding:10px;white-space:pre-wrap;overflow-wrap:anywhere}.conflict-side.browser{border-left:3px solid #c48142}.conflict-side.json{border-left:3px solid #6695bf}.conflict-entry{border-top:1px solid var(--line);padding:12px 0}.conflict-entry label{display:inline-block;margin:8px 16px 0 0}.conflict-entry small{display:block;color:var(--muted)}@media(max-width:700px){.conflict-grid{grid-template-columns:1fr}}
 body.local-applying #center,body.local-applying #libraryPane{pointer-events:none}
+
+/* Consecutive changed siblings share a continuous bracket. Item tags retain detail. */
+.rows>li:has(>.task-row.change-highlight){position:relative;--change-ink:var(--warn)}
+.rows>li:has(>.task-row.change-highlight.ai){--change-ink:#406d98}
+html[data-theme=dark] .rows>li:has(>.task-row.change-highlight.ai){--change-ink:#9bbfea}
+.rows>li:has(>.task-row.change-highlight)::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;border-left:2px solid var(--change-ink);pointer-events:none}
+.rows>li>.task-row.change-highlight{box-shadow:none;border-radius:0}
+.rows>li:has(>.task-row.change-highlight):first-child::before,.rows>li:not(:has(>.task-row.change-highlight))+li:has(>.task-row.change-highlight)::before{border-top:2px solid var(--change-ink);border-top-left-radius:4px}
+.rows>li:has(>.task-row.change-highlight):not(:has(+li>.task-row.change-highlight))::before{border-bottom:2px solid var(--change-ink);border-bottom-left-radius:4px}
+.library-card.change-highlight{padding-left:12px}
 </style>
 </head>
 <body class="booting">
@@ -149,11 +161,11 @@ body.local-applying #center,body.local-applying #libraryPane{pointer-events:none
   <button class="new-list" id="addItemButton" data-action="new-step" type="button" disabled title="Open a checklist to add an item"><span class="add-plus" aria-hidden="true"></span> New item</button>
  </header>
  <div class="library-scroll">
-   <div class="section-label"><button type="button" class="heading-button" data-action="library-view">CHECKLISTS <span id="checklistUnread" class="unread-dot" aria-label="Unread checklist changes" hidden></span></button></div>
+   <div class="section-label"><button id="checklistsLabel" type="button" class="heading-button" data-action="fold-checklists" aria-controls="libraryList archiveSection" aria-expanded="true">CHECKLISTS <span id="checklistUnread" class="unread-dot" aria-label="Unread checklist changes" hidden></span></button><button class="icon-button quiet" type="button" data-action="library-view" aria-label="Open workspace overview" title="Open workspace overview">↗</button></div>
   <nav id="libraryList" aria-label="Open checklists"></nav>
   <details id="archiveSection" class="archive-section"><summary id="archiveSummary">Archived</summary><nav id="archiveList" aria-label="Archived checklists"></nav></details>
   <section id="trackedSection" aria-labelledby="trackedLabel">
-    <div class="section-label"><button id="trackedLabel" class="heading-button" type="button" data-action="ack-tracked">TRACKED <span id="trackedUnread" class="unread-dot" aria-label="Unread tracked changes" hidden></span></button><button class="icon-button quiet" type="button" data-menu="tracked-panel" aria-label="Tracked list options" aria-haspopup="menu">•••</button></div>
+    <div class="section-label"><button id="trackedLabel" class="heading-button" type="button" data-action="fold-tracked" aria-controls="trackedList trackHint" aria-expanded="true">TRACKED <span id="trackedUnread" class="unread-dot" aria-label="Unread tracked changes" hidden></span></button><button class="icon-button quiet" type="button" data-menu="tracked-panel" aria-label="Tracked list options" aria-haspopup="menu">•••</button></div>
    <div id="trackedList" class="tracked-list"></div>
    <p id="trackHint" class="track-hint">Your working set.<br>Drag a title here to keep it close.</p>
   </section>
@@ -209,7 +221,7 @@ function safeHref(href){if(typeof href!=='string'||href.length>2000||/[\x00-\x1f
 function orderedRoots(items){const nested=new Set(items.flatMap(i=>i.requires||[]));return items.filter(i=>!nested.has(i.id)).sort((a,b)=>(a.order||0)-(b.order||0)).map(i=>i.id)}
 function validateDocument(input){
  const d=clone(input);
- allowedKeys(d,['format','schemaVersion','documentId','title','subtitle','description','footer','archived','updatedAt','references','model','state','view'],'Checklist');
+ allowedKeys(d,['format','schemaVersion','documentId','title','subtitle','description','footer','archived','updatedAt','references','model','state','view','attribution'],'Checklist');
  if(!formatIs('document',d.format)||d.schemaVersion!==2)fail('Unsupported checklist format/version. Use Import for older files.');
  if(!validId(d.documentId))fail('Invalid checklist ID.');
  for(const k of ['title','subtitle','description','footer'])text(d[k],`Checklist ${k}`);
@@ -228,8 +240,36 @@ function validateDocument(input){
  const reachable=new Set(),queue=[...m.roots];while(queue.length){const id=queue.pop();if(reachable.has(id))continue;reachable.add(id);queue.push(...lookup.get(id).requires)}if(reachable.size!==ids.size)fail('Some items have no path from the overview.');
  if(!isObj(d.state))fail('Invalid checkmarks.');for(const [id,v] of Object.entries(d.state))if(!ids.has(id)||typeof v!=='boolean')fail('Checkmarks must reference existing items and be true/false.');
  allowedKeys(d.view,['collapsed'],'View');distinctStrings(d.view.collapsed,'Collapsed groups');if(d.view.collapsed.some(id=>!ids.has(id)))fail('A fold preference refers to a missing step.');
+ if(d.attribution!==undefined){
+  if(!isObj(d.attribution))fail('Invalid item attribution.');
+  for(const [id,record] of Object.entries(d.attribution)){
+   if(!ids.has(id))fail('Attribution refers to a missing item.');allowedKeys(record,['created','completed'],'Item attribution');
+   for(const stamp of Object.values(record)){
+    allowedKeys(stamp,['actor','role','at','commitId','approvedBy'],'Attribution stamp');
+    if(typeof stamp.actor!=='string'||!stamp.actor.trim()||stamp.actor.length>80||!['human','assistant'].includes(stamp.role)||typeof stamp.at!=='string'||!Number.isFinite(Date.parse(stamp.at)))fail('Invalid attribution stamp.');
+    if(stamp.commitId!=null&&!validId(stamp.commitId)||stamp.approvedBy!=null&&(typeof stamp.approvedBy!=='string'||!stamp.approvedBy.trim()||stamp.approvedBy.length>80))fail('Invalid attribution signature.');
+   }
+  }
+ }
  return d;
 }
+function stampAttribution(document,before,stamp){
+ const oldIds=new Set(before?.model.items.map(i=>i.id)||[]),records=clone(before?.attribution||{}),kept=new Set(document.model.items.map(i=>i.id));
+ for(const i of document.model.items){const record=records[i.id]||={},prior=before?.state[i.id]===true,done=document.state[i.id]===true;
+  if(!oldIds.has(i.id))record.created=clone(stamp);if(done&&!prior)record.completed=clone(stamp);else if(!done)delete record.completed;
+ }
+ document.attribution=Object.fromEntries(Object.entries(records).filter(([id,value])=>kept.has(id)&&Object.keys(value).length));return document;
+}
+function backfillAttribution(document,events){
+ const found={},ids=new Set(document.model.items.map(i=>i.id));
+ for(const event of events){if(event.checklistId!==document.documentId||!ids.has(event.itemId))continue;
+  const record=found[event.itemId]??={},stamp={actor:event.actor,role:event.role,at:event.at,commitId:event.commitId||null,approvedBy:event.approvedBy||null};
+  if(event.action==='new'&&!record.created)record.created=stamp;
+  if(event.action==='completed')record.completed=stamp;if(event.action==='reopened')delete record.completed;
+ }
+ for(const [id,record] of Object.entries(found)){if(!document.state[id])delete record.completed;if(!Object.keys(record).length)continue;document.attribution??={};const saved=document.attribution[id]??={};for(const [key,stamp] of Object.entries(record))if(!saved[key])saved[key]=stamp;}
+}
+function preserveAttribution(w){for(const d of w.documents)backfillAttribution(d,w.index.activity||[]);}
 const PREFERENCE_V2_KEYS=Object.freeze(['library','tracked','map','theme','showProgress','progressFormat','rollup','autosave','saveDelay','motion']);
 const PREFERENCE_DEFAULTS=Object.freeze({library:true,tracked:true,map:true,theme:'system',showProgress:true,showFooterProgress:false,showFooterTrack:false,progressFormat:'percent',rollup:true,groupProgress:'children',progressVisual:'bar',autosave:true,saveDelay:1000,motion:'system',openTopChecklist:true,displayName:'You'});
 function progressStats(document,focus=null,rollup=true,includeSelf=true){
@@ -261,11 +301,12 @@ function validateWorkspace(raw){
  if(ix.schemaVersion===4){
   arr(ix.activity,'Activity');if(ix.activity.length>500)fail('Activity history exceeds 500 entries.');
   const eventIds=new Set();for(const a of ix.activity){
-   allowedKeys(a,['id','at','actor','role','action','checklistId','itemId','approvedBy','highlight','unread'],'Activity entry');
+   allowedKeys(a,['id','at','actor','role','action','checklistId','itemId','approvedBy','highlight','unread','commitId'],'Activity entry');
    if(!validId(a.id)||eventIds.has(a.id)||typeof a.at!=='string'||!Number.isFinite(Date.parse(a.at)))fail('Invalid activity identity or time.');eventIds.add(a.id);
    if(typeof a.actor!=='string'||!a.actor.trim()||a.actor.length>80||!['human','assistant'].includes(a.role)||!['new','updated','completed','reopened'].includes(a.action))fail('Invalid activity attribution.');
    if(!ids.has(a.checklistId)||a.itemId!==null&&!docs.get(a.checklistId).model.items.some(i=>i.id===a.itemId))fail('Activity points to a missing checklist or item.');
    if(a.approvedBy!==null&&(typeof a.approvedBy!=='string'||!a.approvedBy.trim()||a.approvedBy.length>80)||typeof a.highlight!=='boolean'||typeof a.unread!=='boolean')fail('Invalid activity status.');
+   if(a.commitId!==undefined&&a.commitId!==null&&!validId(a.commitId))fail('Invalid activity commit ID.');
   }
  }
  return w;
@@ -293,16 +334,17 @@ Supported operations:
 - {"op":"add-item","parentId":null,"item":{"id":"unique-stable-id","text":"Title","detail":"Done when...","label":"","tags":[],"parents":[],"requires":[],"order":1}}. parentId=null adds a root; an existing or previously added ID adds a supporting sub-task. Add parents before their sub-tasks. New items start unchecked.
 - {"op":"update-item","id":"existing-id","changes":{"text":"Revised title","detail":"Revised detail","label":"","tags":[],"parents":[]}}. Include only fields to change. parents are category IDs, NOT tree parents. This operation does not change hierarchy.
 - {"op":"reorder","parentId":null,"itemIds":["all-current-root-ids-in-new-order"]}. For a child list, use its parent's ID. Supply an exact permutation of that list.
+- {"op":"move-items","itemIds":["existing-id"],"fromParentId":"old-heading-id-or-null","toParentId":"new-heading-id-or-null","beforeId":"existing-destination-sibling-or-null"}. Move only the named source links, in the supplied order. A shared item keeps its other parent links; IDs, text, tags and checkmarks stay attached to the same item. Use beforeId:null to append. Cycles, missing IDs and completed-ancestor locks are refused.
 - {"op":"set-done","id":"existing-id","done":false}. Use ONLY when explicitly requested by the user. Completion changes require an extra confirmation in the app. Never infer completion from an encouraging description.
 Do not change document or item IDs, existing checkmarks, categories, links, or unrelated text unless the requested operation permits it. A checked ancestor locks its descendants through EVERY parent path. Do not uncheck it to bypass a lock unless the user asked. Shared items are single objects; editing one changes every appearance. Parent closure does not check sub-tasks. Null, negative, and unresolved findings remain valid. Do not make suggestions into obligations or call an item a blocker without the user's intent.
-No deleting, archiving, metadata replacement, or cross-checklist edits in this packet version. For those, provide a separate explanation or a reviewed repository patch. At most 100 operations. The app rejects stale bases, unknown fields, broken links, cycles, and locked changes. A rejected packet must be regenerated from fresh context, not forced through.`;
+Use {"op":"remove-item","id":"existing-id","mode":"keep-subtasks"} to remove an item but keep its children, or mode:"subtree" to remove its private descendants too. Shared descendants survive other paths. Deletion must be explicitly requested. Closed scopes must be reopened deliberately. No archiving, metadata replacement, or cross-checklist edits in this packet version. For those, provide a separate explanation or a reviewed repository patch. At most 100 operations. The app rejects stale bases, unknown fields, broken links, cycles, and locked changes. A rejected packet must be regenerated from fresh context, not forced through.`;
 function canonicalJSON(value){
  if(Array.isArray(value))return '['+value.map(canonicalJSON).join(',')+']';
  if(isObj(value))return '{'+Object.keys(value).sort().map(k=>JSON.stringify(k)+':'+canonicalJSON(value[k])).join(',')+'}';
  return JSON.stringify(value);
 }
 function aiDocumentKey(document){
- const copy=clone(document);delete copy.view;delete copy.updatedAt;
+ const copy=clone(document);delete copy.view;delete copy.updatedAt;delete copy.attribution;
  return canonicalJSON(copy);
 }
 async function aiHash(document){
@@ -315,6 +357,22 @@ function documentLocks(d,id){
  const parents=new Map();for(const i of d.model.items)for(const child of i.requires){if(!parents.has(child))parents.set(child,[]);parents.get(child).push(i.id)}
  const stack=[...(parents.get(id)||[])],seen=new Set([id]),locks=[];
  while(stack.length){const x=stack.pop();if(seen.has(x))continue;seen.add(x);if(d.state[x]===true)locks.push(x);stack.push(...(parents.get(x)||[]))}return locks;
+}
+function planRemoval(document,id,mode){
+ const d=clone(document),items=new Map(d.model.items.map(i=>[i.id,i])),item=items.get(id);
+ if(!item)fail('Missing item: '+id);if(!['keep-subtasks','subtree'].includes(mode))fail('Choose keep-subtasks or subtree.');
+ const removed=new Set([id]);
+ if(mode==='subtree'){
+  const subtree=new Set(),todo=[id];while(todo.length){const key=todo.pop();if(subtree.has(key))continue;subtree.add(key);todo.push(...items.get(key).requires)}
+  const reachable=new Set(),paths=d.model.roots.filter(key=>key!==id);while(paths.length){const key=paths.pop();if(key===id||reachable.has(key))continue;reachable.add(key);paths.push(...items.get(key).requires)}
+  for(const key of subtree)if(!reachable.has(key))removed.add(key);
+ }
+ for(const key of removed)if(documentLocks(d,key).length)fail('A completed ancestor locks this deletion. Reopen it deliberately first.');
+ for(const parent of d.model.items)if(parent.requires.some(key=>removed.has(key))&&(documentLocks(d,parent.id).length||d.state[parent.id]===true))fail('A completed heading locks this deletion. Reopen it deliberately first.');
+ d.model.items=d.model.items.filter(i=>!removed.has(i.id));for(const i of d.model.items)i.requires=i.requires.filter(key=>!removed.has(key));d.model.roots=d.model.roots.filter(key=>!removed.has(key));
+ if(mode==='keep-subtasks'){const linked=new Set(d.model.items.flatMap(i=>i.requires));for(const key of item.requires)if(!linked.has(key)&&!d.model.roots.includes(key))d.model.roots.push(key)}
+ for(const key of removed){delete d.state[key];if(d.attribution)delete d.attribution[key]}d.view.collapsed=d.view.collapsed.filter(key=>!removed.has(key));
+ return {document:validateDocument(d),removed:[...removed],titles:[...removed].map(key=>items.get(key).text)};
 }
 async function planAIChanges(document,input){
  const before=validateDocument(document),packet=clone(input);
@@ -349,6 +407,26 @@ async function planAIChanges(document,input){
    for(let n=0;n<list.length;n++)if(list[n]!==op.itemIds[n]){unlocked(list[n]);unlocked(op.itemIds[n]);}
    summary.push({kind:'Reorder',target:op.parentId===null?'Overview':get(op.parentId).text,before:[...list],after:[...op.itemIds]});
    list.splice(0,list.length,...op.itemIds);
+  }else if(op.op==='move-items'){
+   allowedKeys(op,['op','itemIds','fromParentId','toParentId','beforeId'],'Move items');
+   distinctStrings(op.itemIds,'Moved IDs');if(!op.itemIds.length)fail('Move needs at least one item ID.');
+   for(const key of ['fromParentId','toParentId','beforeId'])if(op[key]!==null&&!validId(op[key]))fail('Invalid '+key+'.');
+   editableParent(op.fromParentId);editableParent(op.toParentId);
+   const source=op.fromParentId===null?d.model.roots:get(op.fromParentId).requires;
+   const destination=op.toParentId===null?d.model.roots:get(op.toParentId).requires;
+   if(op.itemIds.some(id=>!source.includes(id)))fail('Every moved ID must belong to the named source parent.');
+   for(const id of op.itemIds)unlocked(id);
+   if(op.beforeId!==null&&(!destination.includes(op.beforeId)||op.itemIds.includes(op.beforeId)))fail('beforeId must be an unmoved destination sibling.');
+   if(source!==destination&&op.itemIds.some(id=>destination.includes(id)))fail('Destination already links one of these items. Choose its existing link explicitly.');
+   const oldSource=[...source],oldDestination=[...destination];
+   for(const id of op.itemIds)source.splice(source.indexOf(id),1);
+   const at=op.beforeId===null?destination.length:destination.indexOf(op.beforeId);
+   destination.splice(at,0,...op.itemIds);
+   for(const [was,list] of [[oldSource,source],[oldDestination,destination]])for(const key of new Set([...was,...list]))if(was.indexOf(key)!==list.indexOf(key))unlocked(key);
+   summary.push({kind:'Move items',target:op.itemIds.map(id=>get(id).text).join(', '),from:op.fromParentId,to:op.toParentId,before:{source:oldSource,destination:oldDestination},after:{source:[...source],destination:[...destination]}});
+  }else if(op.op==='remove-item'){
+   allowedKeys(op,['op','id','mode'],'Remove item');const removal=planRemoval(d,op.id,op.mode);
+   summary.push({kind:'Delete items',target:get(op.id).text,before:removal.titles,after:op.mode==='keep-subtasks'?'Sub-tasks kept':'Shared descendants kept where also used'});Object.assign(d,removal.document);
   }else if(op.op==='set-done'){
    allowedKeys(op,['op','id','done'],'Set completion');const i=get(op.id);unlocked(op.id);if(typeof op.done!=='boolean')fail('done must be true or false.');
    summary.push({kind:'Change checkmark',target:i.text,before:d.state[i.id]===true,after:op.done});d.state[i.id]=op.done;
@@ -365,9 +443,29 @@ function mergeChecklistDocuments(base,current,incoming,choices={}){
  const stable=x=>Array.isArray(x)?x.map(stable):x&&typeof x==='object'?Object.fromEntries(Object.keys(x).sort().map(k=>[k,stable(x[k])])):x;
  const same=(a,b)=>JSON.stringify(stable(a))===JSON.stringify(stable(b));
  const merged=copy(current),conflicts=[];let applied=0,already=0;
+ const removed=base.model.items.filter(i=>!incoming.model.items.some(n=>n.id===i.id)).map(i=>i.id);
+ if(removed.length){
+  const visible=d=>Object.fromEntries(Object.entries(d).filter(([k])=>!['updatedAt','view','attribution'].includes(k)));
+  if(same(visible(current),visible(incoming)))return {merged,conflicts:[],unresolved:[],applied:0,already:1};
+  let key=null;if(!same(visible(current),visible(base)))key='document:deletion-stale';
+  const byId=new Map(current.model.items.map(i=>[i.id,i])),proposed=new Map(incoming.model.items.map(i=>[i.id,i]));
+  const changed=new Set([...removed,...incoming.model.items.filter(i=>!same(i,byId.get(i.id))).map(i=>i.id),...Object.keys({...current.state,...incoming.state}).filter(id=>(current.state[id]===true)!==(incoming.state[id]===true))]);
+  const locked=new Set(current.model.items.filter(i=>documentLocks(current,i.id).length).map(i=>i.id));
+  const closedLinks=incoming.model.items.some(i=>byId.has(i.id)&&current.state[i.id]===true&&!same(i.requires,byId.get(i.id).requires));
+  const lists=[[current.model.roots,incoming.model.roots],...current.model.items.map(i=>[i.requires,proposed.get(i.id)?.requires||[]])];
+  const lockedLinks=lists.some(([was,list])=>[...locked].some(id=>was.indexOf(id)!==list.indexOf(id)));
+  if(!key&&([...changed].some(id=>locked.has(id))||closedLinks||lockedLinks))key='document:deletion-locked';
+  if(key){const conflict={key,label:'Deletion held; read the current checklist and replan',base:null,browser:null,json:null,choice:null};return {merged,conflicts:[conflict],unresolved:[conflict],applied:0,already:0}}
+  const next=copy(incoming),kept=new Set(next.model.items.map(i=>i.id));next.view={collapsed:current.view.collapsed.filter(id=>kept.has(id))};next.attribution=Object.fromEntries(Object.entries(current.attribution||{}).filter(([id])=>kept.has(id)));
+  return {merged:next,conflicts:[],unresolved:[],applied:1,already:0};
+ }
  function compare(key,label,oldValue,browserValue,jsonValue,apply){
   if(same(jsonValue,oldValue))return;
   if(same(browserValue,jsonValue)){already++;return;}
+  if((key==='model:roots'||key.endsWith(':requires'))&&Array.isArray(oldValue)&&Array.isArray(jsonValue)){
+   const affected=[...new Set([...oldValue,...jsonValue])].filter(id=>oldValue.indexOf(id)!==jsonValue.indexOf(id));
+   if(affected.some(id=>current.model.items.some(i=>i.id===id)&&documentLocks(current,id).length)){conflicts.push({key:key+':locked',label:label+' — completed ancestor; reopen before moving',base:oldValue,browser:browserValue,json:jsonValue,choice:null});return;}
+  }
   if(same(browserValue,oldValue)){apply(copy(jsonValue));applied++;return;}
   if((key==='model:roots'||key==='model:branches'||key.endsWith(':requires'))&&[oldValue,browserValue,jsonValue].every(Array.isArray)){
    const prefix=arr=>arr.length>=oldValue.length&&oldValue.every((x,n)=>same(x,arr[n]));
@@ -395,20 +493,22 @@ function mergeChecklistDocuments(base,current,incoming,choices={}){
    continue;
   }
   if(!browser){
-   if(!same(item,old))conflicts.push({key:'item:'+item.id+':missing',label:'Missing '+item.text,base:old,browser:null,json:item,choice:null});
+   if(!same(item,old)||(incoming.state[item.id]===true)!==(base.state[item.id]===true))conflicts.push({key:'item:'+item.id+':missing',label:'Missing '+item.text,base:old,browser:null,json:item,choice:null});
    continue;
   }
+  const changed=['text','detail','label','tags','parents','requires','order'].some(k=>!same(item[k],old[k])&&!same(item[k],browser[k]))||((incoming.state[item.id]===true)!==(base.state[item.id]===true)&&(incoming.state[item.id]===true)!==(current.state[item.id]===true));
+  if(changed&&(documentLocks(current,item.id).length||current.state[item.id]===true&&!same(item.requires,old.requires)&&!same(item.requires,browser.requires))){conflicts.push({key:'item:'+item.id+':locked',label:item.text+' — completed scope; reopen before editing',base:old,browser,json:item,choice:null});continue;}
   const incomingState=(incoming.state[item.id]===true),baseState=(base.state[item.id]===true),browserState=(current.state[item.id]===true);
   const browserMeaningChanged=['text','detail','label','tags','parents','requires'].some(k=>!same(browser[k],old[k]));
   const incomingMeaningChanged=['text','detail','label','tags','parents','requires'].some(k=>!same(item[k],old[k]));
   for(const field of ['text','detail','label','tags','parents','requires','order']){
    const key='item:'+item.id+':'+field;
-   if(incomingMeaningChanged&&browserState!==baseState&&field==='detail'&&!same(item[field],old[field])&&!same(item[field],browser[field])){
+   if(incomingMeaningChanged&&browserState!==baseState&&['text','detail','label','tags','parents','requires'].includes(field)&&!same(item[field],old[field])&&!same(item[field],browser[field])){
     conflicts.push({key,label:old.text+' — '+field,base:old[field],browser:browser[field],json:item[field],choice:choices[key]||null});
     if(choices[key]==='json'){target[field]=copy(item[field]);applied++;}
    }else compare(key,old.text+' — '+(field==='text'?'title':field),old[field],browser[field],item[field],v=>target[field]=v);
   }
-  if(incomingState!==baseState&&browserMeaningChanged&&!same(item.detail,browser.detail)){
+  if(incomingState!==baseState&&browserMeaningChanged&&['text','detail','label','tags','parents','requires'].some(k=>!same(item[k],browser[k]))){
    const key='state:'+item.id;
    conflicts.push({key,label:item.text+' — completion and changed meaning',base:baseState,browser:browserState,json:incomingState,choice:choices[key]||null});
    if(choices[key]==='json'){merged.state[item.id]=incomingState;applied++;}
@@ -437,7 +537,7 @@ let progressCache=new Map();
 let indexes=new Map(), detailsOpen=new Set(), centerCollapsed=new Set(), overviewInitialized=new Set(), overviewLibraryId=null, menuOrigin=null, menuContext=null, pendingTitleClick=null;
 let dialogContext=null, dialogDirty=false, undoAction=null, toastTimer=null;
 let drag=null, dragFrame=0, suppressClickUntil=0;
-// Browser storage is the primary home. The optional loopback helper only exchanges proposals.
+// Browser storage is the visible editor; the local handoff also holds signed AI commits.
 // One transactional workspace record per app directory; revisions detect stale tabs.
 const DB_NAME='clearings-browser-v1', DB_VERSION=1;
 const SLOT=(()=>{try{return 'workspace:'+new URL('.',location.href).pathname;}catch{return 'workspace:local';}})();
@@ -451,17 +551,45 @@ const CLEAR_BUTTON_KEY='clearings:show-clear-indicators:v1';
 let showClearIndicators=false;try{showClearIndicators=localStorage.getItem(CLEAR_BUTTON_KEY)==='1'}catch{}
 const localBridgeToken=window.__CLEARINGS_LOCAL_TOKEN__||null;
 let localHome='',localPending=[],localBusy=false,lastRefreshAt=0,localError='',localKnownGeneration=null,localSyncBlocked=false;
+let refreshClearArmed=false,leftChecklistsCollapsed=false,leftTrackedCollapsed=false;
 function upgradeIndex(){if(workspace.index.schemaVersion<4){workspace.index.schemaVersion=4;workspace.index.preferences={...PREFERENCE_DEFAULTS,...workspace.index.preferences};workspace.index.activity=[]}}
 function activity(){return workspace.index.activity||[]}
 function recordActivity(action,checklistId,itemId=null,{actor=preferences().displayName,role='human',approvedBy=null,highlight=false,unread=false}={}){
- upgradeIndex();workspace.index.activity.push({id:uid(),at:new Date().toISOString(),actor:actor.trim().slice(0,80)||'You',role,action,checklistId,itemId,approvedBy,highlight,unread});
+ upgradeIndex();preserveAttribution(workspace);const at=new Date().toISOString(),name=actor.trim().slice(0,80)||'You',d=getDoc(checklistId);
+ if(d&&itemId&&d.model.items.some(i=>i.id===itemId)){d.attribution??={};const record=d.attribution[itemId]??={},stamp={actor:name,role,at,approvedBy};if(action==='new'&&!record.created)record.created=clone(stamp);if(action==='completed'&&!record.completed)record.completed=clone(stamp);if(action==='reopened')delete record.completed;}
+ workspace.index.activity.push({id:uid(),at,actor:name,role,action,checklistId,itemId,approvedBy,highlight,unread});
  if(workspace.index.activity.length>500)workspace.index.activity.splice(0,workspace.index.activity.length-500);
 }
-function latestActivity(checklistId,itemId=null,action=null){return [...activity()].reverse().find(a=>a.checklistId===checklistId&&a.itemId===itemId&&(!action||a.action===action))||null}
+function latestActivity(checklistId,itemId=null,action=null){const key=action==='new'?'created':action==='completed'?'completed':null,stamp=key&&itemId?getDoc(checklistId)?.attribution?.[itemId]?.[key]:null;if(stamp)return {...stamp,action,checklistId,itemId};return [...activity()].reverse().find(a=>a.checklistId===checklistId&&a.itemId===itemId&&(!action||a.action===action))||null}
 function highlightedActivity(checklistId,itemId=null){return [...activity()].reverse().find(a=>a.highlight&&a.checklistId===checklistId&&(itemId===null||a.itemId===itemId))||null}
-function activityTag(a){return a?`<span class="change-tag ${a.action==='completed'?'completed':''}">${a.action==='new'?'NEW':a.action==='completed'?'COMPLETED':'UPDATED'}</span>`:''}
-function actorTag(a){return a?`<span class="actor-label ${a.role==='assistant'?'json':'browser'}" title="${esc(a.actor+(a.approvedBy?' · approved by '+a.approvedBy:''))}">${esc(a.actor)}</span>`:''}
+function activityTone(a){return a?.role==='assistant'?'ai':''}
+function activityTag(a){return a?`<span class="change-tag ${activityTone(a)}">${a.action==='new'?'NEW':a.action==='completed'?'COMPLETED':'UPDATED'}</span>`:''}
+function checklistActivityTag(docId){
+ const events=activity().filter(a=>a.checklistId===docId&&a.highlight);if(!events.length)return '';
+ const items=new Map();for(const event of events)items.set(event.itemId,event);
+ const count=items.size,completed=[...items.values()].filter(a=>a.itemId!==null&&a.action==='completed').length;
+ const names=[...new Set(events.map(a=>a.actor))].join(', '),detail=`${count} changed ${count===1?'entry':'entries'} inside this checklist${completed?`; ${completed} task${completed===1?'':'s'} marked complete`:''}. By ${names}.`;
+ return `<span class="change-tag checklist-changes ${events.some(a=>a.role==='assistant')?'ai':''}" title="${esc(detail)}" aria-label="${esc(detail)}">${count} ${count===1?'CHANGE':'CHANGES'}</span>`;
+}
+function rowTags(i){const tags=[i.label,...i.tags].filter(Boolean);return tags.length?`<span class="row-tags" aria-label="Item tags">${tags.map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</span>`:''}
+function actorTag(a,visible=false){return a?`<span class="actor-label ${visible?'completer':''} ${a.role==='assistant'?'json':'browser'}" title="${esc(a.actor+(a.approvedBy?' · approved by '+a.approvedBy:''))}">${esc(a.actor)}</span>`:''}
 function clearHighlights(){let changed=false;for(const a of activity())if(a.highlight||a.unread){a.highlight=false;a.unread=false;changed=true}if(changed){markChanged();renderLibrary();renderCenter()}}
+function clearIndicatorsWithUndo(message){
+ const previous=activity().filter(a=>a.highlight||a.unread).map(a=>({id:a.id,highlight:a.highlight,unread:a.unread}));
+ if(!previous.length)return false;
+ clearHighlights();const clearedRevision=revision;
+ toast(message,()=>{
+  if(revision!==clearedRevision){toast('Newer edits exist. The old indicators were not restored.');return}
+  const byId=new Map(previous.map(a=>[a.id,a]));
+  for(const a of activity()){const before=byId.get(a.id);if(before){a.highlight=before.highlight;a.unread=before.unread}}
+  markChanged();renderLibrary();renderCenter();toast('Notifications restored.');
+ },10000);
+ return true;
+}
+function markChecklistIndicatorSeen(docId){
+ let changed=false;for(const a of activity())if(a.checklistId===docId&&(a.highlight||a.unread)){a.highlight=false;a.unread=false;changed=true}
+ if(changed){markChanged();renderLibrary();renderCenter();toast('Indicator marked as seen.')}else toast('No indicator on this checklist.');
+}
 async function localRequest(path,body){
  if(!localBridgeToken)throw new Error('Open Clearings with Start_Clearings.cmd to use the home-folder handoff.');
  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),5000);let response,result;
@@ -470,36 +598,90 @@ async function localRequest(path,body){
  finally{clearTimeout(timer)}
  if(!response.ok)throw new Error(result.error||'The local handoff did not respond.');return result;
 }
-async function localSync(savedWorkspace,generation){
- if(!localBridgeToken)return;
- if(localSyncBlocked){localError='The local handoff is paused after a mismatch. Review it in Settings before resuming.';updateSaveStatus();return}
- try{await localRequest('sync',{workspace:savedWorkspace,generation,expectedGeneration:localKnownGeneration??0});localKnownGeneration=generation;localError='';updateSaveStatus();}
- catch(error){localSyncBlocked=true;localError=error.message;updateSaveStatus();toast('Browser saved; local handoff needs attention: '+error.message,null,10000)}
+let localSyncQueue=Promise.resolve();
+function localSync(savedWorkspace,generation){
+ const snapshot=clone(savedWorkspace);
+ const job=localSyncQueue.then(()=>performLocalSync(snapshot,generation));localSyncQueue=job.catch(()=>false);return job;
+}
+async function performLocalSync(savedWorkspace,generation){
+ if(!localBridgeToken)return false;
+ if(localSyncBlocked){localError='The local handoff is paused after a mismatch. Review it in Settings before resuming.';updateSaveStatus();return false}
+ try{await localRequest('sync',{workspace:savedWorkspace,generation,expectedGeneration:localKnownGeneration??0});localKnownGeneration=generation;localError='';updateSaveStatus();return true;}
+ catch(error){localSyncBlocked=true;localError=error.message;updateSaveStatus();toast('Browser saved; local handoff needs attention: '+error.message,null,10000);return false}
 }
 async function loadLocalPending(){
  const packet=await localRequest('handoff');
  if(packet.libraryId&&packet.libraryId!==workspace.index.libraryId)throw new Error('This home folder belongs to a different Clearings workspace. Choose another home in Settings.');
- localPending=packet.proposals.filter(p=>p.status==='pending');if(!localSyncBlocked)localError='';updateSaveStatus();renderLibrary();return localPending;
+ localPending=packet.proposals.filter(p=>p.status==='pending'&&(!p.requiresCommit||p.commit||p.committedAt));if(!localSyncBlocked)localError='';updateSaveStatus();renderLibrary();return localPending;
 }
 function proposalPlan(proposal,choices={}){
+ if(proposal.kind==='create')return null;
  const current=getDoc(proposal.documentId);if(!current)return null;
  const base=validateDocument(proposal.base),incoming=validateDocument(proposal.incoming);
  return mergeChecklistDocuments(base,current,incoming,choices);
 }
 function hasLocalConflict(docId){return localPending.some(p=>{if(p.documentId!==docId)return false;try{const plan=proposalPlan(p);return !plan||plan.unresolved.length>0}catch{return true}})}
+function validateIncomingChecklist(proposal){
+ const d=validateDocument(proposal.incoming);
+ if(proposal.documentId!==d.documentId||proposal.kind!=='create')fail('The incoming checklist identity changed.');
+ if(Object.values(d.state).some(Boolean))fail('A new incoming checklist must start unchecked.');
+ return d;
+}
+function newChecklistAlreadyPresent(incoming,current){return aiDocumentKey(incoming)===aiDocumentKey(current)}
+function incomingChecklistPreview(d){
+ const byId=new Map(d.model.items.map(i=>[i.id,i])),seen=new Set(),lines=[];
+ const walk=(id,depth)=>{if(lines.length>=120)return;const i=byId.get(id),shared=seen.has(id);lines.push(`<li style="margin-left:${Math.min(depth,15)*14}px">${esc(i.text)}${shared?' · shared link':''}</li>`);if(shared)return;seen.add(id);for(const child of i.requires)walk(child,depth+1)};
+ for(const root of d.model.roots)walk(root,0);
+ return `<p class="field-hint">${esc(d.title)} · ${d.model.items.length} unchecked items. Existing lists will stay in place.</p>${d.description?`<p class="field-hint">${esc(d.description)}</p>`:''}<ol class="field-hint">${lines.join('')}</ol>${seen.size<d.model.items.length?`<p class="field-hint">Preview shows the first ${seen.size} items. Download the complete JSON before adding.</p>`:''}<button type="button" class="button" data-action="download-incoming-checklist">Download proposed checklist JSON</button>`;
+}
+function openLocalNewPreview(proposal){
+ const d=validateIncomingChecklist(proposal);
+ if(getDoc(d.documentId)){toast('A checklist with that ID already exists. Review the incoming proposal in Manage conflicts.',null,10000);return false}
+ beginDialog({mode:'local-new',proposalId:proposal.id},'Add incoming checklist?',incomingChecklistPreview(d),'Add checklist');return true;
+}
+async function commitLocalNewProposal(proposal){
+ const latest=(await loadLocalPending()).find(p=>p.id===proposal.id&&p.kind==='create');
+ if(!latest)fail('This incoming checklist is no longer pending.');
+ const d=validateIncomingChecklist(latest);
+ if(getDoc(d.documentId))fail('That checklist ID is already in this browser. Nothing was added.');
+ if(browserSaving&&!await browserSavePromise)fail('Wait for the current browser save before adding the incoming checklist.');
+ if(dirty&&!await saveBrowser(false))fail('Save the browser workspace before adding the incoming checklist.');
+ const candidate=clone(workspace),next=clone(d);next.updatedAt=new Date().toISOString();
+ if(candidate.index.schemaVersion<4){candidate.index.schemaVersion=4;candidate.index.preferences={...PREFERENCE_DEFAULTS,...candidate.index.preferences};candidate.index.activity=[]}
+ if(!preferences().clearOnRefreshPress)for(const a of candidate.index.activity||[]){a.highlight=false;a.unread=false}
+ candidate.documents.push(next);candidate.index.entries.push({id:d.documentId,file:`checklist-${d.documentId}.json`});
+ if(!candidate.index.defaultChecklist&&!d.archived)candidate.index.defaultChecklist=d.documentId;
+ const actor=String(latest.commit?.author||latest.committedBy||latest.actor||'Incoming editor').slice(0,80),at=latest.commit?.at||latest.committedAt||latest.createdAt;delete next.attribution;stampAttribution(next,null,{actor,role:'assistant',at,commitId:latest.commit?.id||null});
+ for(const itemId of [null,...d.model.items.map(i=>i.id)])candidate.index.activity.push({id:uid(),at,actor,role:'assistant',action:'new',checklistId:d.documentId,itemId,approvedBy:null,highlight:true,unread:true,commitId:latest.commit?.id||null});
+ preserveAttribution(candidate);candidate.index.activity=candidate.index.activity.slice(-500);validateWorkspace(candidate);
+ const record={format:'clearings-browser-record',version:1,generation:baseGeneration+1,savedAt:new Date().toISOString(),workspace:candidate,draft:pendingDraft?clone(pendingDraft):null};
+ if(new Blob([JSON.stringify(record)]).size>MAX_BYTES)fail('The expanded workspace exceeds 16 MB.');
+ await commitBrowserSnapshot(record,baseGeneration);
+ workspace=candidate;baseGeneration=record.generation;browserSavedAt=record.savedAt;dirty=false;firstDirtyAt=0;revision++;refreshIndexes();render();
+ const synced=await localSync(candidate,baseGeneration);
+ if(!synced){toast('Checklist was saved in this browser, but the handoff did not sync. The proposal stays pending for recovery.',null,12000);return d}
+ try{await localRequest('mark',{proposalId:latest.id,status:'applied',summary:`Added validated checklist with ${d.model.items.length} unchecked item(s)`,actor:preferences().displayName})}
+ catch(error){localError='Added in browser, but receipt is pending: '+error.message;toast(localError,null,10000)}
+ return d;
+}
+let refreshInert=[];
 function setRefreshBusy(value){
- localBusy=value;const button=$('refreshButton');button.textContent=value?'↻ Refreshing…':'↻ Refresh Clearings';document.body.classList.toggle('local-applying',value);
+ if(value&&!localBusy){refreshInert=[...document.body.children].filter(el=>!['SCRIPT','STYLE'].includes(el.tagName)).map(el=>[el,el.inert]);for(const [el] of refreshInert)el.inert=true;}
+ if(!value&&localBusy){for(const [el,prior] of refreshInert)el.inert=prior;refreshInert=[];}
+ localBusy=value;if(!value)lastRefreshAt=Date.now();const button=$('refreshButton');button.textContent=value?'↻ Refreshing…':'↻ Refresh Clearings';document.body.classList.toggle('local-applying',value);
  const wait=value?0:Math.max(0,lastRefreshAt+750-Date.now());button.disabled=value||wait>0;
  if(wait)setTimeout(()=>{if(!localBusy)button.disabled=false},wait);
 }
 async function commitLocalProposal(proposal,plan,clearPrevious){
  if(localSyncBlocked)throw new Error('The local handoff is paused after a mismatch. Review its Settings before applying incoming changes.');
+ if(browserSaving&&!await browserSavePromise)throw new Error('Wait for the current browser save before applying incoming changes.');
  if(dirty&&!await saveBrowser(false))throw new Error('Save the browser workspace before applying incoming changes.');
  const candidate=clone(workspace),old=getDoc(proposal.documentId),next=validateDocument(plan.merged),position=candidate.documents.findIndex(d=>d.documentId===proposal.documentId);
  if(position<0)throw new Error('The affected checklist no longer exists.');
  if(clearPrevious)for(const a of candidate.index.activity||[]){a.highlight=false;a.unread=false}
- next.updatedAt=new Date().toISOString();candidate.documents[position]=next;
- const actor=proposal.actor||'Incoming editor',previousItems=new Map(old.model.items.map(i=>[i.id,i]));
+ next.updatedAt=new Date().toISOString();candidate.documents[position]=next;pruneDocumentLinks(candidate,proposal.documentId);
+ const actor=proposal.commit?.author||proposal.committedBy||proposal.actor||'Incoming editor',previousItems=new Map(old.model.items.map(i=>[i.id,i]));
+ const stamp={actor:actor.slice(0,80),role:'assistant',at:proposal.commit?.at||proposal.committedAt||proposal.createdAt,commitId:proposal.commit?.id||null};stampAttribution(next,old,stamp);
  const changed=[];
  if(old.title!==next.title||old.description!==next.description||old.subtitle!==next.subtitle||old.footer!==next.footer)changed.push([null,'updated']);
  for(const item of next.model.items){const before=previousItems.get(item.id),prior=old.state[item.id]===true,done=next.state[item.id]===true;
@@ -508,13 +690,14 @@ async function commitLocalProposal(proposal,plan,clearPrevious){
   else if(JSON.stringify(before)!==JSON.stringify(item))changed.push([item.id,'updated']);
  }
  if(!changed.length)changed.push([null,'updated']);
- for(const [itemId,action] of changed)candidate.index.activity.push({id:uid(),at:new Date().toISOString(),actor:actor.slice(0,80),role:'assistant',action,checklistId:proposal.documentId,itemId,approvedBy:null,highlight:true,unread:true});
- candidate.index.activity=candidate.index.activity.slice(-500);validateWorkspace(candidate);
+ for(const [itemId,action] of changed)candidate.index.activity.push({id:uid(),at:stamp.at,actor:actor.slice(0,80),role:'assistant',action,checklistId:proposal.documentId,itemId,approvedBy:null,highlight:true,unread:true,commitId:proposal.commit?.id||null});
+ preserveAttribution(candidate);candidate.index.activity=candidate.index.activity.slice(-500);validateWorkspace(candidate);
  const record={format:'clearings-browser-record',version:1,generation:baseGeneration+1,savedAt:new Date().toISOString(),workspace:candidate,draft:pendingDraft?clone(pendingDraft):null};
  if(new Blob([JSON.stringify(record)]).size>MAX_BYTES)throw new Error('The merged workspace exceeds 16 MB.');
  await commitBrowserSnapshot(record,baseGeneration);
  workspace=candidate;baseGeneration=record.generation;browserSavedAt=record.savedAt;dirty=false;firstDirtyAt=0;revision++;refreshIndexes();render();
- await localSync(candidate,baseGeneration);
+ const synced=await localSync(candidate,baseGeneration);
+ if(!synced){toast('Changes were saved in this browser, but the handoff did not sync. The proposal stays pending for recovery.',null,12000);return changed.length}
  try{await localRequest('mark',{proposalId:proposal.id,status:'applied',summary:`Applied ${changed.length} visible change(s) after comparison`,actor:preferences().displayName});}
  catch(error){localError='Applied in browser, but receipt is pending: '+error.message;toast(localError,null,10000)}
  return changed.length;
@@ -524,20 +707,27 @@ async function refreshLocal(){
  if(localSyncBlocked){toast('The local handoff is paused after a mismatch. Open Settings and retry after reviewing the current browser copy.',null,10000);return}
  if(!started){toast('Start a workspace first.');return}if(browserConflict||!browserDB){toast('This browser copy cannot save right now. Export a backup before refreshing.',null,10000);return}
  setRefreshBusy(true);try{
-  if(preferences().clearOnRefreshPress)clearHighlights();
   const pending=await loadLocalPending();let count=0,held=new Set(),cleared=false;
   for(const proposal of pending){if(held.has(proposal.documentId))continue;
+   if(proposal.kind==='create'){
+    const incoming=validateIncomingChecklist(proposal),current=getDoc(incoming.documentId);
+    if(current){if(newChecklistAlreadyPresent(incoming,current))await localRequest('mark',{proposalId:proposal.id,status:'already-current',summary:'Checklist already present after an earlier add',actor:preferences().displayName});else held.add(proposal.documentId);continue}
+    if(proposal.commit){await commitLocalNewProposal(proposal);count+=incoming.model.items.length+1;cleared=true;continue}
+    openLocalNewPreview(proposal);refreshClearArmed=false;return;
+   }
    const choices=proposal.suggestedChoices?.choices||{},plan=proposalPlan(proposal,choices);
    if(!plan||plan.unresolved.length){held.add(proposal.documentId);continue}
    if(!plan.applied){await localRequest('mark',{proposalId:proposal.id,status:'already-current',summary:'Incoming changes were already present',actor:preferences().displayName});continue}
-   count+=await commitLocalProposal(proposal,plan,!cleared&&!preferences().clearOnRefreshPress);cleared=true;
+   count+=await commitLocalProposal(proposal,plan,!cleared);cleared=true;
   }
   await loadLocalPending();
   const conflicts=[...new Set(localPending.map(p=>p.documentId))].filter(hasLocalConflict).length;
-  toast(count?`${count} change${count===1?'':'s'} applied. ${conflicts?conflicts+' checklist'+(conflicts===1?' needs':'s need')+' conflict review.':''}`:conflicts?`${conflicts} checklist${conflicts===1?' needs':'s need'} conflict review. Open its warning sign or Manage Conflicts.`:'No new changes to apply.',null,10000);
+  if(count||conflicts){refreshClearArmed=false;toast(count?`${count} change${count===1?'':'s'} applied. ${conflicts?conflicts+' checklist'+(conflicts===1?' needs':'s need')+' conflict review.':''}`:`${conflicts} checklist${conflicts===1?' needs':'s need'} conflict review. Open its warning sign or Manage Conflicts.`,null,10000)}
+  else if(preferences().clearOnRefreshPress||refreshClearArmed){refreshClearArmed=false;if(!clearIndicatorsWithUndo('No updates found. Notifications removed.'))toast('No updates found.',null,10000)}
+  else if(activity().some(a=>a.highlight||a.unread)){refreshClearArmed=true;toast('No updates found. Press Refresh again to clear notifications.',null,10000)}
+  else toast('No updates found.',null,10000);
  }catch(error){localError=error.message;toast('Refresh paused: '+error.message,null,12000)}finally{setRefreshBusy(false)}
 }
-function acknowledgeActivity(kind){const tracked=new Set(workspace.index.tracked.map(t=>t.checklistId+'\0'+t.itemId));let changed=false;for(const a of activity()){if(a.unread&&(kind==='checklists'||tracked.has(a.checklistId+'\0'+a.itemId)||tracked.has(a.checklistId+'\0null'))){a.unread=false;changed=true}}if(changed){markChanged();renderLibrary()}}
 function readStore(key){return new Promise((resolve,reject)=>{
  const tx=browserDB.transaction('workspaces','readonly'),req=tx.objectStore('workspaces').get(key);
  let result;req.onsuccess=()=>{result=req.result;};tx.oncomplete=()=>resolve(result);tx.onabort=()=>reject(tx.error||new Error('Reading browser storage failed.'));
@@ -777,11 +967,11 @@ refreshIndexes();
 function applyPreferences(){const p=preferences();document.body.classList.toggle('hide-progress',!p.showProgress);document.documentElement.dataset.motion=p.motion;document.body.classList.toggle('hide-library',!p.library);document.body.classList.toggle('hide-map',!p.map);$('trackedSection').hidden=!p.tracked;$('clearIndicators').hidden=!p.showClearIndicators||p.clearOnRefreshPress;document.documentElement.dataset.theme=p.theme;$('scrim').hidden=!document.body.classList.contains('map-open')&&!document.body.classList.contains('library-open');}
 function renderLibrary(){
  const y=document.querySelector('.library-scroll').scrollTop;
- const row=d=>{const change=highlightedActivity(d.documentId),last=latestActivity(d.documentId);return `<div class="library-row ${route.docId===d.documentId&&route.view!=='library'?'active':''} ${change?'change-highlight':''}" data-library-id="${esc(d.documentId)}">${gripHTML('library',d.documentId,'',null,d.archived)}<button class="library-open" type="button" data-action="open-checklist" data-doc="${esc(d.documentId)}" title="${esc(d.title)}">${esc(d.title)}</button>${last?actorTag(last):''}${change?activityTag(change):''}${hasLocalConflict(d.documentId)?`<button class="conflict-warning" type="button" data-action="review-local-conflict" data-doc="${esc(d.documentId)}" title="Incoming JSON and browser changes need review" aria-label="Review conflict in ${esc(d.title)}">⚠</button>`:''}${progressHTML(d.documentId,null,'sidebar')}${menuButton('checklist',d.documentId,'',null,`Options for ${d.title}`)}</div>`};
- const docs=workspace.index.entries.map(e=>getDoc(e.id));$('libraryList').innerHTML=docs.filter(d=>!d.archived).map(row).join('')||'<p class="track-hint">No active checklists.</p>';$('archiveList').innerHTML=docs.filter(d=>d.archived).map(row).join('');$('archiveSection').hidden=!docs.some(d=>d.archived);$('archiveSummary').textContent=`Archived · ${docs.filter(d=>d.archived).length}`;
- $('trackedList').innerHTML=workspace.index.tracked.map(t=>{const d=getDoc(t.checklistId),i=t.itemId?node(t.checklistId,t.itemId):null,change=highlightedActivity(d.documentId,t.itemId);return `<div class="tracked-row ${i&&d.state[i.id]?'done':''} ${change?'change-highlight':''}" data-track-id="${esc(t.id)}">${gripHTML('tracked',t.id)}<button type="button" class="tracked-open" data-action="open-tracked" data-id="${esc(t.id)}" data-drag="tracked-title"><span class="tracked-title">${esc(i?.text||d.title)}</span><span class="tracked-source">${esc(d.title)}${d.archived?' · archived':''}</span></button>${change?activityTag(change):''}${progressHTML(d.documentId,t.itemId,'sidebar')}${menuButton('shortcut',d.documentId,t.id,null,'Shortcut options')}</div>`}).join('');
- $('checklistUnread').hidden=!activity().some(a=>a.unread);const tracked=new Set(workspace.index.tracked.map(t=>t.checklistId+'\0'+t.itemId));$('trackedUnread').hidden=!activity().some(a=>a.unread&&(tracked.has(a.checklistId+'\0'+a.itemId)||tracked.has(a.checklistId+'\0null')));
- $('trackHint').hidden=workspace.index.tracked.length>0;document.querySelector('.library-scroll').scrollTop=y;
+ const row=d=>{const change=highlightedActivity(d.documentId),last=latestActivity(d.documentId);return `<div class="library-row ${route.docId===d.documentId&&route.view!=='library'?'active':''} ${change?'change-highlight '+activityTone(change):''}" data-library-id="${esc(d.documentId)}">${gripHTML('library',d.documentId,'',null,d.archived)}<button class="library-open" type="button" data-action="open-checklist" data-doc="${esc(d.documentId)}" title="${esc(d.title)}">${esc(d.title)}</button>${last?actorTag(last):''}${change?checklistActivityTag(d.documentId):''}${hasLocalConflict(d.documentId)?`<button class="conflict-warning" type="button" data-action="review-local-conflict" data-doc="${esc(d.documentId)}" title="Incoming JSON and browser changes need review" aria-label="Review conflict in ${esc(d.title)}">⚠</button>`:''}${progressHTML(d.documentId,null,'sidebar')}${menuButton('checklist',d.documentId,'',null,`Options for ${d.title}`)}</div>`};
+ const docs=workspace.index.entries.map(e=>getDoc(e.id));$('libraryList').innerHTML=docs.filter(d=>!d.archived).map(row).join('')||'<p class="track-hint">No active checklists.</p>';$('archiveList').innerHTML=docs.filter(d=>d.archived).map(row).join('');$('libraryList').hidden=leftChecklistsCollapsed;$('archiveSection').hidden=leftChecklistsCollapsed||!docs.some(d=>d.archived);$('checklistsLabel').setAttribute('aria-expanded',String(!leftChecklistsCollapsed));$('archiveSummary').textContent=`Archived · ${docs.filter(d=>d.archived).length}`;
+ $('trackedList').innerHTML=workspace.index.tracked.map(t=>{const d=getDoc(t.checklistId),i=t.itemId?node(t.checklistId,t.itemId):null,change=highlightedActivity(d.documentId,t.itemId);return `<div class="tracked-row ${i&&d.state[i.id]?'done':''} ${change?'change-highlight '+activityTone(change):''}" data-track-id="${esc(t.id)}">${gripHTML('tracked',t.id)}<button type="button" class="tracked-open" data-action="open-tracked" data-id="${esc(t.id)}" data-drag="tracked-title"><span class="tracked-title">${esc(i?.text||d.title)}</span><span class="tracked-source">${esc(d.title)}${d.archived?' · archived':''}</span></button>${change?(t.itemId?activityTag(change):checklistActivityTag(d.documentId)):''}${progressHTML(d.documentId,t.itemId,'sidebar')}${menuButton('shortcut',d.documentId,t.id,null,'Shortcut options')}</div>`}).join('');
+ const unread=activity().filter(a=>a.unread);$('checklistUnread').hidden=!unread.length;$('checklistUnread').classList.toggle('ai',unread.length>0&&unread[unread.length-1].role==='assistant');const tracked=new Set(workspace.index.tracked.map(t=>t.checklistId+'\0'+t.itemId));const trackedUnread=unread.filter(a=>tracked.has(a.checklistId+'\0'+a.itemId)||tracked.has(a.checklistId+'\0null'));$('trackedUnread').hidden=!trackedUnread.length;$('trackedUnread').classList.toggle('ai',trackedUnread.length>0&&trackedUnread[trackedUnread.length-1].role==='assistant');
+ $('trackedList').hidden=leftTrackedCollapsed;$('trackHint').hidden=leftTrackedCollapsed||workspace.index.tracked.length>0;$('trackedLabel').setAttribute('aria-expanded',String(!leftTrackedCollapsed));document.querySelector('.library-scroll').scrollTop=y;
 }
 function renderBreadcrumbs(){if(route.view==='library'){$('breadcrumbs').innerHTML='<div class="crumbs-inner">Your workspace</div>';return}const d=currentDoc();let h=`<div class="crumbs-inner"><button type="button" data-action="open-checklist" data-doc="${esc(d.documentId)}" ${!focusId()?'class="current" aria-current="page"':''}>${esc(d.title)}</button>`;for(let n=0;n<route.trail.length;n++){const id=route.trail[n];h+=`<span class="crumb-sep">/</span><button type="button" data-action="breadcrumb" data-level="${n}" ${n===route.trail.length-1?'class="current" aria-current="page"':''}>${esc(node(d.documentId,id).text)}</button>`}$('breadcrumbs').innerHTML=h+'</div>'}
 function refsHTML(d){return d.references.length?`<nav class="references" aria-label="Reference reports">${d.references.map(r=>`<a href="${esc(r.href)}" target="_blank" rel="noopener noreferrer">${esc(r.title)} ↗</a>`).join('')}</nav>`:''}
@@ -809,8 +999,8 @@ function toggleCenterFold(trigger,docId,id){
 function rowHTML(d,id,parent){
  const i=node(d.documentId,id),done=d.state[id]===true,locked=isLocked(d.documentId,id),has=i.requires.length>0,closed=centerIsCollapsed(d.documentId,id);const detailKey=d.documentId+':'+id;
  const action=has?'toggle-center-fold':'details';
- const change=highlightedActivity(d.documentId,id),last=latestActivity(d.documentId,id),createdBy=latestActivity(d.documentId,id,'new');
- return `<li data-step-row="${esc(id)}" data-owner="${esc(parent||'')}" data-doc="${esc(d.documentId)}"><div class="task-row ${done?'done':''} ${locked?'locked':''} ${change?'change-highlight':''}" data-reorder-id="${esc(id)}" data-parent="${esc(parent||'')}">${gripHTML('step',id,d.documentId,parent,locked||contextLocked(d.documentId,parent))}<input class="check ${change?.action==='completed'?'check-highlight':''}" type="checkbox" data-check="${esc(id)}" data-doc="${esc(d.documentId)}" aria-label="Mark ${esc(i.text)} done" ${done?'checked':''} ${locked?'disabled':''}>${last?actorTag(last):''}<button class="row-title ${has?'has-children':''}" type="button" data-action="${action}" data-id="${esc(id)}" data-doc="${esc(d.documentId)}" data-parent="${esc(parent||'')}" ${has?`aria-expanded="${!closed}"`:''}>${esc(i.text)}</button>${change?activityTag(change):''}${has?progressHTML(d.documentId,id,'compact'):''}${menuButton('step',d.documentId,id,parent,`Options for ${i.text}`)}</div>${detailsOpen.has(detailKey)?`<div class="inline-details"><div class="inline-tags">${[i.label,...i.tags].filter(Boolean).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>${createdBy?`<small>Created by ${esc(createdBy.actor)}${createdBy.approvedBy?' · approved by '+esc(createdBy.approvedBy):''}</small><br>`:''}${esc(i.detail||'No detail added yet.')}</div>`:''}${has&&!closed?`<ol class="rows" data-order-parent="${esc(id)}">${i.requires.map(x=>rowHTML(d,x,id)).join('')}</ol>`:''}</li>`
+ const change=highlightedActivity(d.documentId,id),last=done?latestActivity(d.documentId,id,'completed'):latestActivity(d.documentId,id),createdBy=latestActivity(d.documentId,id,'new');
+ return `<li data-step-row="${esc(id)}" data-owner="${esc(parent||'')}" data-doc="${esc(d.documentId)}"><div class="task-row ${done?'done':''} ${locked?'locked':''} ${change?'change-highlight '+activityTone(change):''}" data-reorder-id="${esc(id)}" data-parent="${esc(parent||'')}">${gripHTML('step',id,d.documentId,parent,locked||contextLocked(d.documentId,parent))}<input class="check ${change?.action==='completed'?'check-highlight '+activityTone(change):''}" type="checkbox" data-check="${esc(id)}" data-doc="${esc(d.documentId)}" aria-label="Mark ${esc(i.text)} done" ${done?'checked':''} ${locked?'disabled':''}>${last?actorTag(last,done):''}<button class="row-title ${has?'has-children':''}" type="button" data-action="${action}" data-id="${esc(id)}" data-doc="${esc(d.documentId)}" data-parent="${esc(parent||'')}" ${has?`aria-expanded="${!closed}"`:''}>${esc(i.text)}</button>${rowTags(i)}${change?activityTag(change):''}${has?progressHTML(d.documentId,id,'compact'):''}${menuButton('step',d.documentId,id,parent,`Options for ${i.text}`)}</div>${detailsOpen.has(detailKey)?`<div class="inline-details"><div class="inline-tags">${[i.label,...i.tags].filter(Boolean).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>${createdBy?`<small>Created by ${esc(createdBy.actor)}${createdBy.approvedBy?' · approved by '+esc(createdBy.approvedBy):''}</small><br>`:''}${esc(i.detail||'No detail added yet.')}</div>`:''}${has&&!closed?`<ol class="rows" data-order-parent="${esc(id)}">${i.requires.map(x=>rowHTML(d,x,id)).join('')}</ol>`:''}</li>`
 }
 function renderCenter(){
  renderBreadcrumbs();
@@ -820,7 +1010,7 @@ function renderCenter(){
  addButton.title=!addDoc?'Open a checklist to add an item':addButton.disabled?'Uncheck the completed parent before adding an item':addParent?`Add a supporting item to ${node(addDoc.documentId,addParent).text}`:'Add an item to this checklist';
  if(route.view==='library'){
   $('pageHeader').innerHTML=`<div class="eyebrow">Your workspace</div><div class="header-line"><h1>Checklists</h1><div class="header-actions">${menuButton('library-center')}</div></div><p class="header-subtitle">A place for each thread. A working set for today.</p>`;
-   $('pageContent').innerHTML=workspace.index.entries.map(e=>getDoc(e.id)).filter(d=>!d.archived).map(d=>`<div class="library-card" data-library-card="${esc(d.documentId)}"><button class="library-card-title" type="button" data-action="open-checklist" data-doc="${esc(d.documentId)}"><strong>${esc(d.title)}</strong><small>${d.model.items.length} items${startupChecklistId()===d.documentId?' · opens on startup':''}</small></button>${progressHTML(d.documentId,null,'compact')}${menuButton('checklist',d.documentId)}</div>`).join('')+`<button class="inline-add" type="button" data-action="new-checklist"><span class="add-plus" aria-hidden="true"></span> New checklist</button>`;
+   $('pageContent').innerHTML=workspace.index.entries.map(e=>getDoc(e.id)).filter(d=>!d.archived).map(d=>`<div class="library-card ${highlightedActivity(d.documentId)?'change-highlight '+activityTone(highlightedActivity(d.documentId)):''}" data-library-card="${esc(d.documentId)}"><button class="library-card-title" type="button" data-action="open-checklist" data-doc="${esc(d.documentId)}"><strong>${esc(d.title)}</strong><small>${d.model.items.length} items${startupChecklistId()===d.documentId?' · opens on startup':''}</small></button>${checklistActivityTag(d.documentId)}${hasLocalConflict(d.documentId)?`<button class="conflict-warning" type="button" data-action="review-local-conflict" data-doc="${esc(d.documentId)}" aria-label="Review checklist conflict">⚠</button>`:''}${progressHTML(d.documentId,null,'compact')}${menuButton('checklist',d.documentId)}</div>`).join('')+`<button class="inline-add" type="button" data-action="new-checklist"><span class="add-plus" aria-hidden="true"></span> New checklist</button>`;
    $('centerFooter').hidden=false;$('centerFooter').innerHTML='<span>Drag the six-dot grips beside the checklist names on the left to reorder.</span>';return;
  }
  const d=currentDoc(),id=focusId(),i=id?node(d.documentId,id):null;
@@ -828,7 +1018,7 @@ function renderCenter(){
  const title=i?.text||d.title,subtitle=i?(i.requires.length?`${i.requires.length} supporting items · your checkmarks remain independent`:'One step, in context'):d.subtitle;
  const locked=id&&isLocked(d.documentId,id),ancestors=id?ancestorLocks(d.documentId,id):[];
   const headerChange=id?highlightedActivity(d.documentId,id):highlightedActivity(d.documentId),headerChecked=id&&d.state[id]?latestActivity(d.documentId,id,'completed'):null;
-   $('pageHeader').innerHTML=`<div class="eyebrow">${id?i.requires.length?'In focus':'A closer look':d.archived?'Archived checklist':'Project overview'}</div><div class="header-line ${id?'has-title-checkbox':''} ${id&&d.state[id]?'is-done':''} ${headerChange?'change-highlight':''}">${id?`<input type="checkbox" class="check header-title-checkbox ${headerChange?.action==='completed'?'check-highlight':''}" data-check="${esc(id)}" data-doc="${esc(d.documentId)}" aria-label="Mark ${esc(title)} done" ${d.state[id]?'checked':''} ${locked?'disabled':''}>${headerChecked?actorTag(headerChecked):''}`:''}<h1 class="draggable-title" tabindex="0">${esc(title)}</h1>${headerChange?activityTag(headerChange):''}<div class="header-actions">${progressHTML(d.documentId,id)}${menuButton(id?'step':'checklist',d.documentId,id||'',route.trail.at(-2)||null,id?'Current step options':'Checklist options')}</div></div><p class="header-subtitle">${esc(subtitle)}</p>${!id&&d.description?`<details class="about"><summary>About this checklist</summary><div class="about-text">${esc(d.description)}</div>${refsHTML(d)}${d.footer?`<div class="about-text">${esc(d.footer)}</div>`:''}</details>`:id&&i.requires.length&&i.detail?`<details class="about"><summary>What counts as done</summary><div class="about-text">${esc(i.detail)}</div></details>`:''}`;
+   $('pageHeader').innerHTML=`<div class="eyebrow">${id?i.requires.length?'In focus':'A closer look':d.archived?'Archived checklist':'Project overview'}</div><div class="header-line ${id?'has-title-checkbox':''} ${id&&d.state[id]?'is-done':''} ${headerChange?'change-highlight '+activityTone(headerChange):''}">${id?`<input type="checkbox" class="check header-title-checkbox ${headerChange?.action==='completed'?'check-highlight '+activityTone(headerChange):''}" data-check="${esc(id)}" data-doc="${esc(d.documentId)}" aria-label="Mark ${esc(title)} done" ${d.state[id]?'checked':''} ${locked?'disabled':''}>${headerChecked?actorTag(headerChecked,true):''}`:''}<h1 class="draggable-title" tabindex="0">${esc(title)}</h1>${id?rowTags(i):''}${headerChange?(id?activityTag(headerChange):checklistActivityTag(d.documentId)):''}<div class="header-actions">${progressHTML(d.documentId,id)}${menuButton(id?'step':'checklist',d.documentId,id||'',route.trail.at(-2)||null,id?'Current step options':'Checklist options')}</div></div><p class="header-subtitle">${esc(subtitle)}</p>${!id&&d.description?`<details class="about"><summary>About this checklist</summary><div class="about-text">${esc(d.description)}</div>${refsHTML(d)}${d.footer?`<div class="about-text">${esc(d.footer)}</div>`:''}</details>`:id&&i.requires.length&&i.detail?`<details class="about"><summary>What counts as done</summary><div class="about-text">${esc(i.detail)}</div></details>`:''}`;
  let content='';if(locked)content+=`<p class="lock-note">Read-only while ${ancestors.map(a=>`<button data-action="open-item" data-doc="${esc(d.documentId)}" data-id="${esc(a)}">${esc(node(d.documentId,a).text)}</button>`).join(' or ')} is marked done. Your saved sub-task checks have not changed.</p>`;
  if(id&&d.state[id]&&i.requires.length)content+='<p class="lock-note">This scope is closed. Supporting items remain visible and read-only. Uncheck this heading to edit them.</p>';
  if(id){
@@ -836,7 +1026,7 @@ function renderCenter(){
   else content+=`<div class="inline-tags">${[i.label,...i.tags].filter(Boolean).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div><div class="leaf-content">${esc(i.detail||'No additional detail. This item can stay beautifully simple.')}</div>`;
  }else{
   let leaves=[];const flush=()=>{if(leaves.length){content+=`<ol class="rows" data-order-parent="">${leaves.map(x=>rowHTML(d,x,null)).join('')}</ol>`;leaves=[]}};
-   for(const rootId of d.model.roots){const r=node(d.documentId,rootId);if(!r.requires.length){leaves.push(rootId);continue}flush();const done=d.state[rootId]===true,closed=centerIsCollapsed(d.documentId,rootId),change=highlightedActivity(d.documentId,rootId),checkedBy=done?latestActivity(d.documentId,rootId,'completed'):null;content+=`<section class="section-block" data-root-group="${esc(rootId)}"><header class="group-header ${done?'done':''} ${change?'change-highlight':''}" data-reorder-id="${esc(rootId)}" data-parent="">${gripHTML('step',rootId,d.documentId,null,isLocked(d.documentId,rootId))}<input class="check ${change?.action==='completed'?'check-highlight':''}" type="checkbox" data-check="${esc(rootId)}" data-doc="${esc(d.documentId)}" aria-label="Mark ${esc(r.text)} done" ${done?'checked':''} ${isLocked(d.documentId,rootId)?'disabled':''}>${checkedBy?actorTag(checkedBy):''}<h2><button class="group-name" type="button" data-action="toggle-center-fold" data-doc="${esc(d.documentId)}" data-id="${esc(rootId)}" aria-expanded="${!closed}">${esc(r.text)}</button></h2>${change?activityTag(change):''}${done?'<span class="closed-badge">closed</span>':''}${progressHTML(d.documentId,rootId,'compact')}${menuButton('step',d.documentId,rootId,null,`Options for ${r.text}`)}</header>${closed?'':`<ol class="rows" data-order-parent="${esc(rootId)}">${r.requires.map(x=>rowHTML(d,x,rootId)).join('')}</ol>`}</section>`}flush();
+   for(const rootId of d.model.roots){const r=node(d.documentId,rootId);if(!r.requires.length){leaves.push(rootId);continue}flush();const done=d.state[rootId]===true,closed=centerIsCollapsed(d.documentId,rootId),change=highlightedActivity(d.documentId,rootId),checkedBy=done?latestActivity(d.documentId,rootId,'completed'):null;content+=`<section class="section-block" data-root-group="${esc(rootId)}"><header class="group-header ${done?'done':''} ${change?'change-highlight '+activityTone(change):''}" data-reorder-id="${esc(rootId)}" data-parent="">${gripHTML('step',rootId,d.documentId,null,isLocked(d.documentId,rootId))}<input class="check ${change?.action==='completed'?'check-highlight '+activityTone(change):''}" type="checkbox" data-check="${esc(rootId)}" data-doc="${esc(d.documentId)}" aria-label="Mark ${esc(r.text)} done" ${done?'checked':''} ${isLocked(d.documentId,rootId)?'disabled':''}>${checkedBy?actorTag(checkedBy,true):''}<h2><button class="group-name" type="button" data-action="toggle-center-fold" data-doc="${esc(d.documentId)}" data-id="${esc(rootId)}" aria-expanded="${!closed}">${esc(r.text)}</button></h2>${rowTags(r)}${change?activityTag(change):''}${done?'<span class="closed-badge">closed</span>':''}${progressHTML(d.documentId,rootId,'compact')}${menuButton('step',d.documentId,rootId,null,`Options for ${r.text}`)}</header>${closed?'':`<ol class="rows" data-order-parent="${esc(rootId)}">${r.requires.map(x=>rowHTML(d,x,rootId)).join('')}</ol>`}</section>`}flush();
   if(!d.model.items.length)content+='<div class="empty-state">A clear page.<br>Start with a heading or a single step; you can add depth later.</div>';
  }
  $('pageContent').innerHTML=content;
@@ -892,33 +1082,47 @@ function showMenu(trigger){
  const hr='<hr role="separator">';let h='';
  if(['app','library-center'].includes(type)){
   h+=button('new-checklist','New checklist')+button('templates','Templates…')+button('import','Add checklist / import backup…')+hr;
-  h+=button('local-settings','Settings…')+button('preferences','Preferences…')+button('manage-conflicts','Manage conflicts'+(localPending.length?' ('+localPending.length+')':'')) +button('save','Save now')+button('backup','Export workspace backup…')+hr;
-  h+=button('ai-context','Share with an AI…',route.view==='library')+button('ai-input','Preview AI changes…')+hr+button('help','How this works');
+  h+=button('local-settings','Settings…')+button('preferences','Preferences…')+button('manage-conflicts','Manage conflicts'+(localPending.length?' ('+localPending.length+')':'')) +button('recent-actions','Recent actions…')+hr+button('save','Save now')+button('backup','Export workspace backup…')+hr;
+  h+=button('ai-context','Share with an AI…',route.view==='library')+button('ai-input','Preview AI changes…')+hr+button('help','How this works')+(localBridgeToken?hr+button('quit-helper','Save and quit Clearings'):'');
  }else if(type==='storage'){
   h+=`<small>${esc(browserError||'This workspace lives in this browser on this device. JSON exports are portable copies, not automatic sync.')}</small>`;
    h+=button('local-settings','Settings…')+button('preferences','Preferences…')+button('manage-conflicts','Manage conflicts')+button('save','Save now')+button('backup','Export workspace backup…')+button('export-checklist','Export this checklist',!currentDoc())+button('import','Add checklist / import backup…');
 
  }else if(type==='checklist'){
-  const d=getDoc(docId);h+=button('rename','Rename / edit description')+button('track-checklist',isTracked(docId,null)?'Checklist already tracked':'Track checklist',isTracked(docId,null))+button('duplicate','Duplicate as a fresh checklist')+hr+button('default',!preferences().openTopChecklist&&workspace.index.defaultChecklist===docId?'Default on startup':'Make default on startup',d.archived||!preferences().openTopChecklist&&workspace.index.defaultChecklist===docId)+button('archive',d.archived?'Restore from archive':'Archive checklist')+hr+button('export-checklist','Export checklist JSON')+button('categories','Edit categories')+hr+button('ai-context','Share with an AI…')+button('ai-input','Preview AI changes…');
+  const d=getDoc(docId),unseen=activity().some(a=>a.checklistId===docId&&(a.highlight||a.unread));h+=button('rename','Rename / edit description')+button('track-checklist',isTracked(docId,null)?'Checklist already tracked':'Track checklist',isTracked(docId,null))+button('duplicate','Duplicate as a fresh checklist')+button('mark-indicator-seen','Mark indicator as seen',!unseen)+hr+button('default',!preferences().openTopChecklist&&workspace.index.defaultChecklist===docId?'Default on startup':'Make default on startup',d.archived||!preferences().openTopChecklist&&workspace.index.defaultChecklist===docId)+button('archive',d.archived?'Restore from archive':'Archive checklist')+hr+button('export-checklist','Export checklist JSON')+button('categories','Edit categories')+hr+button('ai-context','Share with an AI…')+button('ai-input','Preview AI changes…');
  }else if(type==='step'){
   const i=node(docId,id),locked=isLocked(docId,id),childLocked=contextLocked(docId,id);
   h+=button('edit-step','Edit item…',locked)+button('details',detailsOpen.has(docId+':'+id)?'Hide details':'Show details')+button('focus-item',route.docId===docId&&focusId()===id?'Focused here':'Focus here',route.docId===docId&&focusId()===id)+button('track-item',isTracked(docId,id)?'Already tracked':'Track this item',isTracked(docId,id))+button('new-subitem','Add new item',childLocked)+hr;
-  h+=button('ai-context','Share this context with an AI…')+hr+button('move-up','Move up',!canMoveStep(docId,id,parent,-1))+button('move-down','Move down',!canMoveStep(docId,id,parent,1))+hr+button('delete-step','Delete item; keep sub-tasks…',locked||i.requires.some(c=>isLocked(docId,c)),'class="danger"')+(i.requires.length?button('delete-step-all','Delete item and sub-tasks…',locked,'class="danger"'):'');
+  h+=button('task-history','Created / completed by…')+button('ai-context','Share this context with an AI…')+hr+button('move-to','Move to…',locked)+button('move-up','Move up',!canMoveStep(docId,id,parent,-1))+button('move-down','Move down',!canMoveStep(docId,id,parent,1))+hr+button('delete-step','Delete item; keep sub-tasks…',locked||i.requires.some(c=>isLocked(docId,c)),'class="danger"')+(i.requires.length?button('delete-step-all','Delete item and sub-tasks…',locked,'class="danger"'):'');
  }else if(type==='shortcut'){
   h+=button('open-tracked','Open in center')+button('track-up','Move up',workspace.index.tracked[0]?.id===id)+button('track-down','Move down',workspace.index.tracked.at(-1)?.id===id)+hr+button('untrack','Remove shortcut');
- }else if(type==='tracked-panel'){h+=button('toggle-tracked','Hide Tracked')+`<small>Drag titles here to track them. Drag shortcuts out to remove them. Nothing is copied or deleted.</small>`}
+ }else if(type==='tracked-panel'){h+=button('fold-tracked',leftTrackedCollapsed?'Expand Tracked':'Collapse Tracked')+`<small>Drag titles here to track them. Drag shortcuts out to remove them. Nothing is copied or deleted.</small>`}
  else if(type==='map-panel'){h+=button('outline-all','All active checklists')+button('outline-follow','Follow center again')+hr+button('expand-all','Expand unfinished groups')+button('collapse-all','Collapse all')+button('toggle-map','Hide outline')+`<small>The outline follows the center’s order. Dragging is intentionally disabled here.</small>`}
  const menu=$('menu');menu.innerHTML=h;menu.hidden=false;menu.style.left='0px';menu.style.top='0px';const rect=trigger.getBoundingClientRect();menu.style.left=Math.max(8,Math.min(innerWidth-menu.offsetWidth-8,rect.right-menu.offsetWidth))+'px';menu.style.top=Math.max(8,Math.min(innerHeight-menu.offsetHeight-8,rect.bottom+5))+'px';menu.querySelector('button:not(:disabled)')?.focus({preventScroll:true});
 }
+async function quitHelper(){
+ try{if(!mayLeaveEditor())return;closeMenu();if(dirty&&!await saveBrowser(true))return;await localRequest('shutdown',{});document.body.innerHTML='<main style="padding:3rem;font:18px system-ui"><h1>Clearings is closed</h1><p>Your workspace is saved. You can close this tab and reopen Clearings from its launcher.</p></main>'}catch(error){toast('Could not quit: '+error.message,null,12000)}
+}
+function openTaskHistory(docId,id){
+ const d=getDoc(docId),i=node(docId,id),created=latestActivity(docId,id,'new'),completed=d.state[id]===true?latestActivity(docId,id,'completed'):null;
+ const line=(label,stamp)=>`<p><strong>${label}</strong><br>${stamp?esc(stamp.actor)+' · '+esc(new Date(stamp.at).toLocaleString())+(stamp.commitId?'<br><small>Commit '+esc(stamp.commitId)+'</small>':''):'Not recorded'}</p>`;
+ beginDialog({mode:'help',docId,id},i.text,line('Created by',created)+line(d.state[id]===true?'Marked complete by':'Currently open',completed)+'<p class="field-hint">Names are collaboration labels. Older missing history stays unknown.</p>');
+}
+function openMoveItem(docId,id,parent){
+ const d=getDoc(docId),i=node(docId,id);if(!i||isLocked(docId,id))return;
+ const invalid=new Set(subIds(docId,id));invalid.add(id);
+ const choices=d.model.items.filter(x=>!invalid.has(x.id)&&!contextLocked(docId,x.id));
+ beginDialog({mode:'move-item',docId,id,parent,baseKey:aiDocumentKey(d)},'Move “'+i.text+'”',`<label class="field"><span>Move under</span><select name="destination"><option value="">Checklist overview</option>${choices.map(x=>`<option value="${esc(x.id)}" ${x.id===parent?'selected':''}>${esc(x.text)}</option>`).join('')}</select></label><p class="field-hint">The item and its sub-tasks move together to the end of this list. Checkmarks and attribution stay with them. Other shared parent links stay in place.</p>`,'Move');
+}
 function childrenArray(docId,parent){return parent===null?getDoc(docId).model.roots:node(docId,parent)?.requires||[]}
-function canMoveStep(docId,id,parent,delta){const list=childrenArray(docId,parent),n=list.indexOf(id);return !isLocked(docId,id)&&!contextLocked(docId,parent)&&n>=0&&n+delta>=0&&n+delta<list.length}
+function canMoveStep(docId,id,parent,delta){const list=childrenArray(docId,parent),n=list.indexOf(id);return !isLocked(docId,id)&&!contextLocked(docId,parent)&&n>=0&&n+delta>=0&&n+delta<list.length&&!isLocked(docId,list[n+delta])}
 function moveStep(docId,id,parent,delta){if(!canMoveStep(docId,id,parent,delta))return;const arr=childrenArray(docId,parent),n=arr.indexOf(id);[arr[n],arr[n+delta]]=[arr[n+delta],arr[n]];touch(docId);renderCenter();renderTree();}
 function moveShortcut(id,delta){const a=workspace.index.tracked,n=a.findIndex(x=>x.id===id);if(n<0||n+delta<0||n+delta>=a.length)return;[a[n],a[n+delta]]=[a[n+delta],a[n]];touch();renderLibrary()}
 function moveLibrary(id,delta){const active=workspace.index.entries.filter(e=>!getDoc(e.id).archived),n=active.findIndex(e=>e.id===id);if(n<0||n+delta<0||n+delta>=active.length)return;const a=workspace.index.entries,x=a.findIndex(e=>e.id===id),y=a.findIndex(e=>e.id===active[n+delta].id);[a[x],a[y]]=[a[y],a[x]];touch();renderLibrary();renderCenter()}
 function reconcileRoots(d,oldRoots=d.model.roots){const nested=new Set(d.model.items.flatMap(i=>i.requires)),ids=new Set(d.model.items.map(i=>i.id));d.model.roots=[...oldRoots.filter(x=>ids.has(x)&&!nested.has(x)),...d.model.items.filter(i=>!nested.has(i.id)&&!oldRoots.includes(i.id)).map(i=>i.id)];}
 function field(name,label,value='',textarea=false){return `<label class="field"><span>${esc(label)}</span>${textarea?`<textarea name="${name}">${esc(value)}</textarea>`:`<input name="${name}" value="${esc(value)}" ${name==='title'?'required maxlength="500"':''}>`}</label>`}
 function beginDialog(ctx,title,fields,apply='Apply'){
- if(!mayLeaveEditor())return;if(draftable(ctx)&&pendingDraft&&!sameDraftContext(pendingDraft.context,ctx)&&!confirm('Replace the previously saved editor draft? Export or resume it first to keep it.'))return;closeMenu();dialogContext=ctx;dialogDirty=false;$('dialogTitle').textContent=title;$('dialogFields').innerHTML=fields;$('dialogApply').textContent=apply;$('dialogApply').hidden=['help','ai-context','preferences','import-review','local-list','template-list','template-choice'].includes(ctx.mode);$('dialogError').textContent='';$('editorForm').querySelector('footer [data-action=close-dialog]').textContent=draftable(ctx)?'Close · keep draft':['help','preferences','ai-context','local-list','template-list','template-choice'].includes(ctx.mode)?'Close':'Cancel';$('editorForm').querySelector('.dialog-discard').hidden=!['new-step','new-checklist'].includes(ctx.mode);$('editorDialog').showModal();$('editorDialog').querySelector('input,textarea,button')?.focus();
+ if(!mayLeaveEditor())return;if(draftable(ctx)&&pendingDraft&&!sameDraftContext(pendingDraft.context,ctx)&&!confirm('Replace the previously saved editor draft? Export or resume it first to keep it.'))return;closeMenu();dialogContext=ctx;dialogDirty=false;$('dialogTitle').textContent=title;$('dialogFields').classList.toggle('settings-sections',ctx.mode==='local-settings');$('dialogFields').innerHTML=fields;$('dialogApply').textContent=apply;$('dialogApply').hidden=['help','ai-context','preferences','import-review','local-list','template-list','template-choice','recent-actions'].includes(ctx.mode);$('dialogError').textContent='';$('editorForm').querySelector('footer [data-action=close-dialog]').textContent=draftable(ctx)?'Close · keep draft':['help','preferences','ai-context','local-list','template-list','template-choice','recent-actions'].includes(ctx.mode)?'Close':'Cancel';$('editorForm').querySelector('.dialog-discard').hidden=!['new-step','new-checklist'].includes(ctx.mode);$('editorDialog').showModal();$('editorDialog').querySelector('input,textarea,button')?.focus();
 }
 function discardEditor(){if(!$('editorDialog').open)return;if((dialogDirty||pendingDraft&&sameDraftContext(pendingDraft.context,dialogContext))&&!confirm('Discard this unfinished draft? This cannot be undone.'))return;const hadDraft=!!pendingDraft&&sameDraftContext(pendingDraft.context,dialogContext);dialogDirty=false;if(hadDraft){pendingDraft=null;markChanged()}$('editorDialog').close();dialogContext=null;updateDraftNotice();if(!started)setTimeout(()=>{if(!started)showWelcome()},0)}
 function closeDialog(){
@@ -947,7 +1151,7 @@ function updateNewItemDestination(){
  $('itemDestinationHint').textContent=same?(ctx.parent?`This becomes a sub-task of “${node(ctx.docId,ctx.parent).text}”.`:'This becomes a top-level item in this checklist.'):`This becomes a top-level item in “${target?.title||'the selected checklist'}”. Links and categories from the original checklist are unavailable here.`;
 }
 function newDoc(title){return {format:'checklist-studio-document',schemaVersion:2,documentId:uid(),title,subtitle:'',description:'',footer:'',archived:false,updatedAt:null,references:[],model:{branches:[],roots:[],items:[]},state:{},view:{collapsed:[]}}}
-function addDoc(d,file=null){workspace.documents.push(d);workspace.index.entries.push({id:d.documentId,file:file||`checklist-${d.documentId}.json`});if(!workspace.index.defaultChecklist)workspace.index.defaultChecklist=d.documentId;refreshIndexes();recordActivity('new',d.documentId);touch(d.documentId)}
+function addDoc(d,file=null){workspace.documents.push(d);workspace.index.entries.push({id:d.documentId,file:file||`checklist-${d.documentId}.json`});if(!workspace.index.defaultChecklist)workspace.index.defaultChecklist=d.documentId;refreshIndexes();recordActivity('new',d.documentId);for(const item of d.model.items)recordActivity('new',d.documentId,item.id);touch(d.documentId)}
 function addBundledTemplate(templateId){
  if(!started){toast('Start a workspace before adding a template.');return}
  const source=BUNDLED_TEMPLATES.find(d=>d.documentId===templateId);
@@ -955,7 +1159,7 @@ function addBundledTemplate(templateId){
  if(!mayLeaveEditor())return;
  const d=clone(source),count=workspace.documents.filter(x=>x.title===source.title||x.title.startsWith(source.title+' — ')).length;
  d.documentId=uid();if(count)d.title+=` — ${count+1}`;
- d.state={};d.archived=false;d.updatedAt=null;
+ d.state={};delete d.attribution;d.archived=false;d.updatedAt=null;
  validateDocument(d);addDoc(d);navigate({view:'checklist',docId:d.documentId,trail:[]});render();
  toast('Template added as a new, unchecked checklist. Nothing was published.');
 }
@@ -995,7 +1199,7 @@ function placeBundledTemplate(templateId,docId,parentId){
  if(parentId)d.model.items.find(i=>i.id===parentId).requires.push(groupId);else d.model.roots.push(groupId);
  d.view.collapsed.push(...source.view.collapsed.map(id=>ids.get(id)));reconcileRoots(d);
  const checked=validateDocument(d);workspace.documents[workspace.documents.findIndex(x=>x.documentId===docId)]=checked;
- refreshIndexes();recordActivity('new',docId,groupId);touch(docId);navigate({view:'checklist',docId,trail:[]});render();
+ refreshIndexes();for(const itemId of ids.values())recordActivity('new',docId,itemId);recordActivity('new',docId,groupId);touch(docId);navigate({view:'checklist',docId,trail:[]});render();
  toast('Template added under the chosen item. Existing checks were kept.');
 }
 function addSmokeTestChecklist(){
@@ -1015,47 +1219,45 @@ function addSmokeTestChecklist(){
 }
 function openRename(docId){const d=getDoc(docId);beginDialog({mode:'rename',docId},'Checklist details',field('title','Display title',d.title)+field('subtitle','Subtitle',d.subtitle)+field('description','About this checklist',d.description,true)+'<p class="field-hint">Renaming changes the display title only. The stable ID, file, and shortcuts stay intact.</p>')}
 function openCategories(docId){const d=getDoc(docId);beginDialog({mode:'categories',docId},'Project categories',d.model.branches.map(b=>field('category-'+b.id,b.id,b.title)).join('')+field('newCategory','Add a category (optional)')+'<p class="field-hint">Categories are labels for belonging to several project areas. The outline uses supporting-item links instead.</p>')}
-function deleteStep(docId,id){const d=getDoc(docId),i=node(docId,id);if(!i||isLocked(docId,id)||i.requires.some(c=>isLocked(docId,c)))return;if(!confirm(`Delete “${i.text}”? Its sub-tasks will be kept, and any newly unlinked sub-tasks will appear in the overview. Shortcuts to this item will be removed.`))return;
-  const previous=clone(workspace);for(const x of d.model.items)x.requires=x.requires.filter(r=>r!==id);d.model.items=d.model.items.filter(x=>x.id!==id);delete d.state[id];d.view.collapsed=d.view.collapsed.filter(x=>x!==id);workspace.index.tracked=workspace.index.tracked.filter(t=>!(t.checklistId===docId&&t.itemId===id));if(workspace.index.activity)workspace.index.activity=workspace.index.activity.filter(a=>!(a.checklistId===docId&&a.itemId===id));reconcileRoots(d);refreshIndexes();touch(docId);const undoRevision=revision;route=normalizeRoute(route);render();toast('Item deleted; its sub-tasks were kept.',()=>{if(revision!==undoRevision){toast('Newer edits exist. Use your backup rather than overwriting them.');return}workspace=previous;refreshIndexes();touch(docId);render()})}
-function deleteStepAll(docId,id){
- const d=getDoc(docId),i=node(docId,id);if(!i||isLocked(docId,id))return;
- const subtree=new Set(subIds(docId,id)),reachable=new Set(),todo=d.model.roots.filter(root=>root!==id);
- while(todo.length){const current=todo.pop();if(current===id||reachable.has(current))continue;reachable.add(current);todo.push(...(node(docId,current)?.requires||[]))}
- const removed=new Set([...subtree].filter(itemId=>!reachable.has(itemId))),shared=subtree.size-removed.size,next=clone(d);
- next.model.items=next.model.items.filter(item=>!removed.has(item.id));for(const item of next.model.items)item.requires=item.requires.filter(child=>!removed.has(child));
- next.model.roots=next.model.roots.filter(root=>!removed.has(root));for(const itemId of removed)delete next.state[itemId];next.view.collapsed=next.view.collapsed.filter(itemId=>!removed.has(itemId));
- try{validateDocument(next)}catch(error){toast('Deletion stopped: '+error.message,null,10000);return}
- const count=removed.size-1,noun=count===1?'sub-task':'sub-tasks',kept=shared?` ${shared} shared ${shared===1?'sub-task remains':'sub-tasks remain'} where also used.`:'';
- if(!confirm(`Delete “${i.text}” wherever it appears in this checklist, with ${count} ${noun}? Their checkmarks and shortcuts will be removed.${kept}`))return;
- const previous=clone(workspace);workspace.documents[workspace.documents.findIndex(x=>x.documentId===docId)]=next;
- workspace.index.tracked=workspace.index.tracked.filter(t=>t.checklistId!==docId||!removed.has(t.itemId));
- if(workspace.index.activity)workspace.index.activity=workspace.index.activity.filter(a=>a.checklistId!==docId||!removed.has(a.itemId));
- refreshIndexes();touch(docId);const undoRevision=revision;route=normalizeRoute(route);render();toast(`Item and ${count} ${noun} deleted.${kept}`,()=>{if(revision!==undoRevision){toast('Newer edits exist. Use your backup rather than overwriting them.');return}workspace=previous;refreshIndexes();touch(docId);render()});
+function pruneDocumentLinks(w,docId){const kept=new Set(w.documents.find(d=>d.documentId===docId).model.items.map(i=>i.id));w.index.tracked=w.index.tracked.filter(t=>t.checklistId!==docId||t.itemId===null||kept.has(t.itemId));if(w.index.activity)w.index.activity=w.index.activity.filter(a=>a.checklistId!==docId||a.itemId===null||kept.has(a.itemId));}
+function deleteStep(docId,id){deleteItems(docId,id,'keep-subtasks')}
+function deleteStepAll(docId,id){deleteItems(docId,id,'subtree')}
+function deleteItems(docId,id,mode){
+ let plan;try{plan=planRemoval(getDoc(docId),id,mode)}catch(error){toast(error.message,null,10000);return}
+ if(!confirm(`Delete ${plan.removed.length} item(s): ${plan.titles.join(', ')}? ${mode==='keep-subtasks'?'Sub-tasks will be kept.':'Shared descendants remain where also used.'}`))return;
+ const previous=clone(workspace);workspace.documents[workspace.documents.findIndex(d=>d.documentId===docId)]=plan.document;pruneDocumentLinks(workspace,docId);refreshIndexes();recordActivity('updated',docId);touch(docId);const undoRevision=revision;route=normalizeRoute(route);render();toast('Items deleted.',()=>{if(revision!==undoRevision){toast('Newer edits exist. Use your backup rather than overwriting them.');return}workspace=previous;refreshIndexes();touch(docId);render()});
 }
 function archiveDoc(docId){const d=getDoc(docId);d.archived=!d.archived;if(d.archived&&workspace.index.defaultChecklist===docId)workspace.index.defaultChecklist=workspace.index.entries.find(e=>!getDoc(e.id).archived)?.id||null;touch(docId);if(d.archived&&route.docId===docId)navigate({view:'checklist',docId:workspace.index.defaultChecklist,trail:[]});render();toast(d.archived?'Archived, not deleted. Find it under Archived.':'Restored to the library.')}
-function duplicateDoc(docId){const d=clone(getDoc(docId));d.documentId=uid();d.title+=' — copy';d.archived=false;d.state={};d.view={collapsed:[]};addDoc(d);navigate({view:'checklist',docId:d.documentId,trail:[]});render();toast('Duplicated as a fresh checklist; progress was not copied.')}
+function duplicateDoc(docId){const d=clone(getDoc(docId));d.documentId=uid();d.title+=' — copy';d.archived=false;d.state={};delete d.attribution;d.view={collapsed:[]};addDoc(d);navigate({view:'checklist',docId:d.documentId,trail:[]});render();toast('Duplicated as a fresh checklist; progress was not copied.')}
 function prefToggle(key,label,detail=''){
  const p=preferences();return `<label class="pref-row"><span>${esc(label)}${detail?`<small>${esc(detail)}</small>`:''}</span><input type="checkbox" class="switch" role="switch" data-pref="${key}" ${p[key]?'checked':''}></label>`;
 }
 function prefSelect(key,label,options){return `<label class="pref-row"><span>${esc(label)}</span><select data-pref="${key}">${options.map(([value,text])=>`<option value="${value}" ${String(preferences()[key])===String(value)?'selected':''}>${esc(text)}</option>`).join('')}</select></label>`;}
 function prefInput(key,label){return `<label class="pref-row"><span>${esc(label)}</span><input type="text" data-pref="${key}" maxlength="80" value="${esc(preferences()[key])}"></label>`}
+function settingsHelp(label,detail){return `<span class="settings-help-wrap"><button class="settings-help-button" type="button" data-action="settings-help" aria-label="Help: ${esc(label)}" aria-expanded="false">?</button><span class="settings-help-popover" role="tooltip">${esc(detail)}</span></span>`}
+function settingsHeading(label,detail){return `<div class="settings-section-title"><h3>${esc(label)}</h3>${settingsHelp(label,detail)}</div>`}
+function settingsToggle(key,label,detail){return `<div class="pref-row"><label for="setting-${key}">${esc(label)}</label>${settingsHelp(label,detail)}<input id="setting-${key}" type="checkbox" class="switch" role="switch" data-pref="${key}" ${preferences()[key]?'checked':''}></div>`}
+function closeSettingsHelps(){for(const wrap of document.querySelectorAll('.settings-help-wrap.is-pinned')){wrap.classList.remove('is-pinned');wrap.querySelector('.settings-help-button')?.setAttribute('aria-expanded','false')}}
+function toggleSettingsHelp(button){const wrap=button.closest('.settings-help-wrap'),wasPinned=wrap.classList.contains('is-pinned');closeSettingsHelps();if(!wasPinned){wrap.classList.add('is-pinned');button.setAttribute('aria-expanded','true')}}
+function openRecentActions(){
+ const recent=[...activity()].reverse().slice(0,15).map(a=>`<li>${esc(new Date(a.at).toLocaleString())} · ${esc(a.actor)}${a.approvedBy?' (approved by '+esc(a.approvedBy)+')':''} · ${esc(a.action)} · ${esc(getDoc(a.checklistId)?.model.items.find(i=>i.id===a.itemId)?.text||getDoc(a.checklistId)?.title||'Checklist')}</li>`).join('');
+ beginDialog({mode:'recent-actions'},'Recent actions',`<p class="field-hint">Latest 15 committed actions. The newest 500 travel with your workspace backup.</p>${recent?`<ol class="field-hint">${recent}</ol>`:'<p class="field-hint">No recorded changes yet.</p>'}`,'Close');
+}
 async function openLocalSettings(){
  if(localBridgeToken){try{localHome=(await localRequest('state')).home}catch(error){localError=error.message}}
  const protection=persistedStorage===true?'Protected from automatic eviction.':persistedStorage===false?'Standard browser storage.':'Protection status not available yet.';
- const recent=[...activity()].reverse().slice(0,15).map(a=>`<li>${esc(new Date(a.at).toLocaleString())} · ${esc(a.actor)}${a.approvedBy?' (approved by '+esc(a.approvedBy)+')':''} · ${esc(a.action)} · ${esc(getDoc(a.checklistId)?.model.items.find(i=>i.id===a.itemId)?.text||getDoc(a.checklistId)?.title||'Checklist')}</li>`).join('');
- const fields=`<section class="pref-section"><h3>Identity</h3><p class="field-hint">Hold Shift to see edit names. Orange means Browser; blue means Incoming JSON. These names are labels, not identity checks.</p>${field('humanName','Your username',preferences().displayName)}</section>
- <section class="pref-section"><h3>Refresh Clearings</h3><p class="field-hint">${localBridgeToken?'The one-click launcher reads one handoff file from this home folder without a file picker.':'This standalone page cannot read a remembered folder. Start_Clearings.cmd opens the one-click local workflow.'} Switches and selectors below save as you change them; Save settings applies your username and home folder.</p>${localBridgeToken?field('home','Clearings home folder',localHome):''}
- ${prefToggle('clearOnRefreshPress','Clear indicators whenever Refresh is pressed','Normally old indicators clear only when new changes arrive. With this on, even an empty Refresh clears them.')}
- ${localBridgeToken?`<p class="field-hint">Change home to an existing folder after resolving pending changes. Browser checklists remain here.</p>${localError?`<p class="dialog-error">Handoff: ${esc(localError)}</p><button class="button" type="button" data-action="retry-local-handoff">Retry handoff after reviewing</button>`:''}<button class="button" type="button" data-action="create-practice-conflict">Make a practice conflict</button>`:''}</section>
- <section class="pref-section" id="savingSettings"><h3>Saving & storage</h3>${prefToggle('autosave','Autosave','Saved locally in this browser, not in an account or in the HTML file.')}${prefSelect('saveDelay','Save after a pause',[['1000','1 second'],['3000','3 seconds'],['5000','5 seconds']])}
- <p class="field-hint">${esc(browserError||'Your workspace stays in this browser. Clearing site data or deleting this profile removes it; export a backup for an independent copy.')}</p>
- <div class="pref-actions"><button class="button" type="button" data-action="save">Save now</button><button class="button" type="button" data-action="backup">Export workspace backup</button><button class="button" type="button" data-action="reload-browser">Reload saved copy</button></div>
+ const fields=`<section class="pref-section">${settingsHeading('Identity','Hold Shift outside text fields to see edit names; hold Ctrl (or Command) to see tags. Orange marks browser changes; blue marks AI changes. Names are labels, not identity checks.')}${field('humanName','Your username',preferences().displayName)}</section>
+ <section class="pref-section">${settingsHeading('Refresh Clearings',localBridgeToken?'The launcher reads incoming changes from the selected Clearings home folder without a file picker.':'The standalone page uses a file picker for incoming changes; the local launcher provides one-click Refresh.')}${localBridgeToken?field('home','Clearings home folder',localHome):''}
+ ${settingsToggle('clearOnRefreshPress','Clear indicators on first Refresh','When off, a no-update Refresh offers a second click to clear indicators. When on, one empty Refresh clears them. New changes clear previous indicators either way.')}
+ ${localBridgeToken?`${localError?`<p class="dialog-error">Handoff: ${esc(localError)}</p><button class="button" type="button" data-action="retry-local-handoff">Retry handoff after reviewing</button>`:''}<button class="button" type="button" data-action="create-practice-conflict">Make a practice conflict</button>`:''}</section>
+ <section class="pref-section" id="savingSettings">${settingsHeading('Saving & storage','The workspace lives in this browser on this device. Export a backup before clearing browser data or moving to another browser. Optional folder copies are separate.')}${settingsToggle('autosave','Autosave','Save locally in this browser after editing. It does not upload data or rewrite the HTML file.')}${prefSelect('saveDelay','Save after a pause',[['1000','1 second'],['3000','3 seconds'],['5000','5 seconds']])}
+ ${browserError?`<p class="dialog-error">${esc(browserError)}</p>`:''}<div class="pref-actions"><button class="button" type="button" data-action="save">Save now</button><button class="button" type="button" data-action="backup">Export workspace backup</button><button class="button" type="button" data-action="reload-browser">Reload saved copy</button></div>
  <p id="persistenceStatus" class="field-hint" role="status">${protection} Protection is not a backup.</p><div class="pref-actions"><button class="button" type="button" data-action="protect-storage">Request storage protection</button></div>
- <details><summary class="field-hint">Optional folder copy / older libraries</summary><p class="field-hint">Browser autosave needs no folder. This optional connection writes separate JSON files and must be reconnected each session.</p>${canDirectory()?`<div class="pref-actions"><button class="button" type="button" data-action="connect">Open / save library folder…</button>${directory?'<button class="button" type="button" data-action="disconnect-folder">Disconnect folder copy</button>':''}</div>`:'<p class="field-hint">Direct folder writing is unavailable here; browser autosave and JSON export still work.</p>'}</details></section>
- <section class="pref-section"><h3>Getting started</h3>${prefToggle('openTopChecklist','Open the top checklist on startup','Turn off to use a checklist chosen with “Make default on startup”.')}<p class="field-hint">Add a fictional checklist for trying save, reopen and export without changing existing lists.</p><button class="button" type="button" data-action="add-smoke-checklist">Add Smoke Test Checklist</button></section>
- <section class="pref-section"><h3>Checklist templates</h3><p class="field-hint">Browse the blank JSON templates included with Clearings. Adding one changes only your browser workspace; nothing is uploaded.</p><button class="button" type="button" data-action="templates">Browse templates</button></section>
- <section class="pref-section"><h3>Recent changes</h3><p class="field-hint">The newest 500 committed actions travel with your workspace backup.</p>${recent?`<ol class="field-hint">${recent}</ol>`:'<p class="field-hint">No recorded changes yet.</p>'}</section>
- <button class="button" type="button" data-action="restore-settings-defaults">Restore Defaults</button><p class="field-hint">Restores saving, startup and Refresh behavior. Your username, home folder, checklists and checkmarks stay as they are.</p>`;
+ <details><summary class="field-hint">Optional folder copy</summary><p class="field-hint">Browser autosave needs no folder. This copy writes separate JSON files and reconnects each session.</p>${canDirectory()?`<div class="pref-actions"><button class="button" type="button" data-action="connect">Open / save library folder…</button>${directory?'<button class="button" type="button" data-action="disconnect-folder">Disconnect folder copy</button>':''}</div>`:'<p class="field-hint">Direct folder writing is unavailable here; browser autosave and JSON export still work.</p>'}</details></section>
+ <section class="pref-section">${settingsHeading('Getting started','Open the top checklist at startup or choose a specific default. The Smoke Test Checklist uses fictional data and never changes your existing lists.')}${settingsToggle('openTopChecklist','Open the top checklist on startup','Turn off to use a checklist chosen with Make default on startup.')}
+ <button class="button" type="button" data-action="add-smoke-checklist">Add Smoke Test Checklist</button></section>
+ <section class="pref-section">${settingsHeading('Checklist templates','Included blank templates add unchecked items to this browser workspace. Nothing is uploaded.')}<button class="button" type="button" data-action="templates">Browse templates</button></section>
+ <button class="button" type="button" data-action="restore-settings-defaults">Restore Defaults</button><p class="field-hint">Keeps your username, home folder and checklists.</p>`;
  beginDialog({mode:'local-settings'},'Settings',fields,'Save settings');
 }
 async function retryLocalHandoff(){
@@ -1066,12 +1268,13 @@ async function retryLocalHandoff(){
 }
 function displayConflictValue(value){return value===null||value===undefined?'(empty)':typeof value==='string'?value:JSON.stringify(value,null,2)}
 function openConflictManager(){
- const cards=localPending.map(p=>{const d=getDoc(p.documentId);let count=0;try{count=proposalPlan(p)?.unresolved.length||0}catch{count=1}
-  return `<div class="conflict-entry"><strong>${esc(d?.title||p.documentId)}</strong><small>${esc(p.actor)} · ${count?count+' decision'+(count===1?'':'s')+' needed':'Ready to refresh'} · ${esc(p.note||'Incoming JSON edit')}</small><button class="button" type="button" data-action="review-local-conflict" data-doc="${esc(p.documentId)}" data-proposal="${esc(p.id)}">${count?'Review conflict':'Inspect proposal'}</button><button class="button" type="button" data-action="dismiss-local-proposal" data-proposal="${esc(p.id)}">Dismiss incoming</button></div>`}).join('');
+ const cards=localPending.map(p=>{const d=getDoc(p.documentId);let count=0;try{count=p.kind==='create'?(d?1:0):proposalPlan(p)?.unresolved.length||0}catch{count=1}
+  return `<div class="conflict-entry"><strong>${esc(d?.title||p.incoming?.title||p.documentId)}</strong><small>${esc(p.actor)} · ${p.kind==='create'?(d?'Checklist ID collision':'New checklist awaiting preview'):count?count+' decision'+(count===1?'':'s')+' needed':'Ready to refresh'} · ${esc(p.note||'Incoming JSON edit')}</small><button class="button" type="button" data-action="review-local-conflict" data-doc="${esc(p.documentId)}" data-proposal="${esc(p.id)}">${count?'Review conflict':'Inspect proposal'}</button><button class="button" type="button" data-action="dismiss-local-proposal" data-proposal="${esc(p.id)}">Dismiss incoming</button></div>`}).join('');
  beginDialog({mode:'local-list'},'Manage conflicts',`<p class="field-hint">Only the affected checklist waits. Other checklists continue normally.</p>${cards||'<p class="field-hint">No incoming changes are waiting.</p>'}`,'Close');
 }
 function openConflictReview(docId,proposalId=null){
  const p=localPending.find(x=>x.documentId===docId&&(!proposalId||x.id===proposalId));if(!p){toast('No incoming proposal for that checklist.');return}
+ if(p.kind==='create'){if(getDoc(docId)){beginDialog({mode:'local-list'},'Checklist ID collision',`<p class="field-hint">An existing checklist already uses ID ${esc(docId)}. Nothing will be replaced or duplicated. The incoming proposal remains available for review or dismissal.</p>`,'Close');return}openLocalNewPreview(p);return}
  let plan;try{plan=proposalPlan(p)}catch(error){toast('Cannot review this incoming proposal: '+error.message,null,10000);return}
  if(!plan){toast('That checklist is not in this workspace.');return}
  const rows=plan.unresolved.map((c,index)=>`<div class="conflict-entry"><strong>${esc(c.label)}</strong><div class="conflict-grid"><div class="conflict-side browser"><strong>Browser</strong><br>${esc(displayConflictValue(c.browser))}</div><div class="conflict-side json"><strong>Incoming JSON</strong><br>${esc(displayConflictValue(c.json))}</div></div><label><input type="radio" name="resolution-${index}" value="browser" required> Keep Browser</label><label><input type="radio" name="resolution-${index}" value="json" required> Use JSON</label></div>`).join('');
@@ -1086,9 +1289,10 @@ async function createPracticeConflict(){
   const d=newDoc('Clearings · Conflict Practice'),item={id:uid(),order:1,parents:[],label:'Practice',tags:[],text:'One practice step',detail:'This checklist exists only to rehearse conflict review.',requires:[]};d.model.items.push(item);d.model.roots.push(item.id);addDoc(d);render();
   if(!await saveBrowser(false))throw new Error('The practice baseline could not be saved.');
   const base=clone(getDoc(d.documentId)),incoming=clone(base);incoming.model.items[0].text='Incoming JSON version';
+  const proposed=await localRequest('propose',{base,incoming,actor:'Practice JSON',note:'Safe conflict rehearsal'});
+  await localRequest('commit',{proposalId:proposed.proposalId,author:'Practice JSON'});
   getDoc(d.documentId).model.items[0].text='Browser version';recordActivity('updated',d.documentId,item.id);touch(d.documentId);render();
   if(!await saveBrowser(false))throw new Error('The browser practice edit could not be saved.');
-  await localRequest('propose',{base,incoming,actor:'Practice JSON',note:'Safe conflict rehearsal'});
   await loadLocalPending();closeDialog();navigate({view:'checklist',docId:d.documentId,trail:[]});openConflictReview(d.documentId);
  }catch(error){toast('Practice stopped: '+error.message,null,12000)}finally{setRefreshBusy(false)}
 }
@@ -1136,11 +1340,12 @@ function helpDialog(){beginDialog({mode:'help'},'A small map, your data',`<div c
  <p><strong>Sharing:</strong> export one checklist and use Add checklist / import backup on the receiving device. Import can append whole lists without replacing existing work. A workspace backup contains every committed checklist and saved checklist preference.</p>
  <p><strong>Local launch:</strong> the standalone HTML needs no server and keeps its browser origin tied to its path. Start_Clearings.cmd opens a separate local address with an optional loopback-only handoff. Export once from an older standalone page and import there, or explicitly restore a saved local handoff into an empty local browser profile. No service worker is installed.</p>
  <p><strong>Multiple tabs:</strong> use one editing tab. Stale writes are refused, not merged. Export a conflicting draft before reloading the saved copy in Settings.</p>
- <p>Click a parent title in the center to expand or collapse its supporting items. Drag its six-dot grip to reorder; drop that grip on Tracked to track it or on the right outline to focus it. Drag a tracked shortcut out to untrack it. Hold Shift to see edit names; Shift + ↑ / ↓ moves a focused grip. Mouse Back/Forward navigates focused views. Ctrl/Cmd+S saves now.</p>
+ <p>Click a parent title in the center to expand or collapse its supporting items. Drag its six-dot grip to reorder; drop that grip on Tracked to track it or on the right outline to focus it. Drag a tracked shortcut out to untrack it. Hold Shift outside text fields to see edit names, or hold Ctrl/Command to see tags. Shift + ↑ / ↓ moves a focused grip. Mouse Back/Forward navigates focused views. Ctrl/Cmd+S saves now.</p>
  <p><strong>AI:</strong> export context and review a standalone change packet, or let an external assistant submit through the local helper and press Refresh. Competing edits wait for a choice in Manage conflicts. No provider, API key or AI network call lives here.</p></div>`,'Close');}
 
 function showDetails(docId,id){if(route.docId!==docId||focusId()===id||(!focusId()&&getDoc(docId).model.roots.includes(id)&&node(docId,id).requires.length)){goItem(docId,id);const about=$('pageHeader').querySelector('.about');if(about)about.open=true;return}const key=docId+':'+id;if(detailsOpen.has(key))detailsOpen.delete(key);else detailsOpen.add(key);renderCenter()}
 function dispatch(command,ctx={}){
+ if(localBusy)return;
  const docId=ctx.docId||route.docId,id=ctx.id||null,parent=ctx.parent||null;
  switch(command){
   case 'import-separate':finishImport('separate');break;
@@ -1148,12 +1353,21 @@ function dispatch(command,ctx={}){
   case 'import-restore':finishImport('restore');break;
   case 'preferences':openPreferences();break;
   case 'local-settings':openLocalSettings();break;
+  case 'recent-actions':openRecentActions();break;
+  case 'task-history':openTaskHistory(docId,id);break;
+  case 'quit-helper':quitHelper();break;
+  case 'move-to':openMoveItem(docId,id,parent);break;
+  case 'download-incoming-checklist':{const p=localPending.find(x=>x.id===dialogContext?.proposalId&&x.kind==='create');if(p)download(`incoming-checklist-${p.documentId}.json`,jsonString(p.incoming));break}
+  case 'settings-help':toggleSettingsHelp(ctx.button);break;
   case 'retry-local-handoff':retryLocalHandoff();break;
   case 'manage-conflicts':openConflictManager();break;
   case 'review-local-conflict':openConflictReview(docId,ctx.proposalId);break;
   case 'dismiss-local-proposal':if(ctx.proposalId&&confirm('Dismiss this incoming proposal? Your browser checklist stays as it is.'))localRequest('mark',{proposalId:ctx.proposalId,status:'dismissed',summary:'Dismissed from Manage conflicts',actor:preferences().displayName}).then(()=>loadLocalPending()).then(()=>{dialogDirty=false;closeDialog();toast('Incoming proposal dismissed.');}).catch(error=>toast(error.message,null,10000));break;
   case 'create-practice-conflict':createPracticeConflict();break;
-  case 'clear-indicators':clearHighlights();toast('Indicators cleared.');break;
+  case 'clear-indicators':if(!clearIndicatorsWithUndo('Notifications removed.'))toast('No indicators to clear.');break;
+  case 'mark-indicator-seen':markChecklistIndicatorSeen(docId);break;
+  case 'fold-checklists':leftChecklistsCollapsed=!leftChecklistsCollapsed;renderLibrary();break;
+  case 'fold-tracked':leftTrackedCollapsed=!leftTrackedCollapsed;renderLibrary();break;
   case 'protect-storage':requestProtection();break;
   case 'reset-preferences':resetPreferences();break;
   case 'restore-settings-defaults':restoreSettingsDefaults();break;
@@ -1171,9 +1385,9 @@ function dispatch(command,ctx={}){
   case 'outline-all':browseOutline();break;
   case 'outline-checklist':browseOutline(docId);break;
   case 'outline-follow':outline=defaultOutline();try{history.pushState(historyData(),'')}catch{}renderTree();break;
-  case 'new-checklist':beginDialog({mode:'new-checklist'},'Start a checklist',field('title','Checklist name')+`<details class="optional-details new-checklist-details"><summary>More details (optional)</summary>${field('description','About this checklist','',true)}</details>`,'Create');break;
-  case 'library-view':acknowledgeActivity('checklists');navigate({view:'library'});break;
-  case 'ack-tracked':acknowledgeActivity('tracked');toast('Tracked changes marked seen.');break;
+  case 'new-checklist':beginDialog({mode:'new-checklist'},'Start a checklist',field('title','Checklist name')+`<details class="optional-details new-checklist-details"><summary>More details (optional)</summary>${field('description','About this checklist','',true)}</details><div class="pref-actions"><button class="button" type="button" data-action="import-from-new">Import checklist…</button></div>`,'Create');break;
+  case 'import-from-new':dialogDirty=false;closeDialog();$('importInput').click();break;
+  case 'library-view':navigate({view:'library'});break;
   case 'refresh-clearings':if(localBridgeToken)refreshLocal();else{if(!started){toast('Start a workspace first.');break}if(browserConflict||!browserDB){toast('This browser copy cannot save right now. Export a backup before refreshing.',null,10000);break}if(preferences().clearOnRefreshPress)clearHighlights();$('refreshInput').click()}break;
   case 'add-smoke-checklist':addSmokeTestChecklist();break;
   case 'templates':openTemplatePicker();break;
@@ -1218,8 +1432,19 @@ function dispatch(command,ctx={}){
 $('editorForm').addEventListener('change',e=>{if(e.target.matches('[data-pref]'))changePreference(e.target);if(e.target.name==='parentChecklist'){updateNewItemDestination();captureDraft()}if(e.target.name==='targetChecklist')updateTemplatePlacement()});
 $('editorDialog').addEventListener('cancel',e=>{e.preventDefault();closeDialog()});
 $('editorForm').addEventListener('submit',async e=>{
-  e.preventDefault();const ctx=dialogContext;if(!ctx||['help','preferences'].includes(ctx.mode))return;const fd=new FormData(e.currentTarget);$('dialogError').textContent='';
+  e.preventDefault();const ctx=dialogContext;if(!ctx||['help','preferences','recent-actions'].includes(ctx.mode))return;const fd=new FormData(e.currentTarget);$('dialogError').textContent='';
  try{
+  if(ctx.mode==='move-item'){
+   const d=getDoc(ctx.docId);if(!d||aiDocumentKey(d)!==ctx.baseKey)fail('The checklist changed. Close and reopen Move to.');
+   const operation={op:'move-items',itemIds:[ctx.id],fromParentId:ctx.parent,toParentId:String(fd.get('destination')||'')||null,beforeId:null};
+   const plan=await planAIChanges(d,{format:AI_FORMAT,schemaVersion:1,documentId:d.documentId,baseSha256:await aiHash(d),operations:[operation]});
+   if(aiDocumentKey(getDoc(ctx.docId))!==ctx.baseKey)fail('The checklist changed during the move.');
+   workspace.documents[workspace.documents.findIndex(x=>x.documentId===ctx.docId)]=plan.document;refreshIndexes();recordActivity('updated',ctx.docId,ctx.id);touch(ctx.docId);dialogDirty=false;closeDialog();route=normalizeRoute(route);render();toast('Item moved; checkmarks and names preserved.');return;
+  }
+  if(ctx.mode==='local-new'){
+   const proposal=localPending.find(p=>p.id===ctx.proposalId&&p.kind==='create');if(!proposal)fail('The incoming checklist is no longer pending.');
+   setRefreshBusy(true);try{const added=await commitLocalNewProposal(proposal);await loadLocalPending();dialogDirty=false;closeDialog();navigate({view:'checklist',docId:added.documentId,trail:[]});toast('New checklist added. Existing lists were preserved.')}finally{setRefreshBusy(false)}return;
+  }
   if(ctx.mode==='template-placement'){
    const target=String(fd.get('targetChecklist')||''),parent=String(fd.get('parentItem')||'');
    placeBundledTemplate(ctx.templateId,target,parent||null);dialogDirty=false;closeDialog();return;
@@ -1227,7 +1452,7 @@ $('editorForm').addEventListener('submit',async e=>{
   if(ctx.mode==='local-settings'){
    const humanName=String(fd.get('humanName')||'').trim(),home=String(fd.get('home')||'').trim();if(!humanName||humanName.length>80)fail('Give the human username 1–80 characters.');
    if(localBridgeToken&&home!==localHome){localHome=(await localRequest('settings',{home})).home;const state=await localRequest('state');localKnownGeneration=state.generation;localSyncBlocked=false;if(started&&baseGeneration)await localSync(workspace,baseGeneration);if(localSyncBlocked)fail(localError)}
-    upgradeIndex();workspace.index.preferences={...storedPreferences(),displayName:humanName};validateWorkspace(workspace);markChanged();await saveBrowser(false);dialogDirty=false;closeDialog();toast('Settings saved. Hold Shift to see edit names.');return;
+    upgradeIndex();workspace.index.preferences={...storedPreferences(),displayName:humanName};validateWorkspace(workspace);markChanged();await saveBrowser(false);dialogDirty=false;closeDialog();toast('Settings saved. Hold Shift to see edit names or Ctrl to see tags.');return;
   }
   if(ctx.mode==='local-review'){
    const p=localPending.find(x=>x.id===ctx.proposalId);if(!p)fail('This proposal was already resolved. Refresh Clearings.');
@@ -1259,6 +1484,8 @@ $('editorForm').addEventListener('submit',async e=>{
 document.addEventListener('click',e=>{
  if(Date.now()<suppressClickUntil){e.preventDefault();e.stopPropagation();return}
  const target=e.target;
+ if(!target.closest('#refreshButton'))refreshClearArmed=false;
+ if(!target.closest('.settings-help-wrap'))closeSettingsHelps();
  if(pendingTitleClick&&target.closest('.group-name,.row-title')!==pendingTitleClick.element)cancelTitleClick();
  const option=target.closest('[data-command]');if(option){const ctx=menuContext||{};closeMenu();dispatch(option.dataset.command,ctx);return}
  const menu=target.closest('[data-menu]');if(menu){showMenu(menu);return}
@@ -1283,7 +1510,7 @@ document.addEventListener('click',e=>{
  if(action==='show-library'){workspace.index.preferences.library=true;if(innerWidth<=700)document.body.classList.toggle('library-open');applyPreferences();queueCache();return}
  if(action==='show-map'){workspace.index.preferences.map=true;if(innerWidth<=980)document.body.classList.toggle('map-open');applyPreferences();queueCache();return}
  if(action==='close-overlays'){closeOverlays();return}
- dispatch(action,{docId,id,parent,proposalId:a.dataset.proposal||null,templateId:a.dataset.template||null});
+ dispatch(action,{docId,id,parent,proposalId:a.dataset.proposal||null,templateId:a.dataset.template||null,button:a});
 });
 document.addEventListener('dblclick',e=>{
  if(Date.now()<suppressClickUntil)return;const title=e.target.closest('.group-name,.row-title');if(!title||!title.isConnected)return;
@@ -1313,9 +1540,12 @@ function refreshCompletion(docId,changedId){
  }
  renderLibrary();renderTree();
 }
- document.addEventListener('change',e=>{const b=e.target.closest('[data-check]');if(!b)return;const docId=b.dataset.doc,id=b.dataset.check,d=getDoc(docId);if(isLocked(docId,id)){b.checked=d.state[id]===true;return}d.state[id]=b.checked;recordActivity(b.checked?'completed':'reopened',docId,id);touch(docId);refreshCompletion(docId,id);renderCenter()});
+ document.addEventListener('change',e=>{const b=e.target.closest('[data-check]');if(!b)return;const docId=b.dataset.doc,id=b.dataset.check,d=getDoc(docId);if(localBusy||isLocked(docId,id)){b.checked=d.state[id]===true;return}d.state[id]=b.checked;recordActivity(b.checked?'completed':'reopened',docId,id);touch(docId);refreshCompletion(docId,id);renderCenter()});
+function isTextEntry(target){return !!target?.closest?.('input,textarea,select,[contenteditable="true"]')}
+document.addEventListener('focusin',e=>{if(isTextEntry(e.target)){document.body.classList.remove('show-attribution','show-tags')}});
 document.addEventListener('keydown',e=>{
-  if(e.key==='Shift')document.body.classList.add('show-attribution');
+ if(e.key==='Shift'&&!isTextEntry(e.target))document.body.classList.add('show-attribution');
+ if((e.key==='Control'||e.key==='Meta')&&!isTextEntry(e.target))document.body.classList.add('show-tags');
  if(e.key==='Escape'){if(drag){cancelDrag();e.preventDefault();return}if(!$('menu').hidden){const origin=menuOrigin;closeMenu();origin?.focus();e.preventDefault();return}closeOverlays()}
  if(!$('menu').hidden&&['ArrowDown','ArrowUp','Home','End'].includes(e.key)){const options=[...$('menu').querySelectorAll('button:not(:disabled),a')],n=options.indexOf(document.activeElement);const next=e.key==='Home'?0:e.key==='End'?options.length-1:(n+(e.key==='ArrowDown'?1:-1)+options.length)%options.length;options[next]?.focus();e.preventDefault();return}
  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='s'){e.preventDefault();captureDraft();saveLibrary(true)}
@@ -1410,7 +1640,7 @@ function jsonString(x){return JSON.stringify(x,null,2)+'\n'}
 function download(name,text,mime='application/json'){const blob=new Blob([text],{type:mime}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.hidden=true;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500)}
 function timestamp(){return new Date().toISOString().replaceAll(':','').replaceAll('.','-')}
 function exportBackup(){try{validateWorkspace(workspace);download(`checklists-${timestamp()}.json`,jsonString(workspace));toast(pendingDraft?'Workspace backup downloaded with committed checklist data. Your unfinished editor draft is separate; use Export draft to keep it too.':'Backup download requested. It contains every committed checklist, checkmark, shortcut and preference. Keep the downloaded file.',null,10000)}catch(e){toast('Could not export: '+e.message,null,10000)}}
-function exportChecklist(docId){try{const d=validateDocument(getDoc(docId));download(`${workspace.index.entries.find(e=>e.id===docId)?.file.replace(/\.json$/,'')||docId}-${timestamp()}.json`,jsonString(d));toast('Checklist JSON download requested. This does not overwrite its source file.')}catch(e){toast(e.message)}}
+function exportChecklist(docId){try{const d=validateDocument(getDoc(docId));backfillAttribution(d,activity());download(`${workspace.index.entries.find(e=>e.id===docId)?.file.replace(/\.json$/,'')||docId}-${timestamp()}.json`,jsonString(d));toast('Checklist JSON download requested. This does not overwrite its source file.')}catch(e){toast(e.message)}}
 function confirmReplace(){if(!mayLeaveEditor())return false;if(dirty)return confirm('This workspace has changes not saved to a connected folder. Replace the in-memory workspace? Cancel and export a backup first to keep them.');return true}
 function checkFileName(name){if(typeof name!=='string'||!/^[A-Za-z0-9][A-Za-z0-9._-]{0,190}\.json$/.test(name)||name.includes('..')||name.toLowerCase()===INDEX_FILE)fail('Unsafe checklist filename in index.');return name}
 async function readOptional(dir,name){try{const h=await dir.getFileHandle(name);const f=await h.getFile();if(f.size>MAX_BYTES)fail('File exceeds 16 MB.');return await f.text()}catch(e){if(e.name==='NotFoundError')return null;throw e}}
@@ -1516,7 +1746,7 @@ function finishImport(kind){
    for(const b of source.model.branches)target.model.branches.push({...b,id:cats.get(b.id)});
    for(const item of source.model.items){const i=clone(item);i.id=ids.get(i.id);i.parents=i.parents.map(x=>cats.get(x));i.requires=i.requires.map(x=>ids.get(x));target.model.items.push(i);if(Object.hasOwn(source.state,item.id))target.state[i.id]=source.state[item.id];}
    const rootId=uid();target.model.items.push({id:rootId,order:target.model.items.length+1,parents:[],label:'',tags:[],text:source.title,detail:[source.subtitle,source.description,source.footer].filter(Boolean).join('\n\n'),requires:source.model.roots.map(x=>ids.get(x))});target.model.roots.push(rootId);
-   target.view.collapsed.push(...source.view.collapsed.map(x=>ids.get(x)));
+   target.view.collapsed.push(...source.view.collapsed.map(x=>ids.get(x)));if(source.attribution){target.attribution??={};for(const [oldId,record] of Object.entries(source.attribution))target.attribution[ids.get(oldId)]=clone(record);}
    for(const ref of source.references)if(!target.references.some(r=>r.href===ref.href&&r.title===ref.title))target.references.push(clone(ref));
    target.updatedAt=new Date().toISOString();focusDoc=target.documentId;
   }else{
@@ -1558,7 +1788,7 @@ async function previewAIChanges(packet,viaRefresh=false){
  const libraryId=workspace.index.libraryId,baseKey=aiDocumentKey(d),plan=await planAIChanges(d,packet);
  if(libraryId!==workspace.index.libraryId||!getDoc(d.documentId)||aiDocumentKey(getDoc(d.documentId))!==baseKey)fail('The checklist changed during validation. Nothing was applied.');
  const rows=plan.summary.map((s,n)=>`<li><strong>${n+1}. ${esc(s.kind)} · ${esc(s.target)}</strong>${s.parent?`<p class="field-hint">Under: ${esc(s.parent)}</p>`:''}<details class="ai-diff"><summary>Inspect exact change</summary><div class="ai-before-after"><div><span class="field-hint">Before</span><pre>${esc(jsonString(s.before))}</pre></div><div><span class="field-hint">Proposed</span><pre>${esc(jsonString(s.after))}</pre></div></div></details></li>`).join('');
- const fields=`<p class="field-hint"><strong>${esc(d.title)}</strong> · ${plan.summary.length} proposed operations. IDs and existing data are not replaced wholesale. No deletions or cross-checklist operations are supported.</p><label class="field"><span>Who proposed these changes?</span><input type="text" name="proposedBy" maxlength="80" value="Assistant"></label><p class="field-hint">This is a display label, not proof of identity. ${esc(preferences().displayName)} remains the approver.</p><ol class="ai-review">${rows}</ol>${plan.completionChanges?`<label class="ai-consent"><input type="checkbox" name="confirmCompletion"> I explicitly authorize the ${plan.completionChanges} listed checkmark change(s).</label>`:'<p class="field-hint">No existing checkmarks are changed.</p>'}<p class="field-hint">Approval updates the in-memory checklist and uses your normal save path. A stale base or invalid edit is refused as a whole.${viaRefresh?' Earlier highlights clear only after these changes are applied.':''}</p>`;
+ const fields=`<p class="field-hint"><strong>${esc(d.title)}</strong> · ${plan.summary.length} proposed operations. IDs and existing data are not replaced wholesale. Deletion is explicit and lists the affected items. Cross-checklist operations are not supported.</p><label class="field"><span>Who proposed these changes?</span><input type="text" name="proposedBy" maxlength="80" value="Assistant"></label><p class="field-hint">This is a display label, not proof of identity. ${esc(preferences().displayName)} remains the approver.</p><ol class="ai-review">${rows}</ol>${plan.completionChanges?`<label class="ai-consent"><input type="checkbox" name="confirmCompletion"> I explicitly authorize the ${plan.completionChanges} listed checkmark change(s).</label>`:'<p class="field-hint">No existing checkmarks are changed.</p>'}<p class="field-hint">Approval updates the in-memory checklist and uses your normal save path. A stale base or invalid edit is refused as a whole.${viaRefresh?' Earlier highlights clear only after these changes are applied.':''}</p>`;
  dialogDirty=false;
  beginDialog({mode:'ai-review',docId:d.documentId,libraryId,baseKey,plan,viaRefresh},'Review before applying',fields,'Apply approved changes');
 }
@@ -1571,11 +1801,15 @@ async function applyReviewedAI(ctx,fd){
  try{
   const previousWorkspace=clone(workspace),previous=clone(getDoc(ctx.docId)),candidate=clone(ctx.plan.document);
   // Navigation/folding since the export is not an edit conflict. Keep current UI state.
-  candidate.view=clone(previous.view);candidate.updatedAt=new Date().toISOString();
-  const next=clone(workspace);next.documents[next.documents.findIndex(d=>d.documentId===ctx.docId)]=candidate;
+  candidate.view={collapsed:previous.view.collapsed.filter(id=>candidate.model.items.some(i=>i.id===id))};candidate.updatedAt=new Date().toISOString();
+  const next=clone(workspace);next.documents[next.documents.findIndex(d=>d.documentId===ctx.docId)]=candidate;pruneDocumentLinks(next,ctx.docId);
   if(ctx.viaRefresh&&!preferences().clearOnRefreshPress)for(const a of next.index.activity||[]){a.highlight=false;a.unread=false}
   const checked=validateWorkspace(next);workspace=checked;refreshIndexes();const actor=String(fd.get('proposedBy')||'Assistant').trim().slice(0,80)||'Assistant';
-  for(const op of ctx.plan.packet.operations){const action=op.op==='add-item'?'new':op.op==='set-done'?(op.done?'completed':'reopened'):'updated',itemId=op.op==='add-item'?op.item.id:op.op==='reorder'?op.parentId:op.id;recordActivity(action,ctx.docId,itemId,{actor,role:'assistant',approvedBy:preferences().displayName,highlight:ctx.viaRefresh,unread:ctx.viaRefresh})}touch(ctx.docId);
+  const oldItems=new Map(previous.model.items.map(i=>[i.id,i]));
+  for(const item of candidate.model.items){const old=oldItems.get(item.id),prior=previous.state[item.id]===true,done=candidate.state[item.id]===true,options={actor,role:'assistant',approvedBy:preferences().displayName,highlight:ctx.viaRefresh,unread:ctx.viaRefresh};
+   if(!old)recordActivity('new',ctx.docId,item.id,options);
+   if(prior!==done)recordActivity(done?'completed':'reopened',ctx.docId,item.id,options);else if(old&&JSON.stringify(old)!==JSON.stringify(item))recordActivity('updated',ctx.docId,item.id,options);
+  }if(previous.model.items.length>candidate.model.items.length)recordActivity('updated',ctx.docId,null,{actor,role:'assistant',approvedBy:preferences().displayName});touch(ctx.docId);
   const appliedRevision=revision;dialogDirty=false;closeDialog();render();
   toast(`${ctx.plan.summary.length} approved operations applied.`,()=>{
    if(revision!==appliedRevision){toast('Newer edits exist. Undo would overwrite them; use a backup instead.');return}
@@ -1588,8 +1822,8 @@ $('aiChangeInput').addEventListener('change',async e=>{
  try{if(file.size>MAX_BYTES)fail('Proposal exceeds 16 MB.');await previewAIChanges(parseJSON(await file.text()));}
  catch(err){if($('editorDialog').open)$('dialogError').textContent=err.message;else toast(err.message,null,10000)}
 });
- document.addEventListener('keyup',e=>{if(e.key==='Shift')document.body.classList.remove('show-attribution')});
-window.addEventListener('blur',()=>document.body.classList.remove('show-attribution'));
+document.addEventListener('keyup',e=>{if(e.key==='Shift')document.body.classList.remove('show-attribution');if(e.key==='Control'||e.key==='Meta')document.body.classList.remove('show-tags')});
+window.addEventListener('blur',()=>document.body.classList.remove('show-attribution','show-tags'));
 $('refreshInput').addEventListener('change',async e=>{
  const file=e.target.files?.[0];e.target.value='';if(!file)return;
  try{if(file.size>MAX_BYTES)fail('Changes file exceeds 16 MB.');const packet=parseJSON(await file.text());if(packet?.format!==AI_FORMAT)fail('Refresh Clearings expects a Clearings changes JSON. A workspace backup is a snapshot; use Import for that file.');await previewAIChanges(packet,true)}
@@ -1597,7 +1831,7 @@ $('refreshInput').addEventListener('change',async e=>{
 });
 
 // This small read-only surface supports reproducible UI tests and personal backups.
-const readOnlyAPI=Object.freeze({snapshot:()=>clone(workspace),validate:validateWorkspace,validateDocument,migrateDocument,aiHash,planAIChanges,formatVersion:1,appVersion:'0.4.2',storage:()=>Object.freeze({ready:storageReady,available:!!browserDB,saving:browserSaving,dirty,error:browserError,savedAt:browserSavedAt,persisted:persistedStorage,draft:!!pendingDraft,generation:baseGeneration})});
+const readOnlyAPI=Object.freeze({snapshot:()=>clone(workspace),validate:validateWorkspace,validateDocument,migrateDocument,aiHash,planAIChanges,formatVersion:1,appVersion:'0.4.3',storage:()=>Object.freeze({ready:storageReady,available:!!browserDB,saving:browserSaving,dirty,error:browserError,savedAt:browserSavedAt,persisted:persistedStorage,draft:!!pendingDraft,generation:baseGeneration})});
 Object.defineProperty(window,'Clearings',{value:readOnlyAPI,writable:false});
 Object.defineProperty(window,'ChecklistStudio',{value:readOnlyAPI,writable:false});
 // Read-only legacy test/backup alias; no project-specific runtime dependency.

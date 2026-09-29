@@ -222,6 +222,106 @@
             "collapsed"
           ],
           "additionalProperties": false
+        },
+        "attribution": {
+          "type": "object",
+          "propertyNames": {
+            "$ref": "#/$defs/id"
+          },
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "created": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "actor",
+                  "role",
+                  "at"
+                ],
+                "properties": {
+                  "actor": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  "role": {
+                    "enum": [
+                      "human",
+                      "assistant"
+                    ]
+                  },
+                  "at": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "commitId": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/$defs/id"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "approvedBy": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "minLength": 1,
+                    "maxLength": 80
+                  }
+                }
+              },
+              "completed": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "actor",
+                  "role",
+                  "at"
+                ],
+                "properties": {
+                  "actor": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  "role": {
+                    "enum": [
+                      "human",
+                      "assistant"
+                    ]
+                  },
+                  "at": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "commitId": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/$defs/id"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "approvedBy": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "minLength": 1,
+                    "maxLength": 80
+                  }
+                }
+              }
+            }
+          }
         }
       },
       "required": [
@@ -410,18 +510,86 @@
           "items": {
             "type": "object",
             "properties": {
-              "id": {"$ref": "#/$defs/id"},
-              "at": {"type": "string", "format": "date-time"},
-              "actor": {"type": "string", "minLength": 1, "maxLength": 80},
-              "role": {"enum": ["human", "assistant"]},
-              "action": {"enum": ["new", "updated", "completed", "reopened"]},
-              "checklistId": {"$ref": "#/$defs/id"},
-              "itemId": {"anyOf": [{"$ref": "#/$defs/id"}, {"type": "null"}]},
-              "approvedBy": {"anyOf": [{"type": "string", "minLength": 1, "maxLength": 80}, {"type": "null"}]},
-              "highlight": {"type": "boolean"},
-              "unread": {"type": "boolean"}
+              "id": {
+                "$ref": "#/$defs/id"
+              },
+              "at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "actor": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 80
+              },
+              "role": {
+                "enum": [
+                  "human",
+                  "assistant"
+                ]
+              },
+              "action": {
+                "enum": [
+                  "new",
+                  "updated",
+                  "completed",
+                  "reopened"
+                ]
+              },
+              "checklistId": {
+                "$ref": "#/$defs/id"
+              },
+              "itemId": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/id"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "approvedBy": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "commitId": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/id"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "highlight": {
+                "type": "boolean"
+              },
+              "unread": {
+                "type": "boolean"
+              }
             },
-            "required": ["id", "at", "actor", "role", "action", "checklistId", "itemId", "approvedBy", "highlight", "unread"],
+            "required": [
+              "id",
+              "at",
+              "actor",
+              "role",
+              "action",
+              "checklistId",
+              "itemId",
+              "approvedBy",
+              "highlight",
+              "unread"
+            ],
             "additionalProperties": false
           }
         }
@@ -508,12 +676,59 @@
           }
         },
         {
-          "if": {"properties": {"schemaVersion": {"const": 3}}},
-          "then": {"properties": {"preferences": {"not": {"anyOf": [{"required": ["openTopChecklist"]}, {"required": ["displayName"]}]}}}}
+          "if": {
+            "properties": {
+              "schemaVersion": {
+                "const": 3
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "preferences": {
+                "not": {
+                  "anyOf": [
+                    {
+                      "required": [
+                        "openTopChecklist"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "displayName"
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          }
         },
         {
-          "if": {"properties": {"schemaVersion": {"const": 4}}},
-          "then": {"required": ["activity"], "properties": {"preferences": {"required": ["library", "tracked", "map", "theme", "openTopChecklist", "displayName"]}}}
+          "if": {
+            "properties": {
+              "schemaVersion": {
+                "const": 4
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "activity"
+            ],
+            "properties": {
+              "preferences": {
+                "required": [
+                  "library",
+                  "tracked",
+                  "map",
+                  "theme",
+                  "openTopChecklist",
+                  "displayName"
+                ]
+              }
+            }
+          }
         }
       ]
     },
@@ -706,6 +921,29 @@
                   "op",
                   "id",
                   "done"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "op": {
+                    "const": "remove-item"
+                  },
+                  "id": {
+                    "$ref": "#/$defs/id"
+                  },
+                  "mode": {
+                    "enum": [
+                      "keep-subtasks",
+                      "subtree"
+                    ]
+                  }
+                },
+                "required": [
+                  "op",
+                  "id",
+                  "mode"
                 ],
                 "additionalProperties": false
               }

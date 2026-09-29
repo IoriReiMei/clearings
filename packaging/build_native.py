@@ -19,7 +19,7 @@ import sys
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSION = "0.4.2"
+VERSION = "0.4.3"
 
 
 def source_files() -> list[Path]:
@@ -37,8 +37,8 @@ def source_files() -> list[Path]:
         if hashlib.sha256(path.read_bytes()).hexdigest() != digest:
             raise ValueError(f"Public source differs from manifest: {name}")
         files.append(path)
-    if b"appVersion:'0.4.2'" not in (ROOT / "index.html").read_bytes():
-        raise ValueError("The public app version is not 0.4.2")
+    if b"appVersion:'0.4.3'" not in (ROOT / "index.html").read_bytes():
+        raise ValueError("The public app version is not 0.4.3")
     return files
 
 
@@ -95,6 +95,29 @@ def main() -> None:
               else output / "Clearings")
     if not bundle.is_dir():
         raise ValueError("PyInstaller did not produce the expected bundle")
+    if sys.platform == "win32":
+        # A windowless launcher intentionally has no stdout. Give assistants a
+        # console entry point using the same code and internal runtime.
+        cli = [part for part in command if part != "--windowed"]
+        cli[cli.index("--name") + 1] = "ClearingsCLI"
+        cli[cli.index("--workpath") + 1] = str(output / "build-cli")
+        subprocess.run(cli, check=True)
+        cli_bundle = output / "ClearingsCLI"
+        for path in (cli_bundle / "_internal").rglob("*"):
+            if not path.is_file():
+                continue
+            relative = path.relative_to(cli_bundle / "_internal")
+            target = bundle / "_internal" / relative
+            if not target.exists():
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(path, target)
+            elif target.read_bytes() != path.read_bytes():
+                if path.name != "base_library.zip":
+                    raise ValueError(f"CLI runtime differs from GUI runtime: {relative}")
+                with zipfile.ZipFile(target) as gui_zip, zipfile.ZipFile(path) as cli_zip:
+                    if set(gui_zip.namelist()) != set(cli_zip.namelist()) or any(gui_zip.read(name) != cli_zip.read(name) for name in gui_zip.namelist()):
+                        raise ValueError("CLI standard library differs from GUI runtime")
+        shutil.copyfile(cli_bundle / "ClearingsCLI.exe", bundle / "ClearingsCLI.exe")
     write_source_archive(bundle / "source.zip", files)
     copy_runtime_licenses(bundle)
     if sys.platform == "darwin":

@@ -1,78 +1,75 @@
-<!--
-SPDX-License-Identifier: MPL-2.0
-This Source Code Form is subject to the terms of the Mozilla Public
-License, v. 2.0. If a copy of the MPL was not distributed with this
-file, You can obtain one at https://mozilla.org/MPL/2.0/.
--->
-# Clearings 0.4.2 source candidate
+<!-- SPDX-License-Identifier: MPL-2.0 -->
+# Clearings 0.4.3
 
-A local-first checklist that grows into an outline. The app has no account,
-analytics, bundled AI, external font, or runtime dependency for ordinary use.
+Clearings is a local checklist and outline for people and their AI collaborators.
+Your workspace stays on your device. There is no account, telemetry, bundled AI,
+API key, subscription or runtime download.
 
-![Clearings in dark mode](docs/preview.png)
+![Clearings](docs/preview.png)
 
-## Open Clearings
+## Download and open
 
-Open `index.html` in a normal browser window, or serve the same files from a
-stable HTTPS address such as GitHub Pages. Choose a username, then start a
-workspace, import a backup, or explore the fictional examples. The app saves
-ordinary changes in this browser's IndexedDB. It does not upload checklist data.
-Export a workspace backup regularly; browser storage is not an independent
-backup. A different browser, profile, file location, or site address may open a
-separate workspace. Export from the old location before switching, and import
-the backup at the new location. Never replace your own JSON with the examples.
+Get the matching file from [Releases](https://github.com/IoriReiMei/clearings/releases).
 
-The optional source-ZIP Windows `Start_Clearings.cmd` opens a loopback-only local helper
-for a remembered home folder and assistant proposal handoff. It requires
-Python 3.10 or newer installed with the Windows launcher or `pythonw.exe` on
-the path.
-This helper is **not** used by `index.html` opened directly or by GitHub Pages.
-The public helper uses `127.0.0.1:18765`; the personal working helper keeps
-`127.0.0.1:8765`. A native installer would bundle the helper, so its user would
-not need a separate Python installation. Windows, Mac, and Linux installer
-recipes are included for review, but this source ZIP is not an installer and no
-native binaries have been published. The helper's browser address has separate storage, so export and import once
-when moving from the standalone page. See [Local handoff](docs/LOCAL_HANDOFF.md).
+| Computer | Download | Install |
+| --- | --- | --- |
+| Windows x64 | `Clearings-Setup-0.4.3-Windows-x64.exe` | Open the installer, choose shortcuts, finish, then open Clearings. No administrator rights or separate Python installation. |
+| Mac Apple silicon | `Clearings-0.4.3-macOS-arm64.dmg` | Open the image and drag Clearings into Applications. |
+| Mac Intel | `Clearings-0.4.3-macOS-x86_64.dmg` | Open the image and drag Clearings into Applications. |
+| Linux x64 | `Clearings-Install-0.4.3-Linux-x64.run` | Run `sh Clearings-Install-0.4.3-Linux-x64.run`, then open Clearings from the app menu. |
 
-## Use the outline
+The installed app opens your normal browser at `http://127.0.0.1:18765/`.
+Windows binaries are unsigned; macOS builds are ad-hoc signed, not notarized.
+Your operating system may require an extra launch approval. These builds are
+suited to this private review; a seamless public first launch still needs platform
+signing. See [verification limits](CLEARINGS_VERIFICATION.md).
 
-- The left side holds checklists and tracked shortcuts; the center shows the
-  selected outline; the right side browses the tree independently.
-- Names open items. Checkboxes alone mark work complete. Parent progress can
-  count only supporting tasks, and the left progress bars span the list width.
-- Click a parent title to fold or unfold its sub-tasks. Double-click an
-  underlined task title to focus it. On opening a checklist, only the first
-  unfinished parent starts expanded; deeper levels start folded.
-- Drag a six-dot grip to reorder a checklist or sibling item. The held tile
-  glides to its destination, or returns if the drop is invalid. Reduced-motion
-  preference skips the movement. Menus and Shift + Up/Down offer alternatives.
-- New items ask for a title first. Optional details include choosing another
-  active checklist as parent. Deleting an item can promote its sub-tasks or,
-  after confirmation, remove its unshared sub-tree.
-- **Settings** covers identity, saving, startup, storage, Refresh behavior and
-  recent changes. **Templates** in the workspace menu offers the included
-  GitHub release and patch-update checklists. Choose a template, then make a
-  new checklist or add it under an existing item; each choice makes a fresh,
-  unchecked copy. Settings links to the same picker. **Preferences** covers appearance, progress, motion and
-  optional controls. **Refresh Clearings** is for incoming changes; normal
-  browser saving does not depend on it.
+The source ZIP also contains `index.html`, usable directly without installing a
+runtime. Direct-file and hosted use support JSON import/export; local assistant
+handoff requires the installed helper (or Python for the source launcher).
 
-Export a single checklist to share it. Imports are previewed, and replacing an
-entire workspace is a separate explicit choice. External assistant proposals
-also require review. When the local helper is used, independent edits can
-combine and competing edits wait for a checklist-level choice; display names
-and colors are attribution hints, not identity verification. See
-[External assistant guide](AI_CHECKLIST_GUIDE.md).
+## Work together
 
-## Hosting and verification
+Create a workspace, choose your display name, and add checklists. Click titles
+to explore or fold groups; click checkboxes to complete work. Parent closure does
+not claim that all its children were completed. Use **Move to…** to move an item
+under another heading or back to the overview. The item keeps its identity,
+subtasks, checkmark and attribution. Menus, grips and keyboard controls also
+reorder siblings. Shared items remain one object wherever linked.
 
-This package is prepared for review; placing it in a GitHub repository or
-enabling Pages is a separate owner action. If hosted, keep the site address
-stable so returning browsers find the same workspace. The hosted page needs
-network access to load, and Clearings does not promise offline page caching.
-See [Hosting](docs/HOSTING.md), [real-browser check](docs/NATIVE_SMOKE_TEST.md),
-and [verification limits](CLEARINGS_VERIFICATION.md).
+A checked item shows its completer. **Created / completed by…** shows names and
+timestamps; Shift reveals additional edit labels. Creator and completer records
+survive moves and exports. Missing older history is shown as unknown.
 
-The included examples and GitHub planning templates are fictional or blank.
+Give your local assistant the [assistant guide](AI_CHECKLIST_GUIDE.md). It can
+read, propose and sign task changes; another assistant can read and continue
+those changes immediately, even on a newly created checklist. You do not have to
+relay them. **Refresh Clearings** brings signed work into your visible browser
+copy. Independent edits combine; conflicts stay visible for review. Assistants
+still need their ordinary execution environment and user authorization: Clearings
+does not launch models or run tasks on its own. Names identify declared authors,
+not verified identities.
+
+The workspace menu contains **Settings**, **Preferences**, **Recent actions**,
+**Export workspace backup…**, and **Save and quit Clearings**. Templates provide
+blank GitHub release and patch checklists; they never publish anything.
+
+## Keep your work
+
+Ordinary changes save to this browser's IndexedDB. The helper keeps a saved local
+handoff plus pending signed work. Export a backup regularly. A different browser,
+profile, file path or address has separate browser storage: export from the old
+location and import once at the new one. Never discard the old copy before
+checking the new one. Working edition port 8765 and installed edition port 18765
+are deliberately separate. Uninstall removes the program, not your work.
+
+Version 0.4.3 reads older documents. Its optional attribution field requires
+0.4.3 or newer when importing a new export into another Clearings copy.
+
+## Development and license
+
+See [local handoff](docs/LOCAL_HANDOFF.md), [installer build notes](packaging/README.md),
+[real-browser check](docs/NATIVE_SMOKE_TEST.md), and [hosting](docs/HOSTING.md).
+Only reviewed, allowlisted source and fictional examples enter release packages.
 The app and designated files use MPL 2.0; see [license](LICENSE),
 [scope](LICENSE_SCOPE.md), and [third-party notes](THIRD_PARTY_NOTES.md).

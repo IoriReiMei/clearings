@@ -71,3 +71,13 @@ test('independent children under one heading both survive',()=>{
  assert.deepEqual(Array.from(item(result.merged,'shape').requires).slice(-2),['browser-child','json-child']);
  validateDocument(result.merged);
 });
+test('concurrent source-list change holds a move for review',()=>{
+ const base=copy(original),browser=copy(base),incoming=copy(base);
+ item(browser,'shape').requires.push('browser-child');
+ browser.model.items.push({id:'browser-child',order:999,parents:[],label:'',tags:[],text:'Browser child',detail:'',requires:[]});
+ item(incoming,'shape').requires=item(incoming,'shape').requires.filter(id=>id!=='purpose');
+ item(incoming,'make').requires.push('purpose');
+ const result=mergeChecklistDocuments(base,browser,incoming);
+ assert.ok(result.unresolved.some(x=>x.key==='item:shape:requires'));
+ assert.equal(item(result.merged,'shape').requires.includes('purpose'),true);
+});

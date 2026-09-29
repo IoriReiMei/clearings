@@ -28,6 +28,9 @@ if [ ! -x "$STAGE/Clearings/Clearings" ] || [ ! -f "$STAGE/Clearings/source.zip"
     printf '%s\n' 'Clearings payload is incomplete; nothing was installed.' >&2
     exit 1
 fi
+if [ -x "$APP_ROOT/current/Clearings" ]; then
+    "$STAGE/Clearings/Clearings" stop --installation "$(readlink -f "$APP_ROOT/current/Clearings")"
+fi
 mv "$STAGE/Clearings" "$DEST"
 ln -sfn "$DEST" "$APP_ROOT/current"
 BIN="$HOME/.local/bin"

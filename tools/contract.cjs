@@ -14,5 +14,5 @@ const block=html.split('/* CONTRACT_BEGIN: pure validators and proposal planning
 if(!block)throw new Error('Cannot locate the pure contract in the application.');
 const scope={crypto:webcrypto,TextEncoder,Blob};
 vm.createContext(scope);
-vm.runInContext(block+'\nthis.api={validateDocument,validateWorkspace,migrateDocument,aiHash,planAIChanges,canonicalJSON,aiDocumentKey,progressStats,PREFERENCE_DEFAULTS};',scope);
+vm.runInContext(block+'\nthis.api={validateDocument,validateWorkspace,migrateDocument,aiHash,planAIChanges,canonicalJSON,aiDocumentKey,progressStats,PREFERENCE_DEFAULTS,documentLocks,planRemoval,stampAttribution,backfillAttribution};',scope);
 module.exports=scope.api;

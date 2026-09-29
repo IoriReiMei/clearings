@@ -43,7 +43,7 @@ try {
     assert.ok(html.includes("STORE='checklist-studio:recovery:v1'"));
     assert.ok(html.includes("LEGACY_STORE='lc:checklist-studio:recovery:v1'"));
     assert.ok(html.includes("const AI_FORMAT='checklist-studio-changes'"));
-    assert.ok(html.includes("appVersion:'0.4.2'"));
+    assert.ok(html.includes("appVersion:'0.4.3'"));
     assert.ok(!html.includes("format:'clearings-document'"));
   });
   test('overview folding and drag-to-focus interaction ships in the app', () => {
@@ -85,7 +85,7 @@ try {
   });
   test('app and development source contain MPL notices', () => {
     for (const file of [appPath, ...['tools/contract.cjs','tools/validate_checklist.cjs',
-      'tools/clearings_local.py','tools/make_share_package.py','tests/contract.test.cjs',
+      'tools/clearings_local.py','tools/clearings_commit.py','tools/make_share_package.py','tests/contract.test.cjs',
       'tests/clearings-release.test.cjs'].map(x => path.join(root,x))]) {
       assert.ok(fs.readFileSync(file,'utf8').includes('SPDX-License-Identifier: MPL-2.0'), file);
     }
@@ -141,9 +141,9 @@ try {
     }
   });
   const zip=path.join(temp,'clearings.zip');
-  test('release source and builder agree on 0.4.2',()=>{
-    assert.match(html,/appVersion:'0\.4\.2'/);
-    assert.match(fs.readFileSync(packager,'utf8'),/Clearings 0\.4\.2 - a local installer-source candidate/);
+  test('release source and builder agree on 0.4.3',()=>{
+    assert.match(html,/appVersion:'0\.4\.3'/);
+    assert.match(fs.readFileSync(packager,'utf8'),/Clearings 0\.4\.3 - shared tasks with durable attribution/);
     const publicLauncher=fs.existsSync(path.join(root,'docs/GITHUB_START_CLEARINGS.cmd'))
       ?path.join(root,'docs/GITHUB_START_CLEARINGS.cmd'):path.join(root,'Start_Clearings.cmd');
     assert.match(fs.readFileSync(publicLauncher,'utf8'),/py\.exe -3 -c/);
@@ -155,7 +155,7 @@ try {
     for(const name of ['index.html','LICENSE','LICENSE_SCOPE.md','THIRD_PARTY_NOTES.md',
       'templates/clearings_github_release.json','templates/clearings_github_release.json.license',
       'templates/clearings_github_patch.json','templates/clearings_github_patch.json.license',
-      'Start_Clearings.cmd','tools/clearings_local.py','tools/merge.cjs','docs/LOCAL_HANDOFF.md',
+      'Start_Clearings.cmd','tools/clearings_local.py','tools/clearings_commit.py','tools/merge.cjs','docs/LOCAL_HANDOFF.md',
       'packaging/build_native.py','packaging/build_linux_run.py',
       'packaging/build_mac_dmg.py','packaging/windows/Clearings.nsi',
       '.github/workflows/build-installers.yml'])
@@ -209,5 +209,7 @@ print('OK')`,zip,second]);
   console.log(`\n${passed} Clearings release checks passed.`);
 } finally {
   // This is the temporary directory created by this test, never a user's library.
-  fs.rmSync(temp,{recursive:true,force:true});
+  const safe=path.resolve(temp).startsWith(path.resolve(os.tmpdir())+path.sep)
+    &&path.basename(temp).startsWith('clearings-release-');
+  if(safe)fs.rmSync(temp,{recursive:true,force:true});
 }
