@@ -85,7 +85,7 @@ font, icon package, or image. `docs/preview.png` is unchanged from 0.4.0.
 Playwright package noted above. A dated, bounded source comparison is retained
 in the development records; it is not an infringement clearance.
 
-## Installer-source preparation (0.4.2)
+## Installer builds (0.4.3)
 
 The optional native installer recipes use PyInstaller to bundle Python and the
 standard-library helper. Windows setup compilation uses NSIS; Mac DMG creation
@@ -97,12 +97,12 @@ refuses a bundle if either is missing. Before public distribution, audit the
 complete collected dependency set and platform installer notices. These sources alone are
 not a completed binary-license audit or a signed release.
 
-Some GitHub-hosted Python 3.12 installations omit a separate runtime
-`LICENSE` file. For the observed 3.12.10 and 3.12.14 versions only, the build recipe falls
-back to `packaging/licenses/PYTHON-3.12-LICENSE.txt`, copied from CPython's
-official `v3.12.14/LICENSE` at
-https://raw.githubusercontent.com/python/cpython/v3.12.14/LICENSE
-(SHA-256 `3b2f81fe21d181c499c59a256c8e1968455d6689d269aa85373bfb6af41da3bf`).
-The official `v3.12.10/LICENSE` has the same SHA-256. A different runtime
-version without its own license file stops the build for review.
-This third-party text is supplied under its own terms, not Clearings' MPL-2.0.
+When an installed runtime lacks a separate license file, the 0.4.3 build recipe
+accepts the official Python 3.14.7 fallback at
+`packaging/licenses/PYTHON-3.14-LICENSE.txt`, copied from
+https://raw.githubusercontent.com/python/cpython/v3.14.7/LICENSE
+(SHA-256 `b0e25a78cffb43f4d92de8b61ccfa1f1f98ecbc22330b54b5251e7b6ba010231`).
+A different runtime without its own license file stops for review. The older
+`PYTHON-3.12-LICENSE.txt` remains as a reference for previous source-build users;
+it is not the runtime license fallback for 0.4.3. Both are third-party legal
+text under their own terms, not Clearings' MPL-2.0.

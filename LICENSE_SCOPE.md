@@ -29,8 +29,8 @@ Source files carry SPDX/Exhibit A notices. Non-commentable JSON and image files
 have neighboring `.license` notices, which must accompany those files when copied.
 The full LICENSE includes Exhibit B as part of the standard text; this project
 has not separately designated its files incompatible with secondary licenses.
-The CPython license copy at `packaging/licenses/PYTHON-3.12-LICENSE.txt` is
-third-party legal text under its own terms, not a Clearings MPL-2.0 source file.
+The CPython license copies at `packaging/licenses/PYTHON-3.12-LICENSE.txt`
+and `packaging/licenses/PYTHON-3.14-LICENSE.txt` are third-party legal text under its own terms, not a Clearings MPL-2.0 source file.
 
 ## Not a blanket license for the surrounding folder
 

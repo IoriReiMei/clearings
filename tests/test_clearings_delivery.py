@@ -138,9 +138,10 @@ class DeliveryChecks(unittest.TestCase):
             except Exception as exc:errors.append(exc)
         with patch.object(local,'CHANNEL','release'):
             worker=threading.Thread(target=serve,daemon=True);worker.start()
-            deadline=time.monotonic()+5
+            deadline=time.monotonic()+10
             while not (self.bridge.root/'session.json').exists() and time.monotonic()<deadline:time.sleep(.02)
             try:
+                self.assertTrue((self.bridge.root/'session.json').exists(),repr(errors))
                 with self.assertRaisesRegex(RuntimeError,'different Clearings'):
                     local.stop_server(self.bridge,installation=str(self.bridge.root/'not-this.exe'))
                 self.assertTrue(worker.is_alive())

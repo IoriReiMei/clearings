@@ -132,8 +132,11 @@ def stop_server(bridge, *, installation=None):
         with socket.socket() as probe:
             if os.name == "nt":
                 probe.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
+            else:
+                probe.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             try:
                 probe.bind(("127.0.0.1", port))
+                probe.listen(1)
                 pid = session.get("pid")
                 if os.name == "nt" and type(pid) is int and pid != os.getpid():
                     import ctypes
@@ -786,7 +789,10 @@ class LocalServer(ThreadingHTTPServer):
     # HTTPServer's SO_REUSEADDR can admit a second listener on Windows. A
     # shortcut must never appear to start successfully while another copy owns
     # the same browser origin.
-    allow_reuse_address = False
+    # POSIX needs address reuse for the previous connections' TIME_WAIT state.
+    # SO_REUSEPORT stays disabled: concurrent listeners are never permitted.
+    allow_reuse_address = os.name != "nt"
+    allow_reuse_port = False
 
     def server_bind(self):
         if os.name == "nt":
@@ -829,7 +835,12 @@ def run_server(bridge: Bridge, port: int, open_browser: bool):
                 for _ in range(30):
                     try:
                         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
+                            if os.name == "nt":
+                                probe.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
+                            else:
+                                probe.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                             probe.bind(("127.0.0.1", port))
+                            probe.listen(1)
                         break
                     except OSError:
                         time.sleep(0.1)
