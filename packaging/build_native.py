@@ -19,7 +19,7 @@ import sys
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSION = "0.4.4"
+VERSION = "0.4.5"
 
 
 def source_files() -> list[Path]:
@@ -37,8 +37,8 @@ def source_files() -> list[Path]:
         if hashlib.sha256(path.read_bytes()).hexdigest() != digest:
             raise ValueError(f"Public source differs from manifest: {name}")
         files.append(path)
-    if b"appVersion:'0.4.4'" not in (ROOT / "index.html").read_bytes():
-        raise ValueError("The public app version is not 0.4.4")
+    if b"appVersion:'0.4.5'" not in (ROOT / "index.html").read_bytes():
+        raise ValueError("The public app version is not 0.4.5")
     return files
 
 

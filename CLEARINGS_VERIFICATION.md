@@ -1,14 +1,42 @@
 <!-- SPDX-License-Identifier: MPL-2.0 -->
-# Clearings 0.4.4 verification boundary
+# Clearings 0.4.5 verification boundary
 
-This release adds a Windows tray icon for the running local helper. It shows the version and loopback address, opens Clearings, and offers Stop helper with a save-edits reminder. Icon lifetime follows helper lifetime. Windows may place it in the overflow area. No automatic startup or login registration is added. The implementation uses Windows APIs via ctypes and adds no package dependency.
+Group menus offer Collapse all when open and Expand all when collapsed. Both
+include nested groups. In a focused view, the title remains visible and its menu
+folds or unfolds the descendant groups. Leaf tasks have no fold command. Shared
+groups retain one fold state across their occurrences, consistent with existing
+title clicks. Center folds last for the page session; outline folds remain separate.
+The operation does not modify checklist contents, checks, attribution or unread
+indicators. No saved document or proposal format changes.
 
-Native tray checks use a temporary icon and Windows Shell_NotifyIconGetRect to verify registration, recovery after removing that fixture registration, and removal on shutdown. They do not restart Explorer or read the owner's workspace. Callback checks cover opening, cancelled stopping and stopping once. Helper checks cover tray creation/cleanup, startup failure, and explicit headless opt-out. This is not a screenshot-based verification of each display scale or a human click-through of the owner's taskbar.
+Save and quit now waits for an in-flight browser save, saves any newer edits,
+then waits for local handoff completion before requesting helper shutdown. The
+interface is temporarily inert while this completes. A failed save or blocked
+handoff keeps the helper running and restores the interface with an explanation.
+The tray's Stop helper command still requires browser edits to be saved first.
 
-The four-platform build checks source and bundles each helper. Windows additionally installs the exact checksummed 0.4.3 release, saves fictional handoff data, upgrades to 0.4.4 while running, reinstalls 0.4.4, then uninstalls; saved data must remain byte-identical. CI uses --no-tray for headless helper checks; native tray evidence comes from the separate Windows desktop fixture. The installer replaces bundled files; automatic update discovery, downgrade prevention and general removal of obsolete bundle files remain outside this release. No previous program paths are removed by 0.4.4.
+The real Chromium handoff check covers nested collapse/expand, focused scope,
+unaffected sibling groups and outline, exact workspace equality after folding,
+retained checked children and assistant indicators. It also exercises a blocked
+handoff on quit and a deliberately delayed sync with a newer edit, comparing the
+final handoff snapshot before shutdown. All browser data and helpers are fixtures.
 
-Clearings retains its 0.4.3 collaboration and schema contracts: document 2 with optional attribution, workspace 1, index 4. The tray does not save browser drafts or migrate browser profiles. Working and installed origins remain separate. It coordinates authorized assistants but does not launch them. Names and receipts are local attribution, not authentication or cryptographic signatures.
+The four-platform build validates packaged source and native helpers. Windows
+uses the exact checksummed 0.4.4 installer to exercise running-helper upgrade to
+0.4.5, reinstall and uninstall with byte-identical fictional handoff retention.
+The installer replaces bundled files; it does not compare installed versions,
+prevent downgrades, discover updates or remove arbitrary obsolete bundle files.
+This update removes no previous program paths.
 
-Windows builds remain unsigned; Mac builds are ad-hoc signed and not notarized. The owner's Firefox profile, Safari, interactive Mac/Linux installation, accessibility tools, and OS security prompts are not certified by the automated checks. Keep this a private review release until the owner chooses otherwise.
+The working browser origin and installed origin stay separate. Names and commit
+receipts remain declared local attribution, not authenticated identities or
+cryptographic signatures. Clearings coordinates authorized assistants; it does
+not launch them. Older documents remain readable; attribution exports require
+0.4.3 or newer.
 
-Windows APIs: https://learn.microsoft.com/en-us/windows/win32/shell/notification-area and https://learn.microsoft.com/en-us/windows/win32/api/shellapi/nf-shellapi-shell_notifyiconw
+Windows binaries are unsigned. Mac builds are ad-hoc signed and not notarized.
+The owner's Firefox workspace, Safari, interactive Mac/Linux installation,
+assistive technologies and every display scale are not certified by these
+automated checks. Release as a beta with these limits until broader hands-on
+coverage and distribution signing justify a stronger claim. Repository visibility
+remains the owner's decision.

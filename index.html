@@ -665,10 +665,10 @@ async function commitLocalNewProposal(proposal){
  return d;
 }
 let refreshInert=[];
-function setRefreshBusy(value){
+function setRefreshBusy(value,label='↻ Refreshing…'){
  if(value&&!localBusy){refreshInert=[...document.body.children].filter(el=>!['SCRIPT','STYLE'].includes(el.tagName)).map(el=>[el,el.inert]);for(const [el] of refreshInert)el.inert=true;}
  if(!value&&localBusy){for(const [el,prior] of refreshInert)el.inert=prior;refreshInert=[];}
- localBusy=value;if(!value)lastRefreshAt=Date.now();const button=$('refreshButton');button.textContent=value?'↻ Refreshing…':'↻ Refresh Clearings';document.body.classList.toggle('local-applying',value);
+ localBusy=value;if(!value)lastRefreshAt=Date.now();const button=$('refreshButton');button.textContent=value?label:'↻ Refresh Clearings';document.body.classList.toggle('local-applying',value);
  const wait=value?0:Math.max(0,lastRefreshAt+750-Date.now());button.disabled=value||wait>0;
  if(wait)setTimeout(()=>{if(!localBusy)button.disabled=false},wait);
 }
@@ -985,6 +985,17 @@ function ensureOverviewDefaults(d){
  if(first)centerCollapsed.delete(centerFoldKey(d.documentId,first));
  overviewInitialized.add(d.documentId);
 }
+function centerFoldScope(docId,id){
+ ensureOverviewDefaults(getDoc(docId));
+ // The focused title stays visible; its menu folds the groups underneath it.
+ const focused=route.docId===docId&&focusId()===id;
+ return subIds(docId,id,!focused).filter(key=>node(docId,key)?.requires.length);
+}
+function foldCenterScope(docId,id,closed){
+ for(const key of centerFoldScope(docId,id)){const stamp=centerFoldKey(docId,key);if(closed)centerCollapsed.add(stamp);else centerCollapsed.delete(stamp)}
+ renderCenter();
+ $('center').querySelector(`[data-menu="step"][data-doc="${CSS.escape(docId)}"][data-id="${CSS.escape(id)}"]`)?.focus({preventScroll:true});
+}
 function toggleCenterFold(trigger,docId,id){
  const buttons=()=>[...$('pageContent').querySelectorAll('[data-action="toggle-center-fold"]')].filter(button=>!button.closest('[data-fold-visual]')),position=buttons().indexOf(trigger),wasFocused=document.activeElement===trigger,owner=trigger.closest('[data-root-group],[data-step-row]'),oldList=owner?.querySelector(':scope > ol.rows:not([data-fold-visual])'),oldHeight=oldList?.getBoundingClientRect().height||0;
  const key=centerFoldKey(docId,id),opening=centerCollapsed.has(key);if(opening)centerCollapsed.delete(key);else centerCollapsed.add(key);
@@ -1092,6 +1103,8 @@ function showMenu(trigger){
   const d=getDoc(docId),unseen=activity().some(a=>a.checklistId===docId&&(a.highlight||a.unread));h+=button('rename','Rename / edit description')+button('track-checklist',isTracked(docId,null)?'Checklist already tracked':'Track checklist',isTracked(docId,null))+button('duplicate','Duplicate as a fresh checklist')+button('mark-indicator-seen','Mark indicator as seen',!unseen)+hr+button('default',!preferences().openTopChecklist&&workspace.index.defaultChecklist===docId?'Default on startup':'Make default on startup',d.archived||!preferences().openTopChecklist&&workspace.index.defaultChecklist===docId)+button('archive',d.archived?'Restore from archive':'Archive checklist')+hr+button('export-checklist','Export checklist JSON')+button('categories','Edit categories')+hr+button('ai-context','Share with an AI…')+button('ai-input','Preview AI changes…');
  }else if(type==='step'){
   const i=node(docId,id),locked=isLocked(docId,id),childLocked=contextLocked(docId,id);
+  const foldScope=centerFoldScope(docId,id),folded=route.docId===docId&&focusId()===id?foldScope.every(key=>centerIsCollapsed(docId,key)):centerIsCollapsed(docId,id);
+  if(foldScope.length)h+=button(folded?'expand-center-scope':'collapse-center-scope',folded?'Expand all':'Collapse all')+hr;
   h+=button('edit-step','Edit item…',locked)+button('details',detailsOpen.has(docId+':'+id)?'Hide details':'Show details')+button('focus-item',route.docId===docId&&focusId()===id?'Focused here':'Focus here',route.docId===docId&&focusId()===id)+button('track-item',isTracked(docId,id)?'Already tracked':'Track this item',isTracked(docId,id))+button('new-subitem','Add new item',childLocked)+hr;
   h+=button('task-history','Created / completed by…')+button('ai-context','Share this context with an AI…')+hr+button('move-to','Move to…',locked)+button('move-up','Move up',!canMoveStep(docId,id,parent,-1))+button('move-down','Move down',!canMoveStep(docId,id,parent,1))+hr+button('delete-step','Delete item; keep sub-tasks…',locked||i.requires.some(c=>isLocked(docId,c)),'class="danger"')+(i.requires.length?button('delete-step-all','Delete item and sub-tasks…',locked,'class="danger"'):'');
  }else if(type==='shortcut'){
@@ -1101,7 +1114,16 @@ function showMenu(trigger){
  const menu=$('menu');menu.innerHTML=h;menu.hidden=false;menu.style.left='0px';menu.style.top='0px';const rect=trigger.getBoundingClientRect();menu.style.left=Math.max(8,Math.min(innerWidth-menu.offsetWidth-8,rect.right-menu.offsetWidth))+'px';menu.style.top=Math.max(8,Math.min(innerHeight-menu.offsetHeight-8,rect.bottom+5))+'px';menu.querySelector('button:not(:disabled)')?.focus({preventScroll:true});
 }
 async function quitHelper(){
- try{if(!mayLeaveEditor())return;closeMenu();if(dirty&&!await saveBrowser(true))return;await localRequest('shutdown',{});document.body.innerHTML='<main style="padding:3rem;font:18px system-ui"><h1>Clearings is closed</h1><p>Your workspace is saved. You can close this tab and reopen Clearings from its launcher.</p></main>'}catch(error){toast('Could not quit: '+error.message,null,12000)}
+ if(localBusy||!mayLeaveEditor())return;
+ closeMenu();setRefreshBusy(true,'Saving…');let closed=false;
+ try{
+  if(browserSaving&&!await browserSavePromise)throw new Error('The current browser save did not finish. Export a backup before closing.');
+  if(!await saveBrowser(false))throw new Error('Browser storage is unavailable. Export a backup before closing.');
+  await localSyncQueue;
+  if(dirty||localSyncBlocked)throw new Error('The local handoff needs attention. Review Settings before quitting; the helper is still running.');
+  await localRequest('shutdown',{});closed=true;
+  document.body.innerHTML='<main style="padding:3rem;font:18px system-ui"><h1>Clearings is closed</h1><p>Your workspace is saved. You can close this tab and reopen Clearings from its launcher.</p></main>';
+ }catch(error){toast('Could not quit: '+error.message,null,12000)}finally{if(!closed)setRefreshBusy(false)}
 }
 function openTaskHistory(docId,id){
  const d=getDoc(docId),i=node(docId,id),created=latestActivity(docId,id,'new'),completed=d.state[id]===true?latestActivity(docId,id,'completed'):null;
@@ -1356,6 +1378,8 @@ function dispatch(command,ctx={}){
   case 'recent-actions':openRecentActions();break;
   case 'task-history':openTaskHistory(docId,id);break;
   case 'quit-helper':quitHelper();break;
+  case 'collapse-center-scope':foldCenterScope(docId,id,true);break;
+  case 'expand-center-scope':foldCenterScope(docId,id,false);break;
   case 'move-to':openMoveItem(docId,id,parent);break;
   case 'download-incoming-checklist':{const p=localPending.find(x=>x.id===dialogContext?.proposalId&&x.kind==='create');if(p)download(`incoming-checklist-${p.documentId}.json`,jsonString(p.incoming));break}
   case 'settings-help':toggleSettingsHelp(ctx.button);break;
@@ -1831,7 +1855,7 @@ $('refreshInput').addEventListener('change',async e=>{
 });
 
 // This small read-only surface supports reproducible UI tests and personal backups.
-const readOnlyAPI=Object.freeze({snapshot:()=>clone(workspace),validate:validateWorkspace,validateDocument,migrateDocument,aiHash,planAIChanges,formatVersion:1,appVersion:'0.4.4',storage:()=>Object.freeze({ready:storageReady,available:!!browserDB,saving:browserSaving,dirty,error:browserError,savedAt:browserSavedAt,persisted:persistedStorage,draft:!!pendingDraft,generation:baseGeneration})});
+const readOnlyAPI=Object.freeze({snapshot:()=>clone(workspace),validate:validateWorkspace,validateDocument,migrateDocument,aiHash,planAIChanges,formatVersion:1,appVersion:'0.4.5',storage:()=>Object.freeze({ready:storageReady,available:!!browserDB,saving:browserSaving,dirty,error:browserError,savedAt:browserSavedAt,persisted:persistedStorage,draft:!!pendingDraft,generation:baseGeneration})});
 Object.defineProperty(window,'Clearings',{value:readOnlyAPI,writable:false});
 Object.defineProperty(window,'ChecklistStudio',{value:readOnlyAPI,writable:false});
 // Read-only legacy test/backup alias; no project-specific runtime dependency.

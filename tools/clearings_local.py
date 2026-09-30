@@ -38,7 +38,7 @@ from clearings_tray import WindowsTray
 
 MAX_BYTES = 16 * 1024 * 1024
 FILE_NAME = "clearings_handoff.json"
-VERSION = "0.4.4"
+VERSION = "0.4.5"
 WINDOWS_TRAY = os.name == "nt"
 # The working helper already owns 8765 and its existing browser workspace.
 # Keep it there; installed/public Clearings has a separate, stable origin.

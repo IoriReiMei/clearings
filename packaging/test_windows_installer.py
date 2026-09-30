@@ -57,7 +57,7 @@ def main():
             run([str(first),'/S',f'/D={install}'])
             assert (install/'Clearings.exe').is_file()
             first_version=subprocess.run([str(install/'ClearingsCLI.exe'),'--version'],env=env,check=True,capture_output=True,text=True,**hidden).stdout.strip()
-            assert first_version==('Clearings 0.4.3' if args.previous_installer else 'Clearings 0.4.4'),first_version
+            assert first_version==('Clearings 0.4.4' if args.previous_installer else 'Clearings 0.4.5'),first_version
             cli=subprocess.run([str(install/'ClearingsCLI.exe'),'status'],env=env,check=True,capture_output=True,text=True,**hidden)
             assert json.loads(cli.stdout)['home']==str(home.resolve())
             child,request=start()
@@ -71,7 +71,7 @@ def main():
             wait_for(lambda:child.poll() is not None,'Update left the earlier helper running')
             assert hashlib.sha256(handoff.read_bytes()).hexdigest()==before
             version=subprocess.run([str(install/'ClearingsCLI.exe'),'--version'],env=env,check=True,capture_output=True,text=True,**hidden).stdout.strip()
-            assert version=='Clearings 0.4.4',version
+            assert version=='Clearings 0.4.5',version
             child,request=start()
             run([str(installer),'/S',f'/D={install}'])
             wait_for(lambda:child.poll() is not None,'Reinstall left the earlier helper running')
@@ -81,7 +81,7 @@ def main():
             wait_for(lambda:child.poll() is not None,'Uninstall left the helper running')
             wait_for(lambda:not (install/'Clearings.exe').exists() and not (install/'_internal').exists(),'Uninstall left program files behind')
             assert hashlib.sha256(handoff.read_bytes()).hexdigest()==before
-            print(f'PASS {first_version} install, running-helper upgrade to 0.4.4, reinstall, uninstall, and exact handoff preservation')
+            print(f'PASS {first_version} install, running-helper upgrade to 0.4.5, reinstall, uninstall, and exact handoff preservation')
         finally:
             for child in children:
                 if child.poll() is None:

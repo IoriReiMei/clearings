@@ -1,5 +1,5 @@
 <!-- SPDX-License-Identifier: MPL-2.0 -->
-# Clearings 0.4.4
+# Clearings 0.4.5
 
 Clearings is a local checklist and outline for people and their AI collaborators.
 Your workspace stays on your device. There is no account, telemetry, bundled AI,
@@ -13,16 +13,17 @@ Get the matching file from [Releases](https://github.com/IoriReiMei/clearings/re
 
 | Computer | Download | Install |
 | --- | --- | --- |
-| Windows x64 | `Clearings-Setup-0.4.4-Windows-x64.exe` | Open the installer, choose shortcuts, finish, then open Clearings. No administrator rights or separate Python installation. |
-| Mac Apple silicon | `Clearings-0.4.4-macOS-arm64.dmg` | Open the image and drag Clearings into Applications. |
-| Mac Intel | `Clearings-0.4.4-macOS-x86_64.dmg` | Open the image and drag Clearings into Applications. |
-| Linux x64 | `Clearings-Install-0.4.4-Linux-x64.run` | Run `sh Clearings-Install-0.4.4-Linux-x64.run`, then open Clearings from the app menu. |
+| Windows x64 | `Clearings-Setup-0.4.5-Windows-x64.exe` | Open the installer, choose shortcuts, finish, then open Clearings. No administrator rights or separate Python installation. |
+| Mac Apple silicon | `Clearings-0.4.5-macOS-arm64.dmg` | Open the image and drag Clearings into Applications. |
+| Mac Intel | `Clearings-0.4.5-macOS-x86_64.dmg` | Open the image and drag Clearings into Applications. |
+| Linux x64 | `Clearings-Install-0.4.5-Linux-x64.run` | Run `sh Clearings-Install-0.4.5-Linux-x64.run`, then open Clearings from the app menu. |
 
 The installed app opens your normal browser at `http://127.0.0.1:18765/`.
 Windows binaries are unsigned; macOS builds are ad-hoc signed, not notarized.
-Your operating system may require an extra launch approval. These builds are
-suited to this private review; a seamless public first launch still needs platform
-signing. See [verification limits](CLEARINGS_VERIFICATION.md).
+Your operating system may require an extra launch approval. These are beta
+builds; signing and notarization remain future distribution work. Windows
+installer upgrades are automated checks; interactive Mac/Linux installation and
+Safari still need hands-on testing. See [verification limits](CLEARINGS_VERIFICATION.md).
 
 The source ZIP also contains `index.html`, usable directly without installing a
 runtime. Direct-file and hosted use support JSON import/export; local assistant
@@ -41,6 +42,12 @@ under another heading or back to the overview. The item keeps its identity,
 subtasks, checkmark and attribution. Menus, grips and keyboard controls also
 reorder siblings. Shared items remain one object wherever linked.
 
+A group's **⋯ → Collapse all / Expand all** folds or unfolds that group and
+its nested groups. In a focused group, it affects the groups underneath the
+title. Folding leaves checkmarks, attribution and unread indicators alone;
+the outline keeps its own fold controls. These center folds last for the
+current page session.
+
 A checked item shows its completer. **Created / completed by…** shows names and
 timestamps; Shift reveals additional edit labels. Creator and completer records
 survive moves and exports. Missing older history is shown as unknown.
@@ -57,6 +64,8 @@ not verified identities.
 The workspace menu contains **Settings**, **Preferences**, **Recent actions**,
 **Export workspace backup…**, and **Save and quit Clearings**. Templates provide
 blank GitHub release and patch checklists; they never publish anything.
+**Save and quit** waits for browser saving and the local handoff before stopping
+the helper. If saving needs attention, it keeps Clearings open with an explanation.
 
 ## Keep your work
 
@@ -69,6 +78,13 @@ are deliberately separate. Uninstall removes the program, not your work.
 
 Version 0.4.3 reads older documents. Its optional attribution field requires
 0.4.3 or newer when importing a new export into another Clearings copy.
+
+## Feedback
+
+[Report a problem or suggest an improvement](https://github.com/IoriReiMei/clearings/issues).
+Include the Clearings version, operating system, browser, steps and expected
+result. Use a small fictional checklist to reproduce a problem; keep personal
+workspace exports, helper session files and access tokens out of public reports.
 
 ## Development and license
 

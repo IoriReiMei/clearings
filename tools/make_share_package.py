@@ -27,7 +27,7 @@ FILES = {
     'LC_CHECKLIST.html': 'index.html',
     'docs/GITHUB_RELEASE_README.md': 'README.md',
     'AI_CHECKLIST_GUIDE.md': 'AI_CHECKLIST_GUIDE.md',
-    'docs/RELEASE_VERIFICATION_0_4_4.md': 'CLEARINGS_VERIFICATION.md',
+    'docs/RELEASE_VERIFICATION_0_4_5.md': 'CLEARINGS_VERIFICATION.md',
     'LICENSE': 'LICENSE',
     'LICENSE_SCOPE.md': 'LICENSE_SCOPE.md',
     'THIRD_PARTY_NOTES.md': 'THIRD_PARTY_NOTES.md',
@@ -120,8 +120,8 @@ def main() -> None:
         parser.error(f'Output exists: {output}. Choose another name or explicitly pass --force.')
     app_source = ROOT/'LC_CHECKLIST.html'
     if not app_source.exists(): app_source = ROOT/'index.html'
-    if b"appVersion:'0.4.4'" not in app_source.read_bytes():
-        raise ValueError('This packager is for Clearings 0.4.4 only; review the allowlist and release note for another version.')
+    if b"appVersion:'0.4.5'" not in app_source.read_bytes():
+        raise ValueError('This packager is for Clearings 0.4.5 only; review the allowlist and release note for another version.')
     assert_current(app_source, ROOT)
     payload: dict[str,bytes]={}
     extracted_release = app_source.name == 'index.html'
@@ -138,7 +138,7 @@ def main() -> None:
         payload[destination]=data
     payload['.gitignore']=b'# SPDX-License-Identifier: MPL-2.0\n# Keep personal libraries under data/ and review before sharing.\n/data/\n/checklist_index.json\n/checklist-*.json\n/program_overview.json\n/build-output/\n/artifacts/\n*.zip\n*.dmg\n*.run\n__pycache__/\n'
     payload['.nojekyll']=b''
-    payload['RELEASE_NOTE.txt']=b'SPDX-License-Identifier: MPL-2.0\nClearings 0.4.4 - visible Windows helper with tray controls.\nAssistants can create and edit signed shared work before browser Refresh.\nMove to and explicit same-list deletion use shared task rules.\nWindows includes a console CLI and an installer that stops its own helper before upgrade or uninstall.\nThe app contains no model, account, telemetry or external runtime download.\nNative binaries bundle Python; this source ZIP is also usable as a standalone browser app.\nOlder exports remain readable; attribution-enriched exports need 0.4.3 or newer.\nSigning and platform verification limits are documented in CLEARINGS_VERIFICATION.md.\nOnly allowlisted source, docs, tests and fictional examples are included.\nSee LICENSE, LICENSE_SCOPE.md and THIRD_PARTY_NOTES.md.\n'
+    payload['RELEASE_NOTE.txt']=b'SPDX-License-Identifier: MPL-2.0\nClearings 0.4.5 - nested group folding and complete saves before quitting.\nAssistants can create and edit signed shared work before browser Refresh.\nMove to and explicit same-list deletion use shared task rules.\nWindows includes a console CLI and an installer that stops its own helper before upgrade or uninstall.\nThe app contains no model, account, telemetry or external runtime download.\nNative binaries bundle Python; this source ZIP is also usable as a standalone browser app.\nOlder exports remain readable; attribution-enriched exports need 0.4.3 or newer.\nSigning and platform verification limits are documented in CLEARINGS_VERIFICATION.md.\nOnly allowlisted source, docs, tests and fictional examples are included.\nSee LICENSE, LICENSE_SCOPE.md and THIRD_PARTY_NOTES.md.\n'
     manifest={name:hashlib.sha256(data).hexdigest() for name,data in payload.items()}
     payload['MANIFEST.json']=(json.dumps(manifest,indent=2)+'\n').encode()
     output.parent.mkdir(parents=True,exist_ok=True)

@@ -61,11 +61,11 @@ jobs:
           if (-not (Test-Path -LiteralPath $compiler)) { throw 'NSIS compiler missing' }
           & $compiler /V2 "/DSOURCE_DIR=$pwd\build-output" "/DOUTPUT_DIR=$pwd\artifacts" packaging\windows\Clearings.nsi
           if ($LASTEXITCODE -ne 0) { throw 'Installer compilation failed' }
-          $installer = Get-Item -LiteralPath 'artifacts\Clearings-Setup-0.4.4-Windows-x64.exe'
-          gh release download v0.4.3 --repo "$env:GITHUB_REPOSITORY" --pattern 'Clearings-Setup-0.4.3-Windows-x64.exe' --dir previous-release
+          $installer = Get-Item -LiteralPath 'artifacts\Clearings-Setup-0.4.5-Windows-x64.exe'
+          gh release download v0.4.4 --repo "$env:GITHUB_REPOSITORY" --pattern 'Clearings-Setup-0.4.4-Windows-x64.exe' --dir previous-release
           if ($LASTEXITCODE -ne 0) { throw 'Previous private installer download failed' }
-          $previous = Get-Item -LiteralPath 'previous-release\Clearings-Setup-0.4.3-Windows-x64.exe'
-          if ((Get-FileHash -LiteralPath $previous.FullName -Algorithm SHA256).Hash -ne 'b969d97e7912a283251f954f0517640b67c08779c873011c775bab1a4ad5935a') { throw 'Previous installer checksum mismatch' }
+          $previous = Get-Item -LiteralPath 'previous-release\Clearings-Setup-0.4.4-Windows-x64.exe'
+          if ((Get-FileHash -LiteralPath $previous.FullName -Algorithm SHA256).Hash -ne 'b1d3f3f3073aa5e5c16a4484b9ba67e14d96e728ce68e16436f2120a805dd5c0') { throw 'Previous installer checksum mismatch' }
           python -B packaging/test_windows_installer.py --installer $installer.FullName --previous-installer $previous.FullName
           if ($LASTEXITCODE -ne 0) { throw 'Running-helper installer lifecycle failed' }
       - name: Build macOS review image
@@ -77,7 +77,7 @@ jobs:
         run: |
           python -B packaging/build_linux_run.py --dist build-output --output artifacts
           test_home="$(mktemp -d)"
-          HOME="$test_home" XDG_DATA_HOME="$test_home/.local/share" sh artifacts/Clearings-Install-0.4.4-Linux-x64.run
+          HOME="$test_home" XDG_DATA_HOME="$test_home/.local/share" sh artifacts/Clearings-Install-0.4.5-Linux-x64.run
           HOME="$test_home" XDG_DATA_HOME="$test_home/.local/share" "$test_home/.local/bin/clearings" --version
           test -f "$test_home/.local/share/applications/Clearings.desktop"
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

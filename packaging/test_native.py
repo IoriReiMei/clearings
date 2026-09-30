@@ -80,7 +80,7 @@ def main() -> None:
             assert identity["config"] == str(config.resolve()), identity
             with urllib.request.urlopen(f"http://127.0.0.1:{port}/", timeout=2) as response:
                 page = response.read()
-            assert b"appVersion:'0.4.4'" in page
+            assert b"appVersion:'0.4.5'" in page
             assert b"window.__CLEARINGS_LOCAL_TOKEN__" in page
             command_app = app.with_name("ClearingsCLI.exe") if sys.platform == "win32" else app
             if sys.platform == "win32":
@@ -91,7 +91,7 @@ def main() -> None:
             stopped = subprocess.run([str(command_app), "--config-dir", str(config), "stop"], timeout=20)
             assert stopped.returncode == 0
             child.wait(timeout=15)
-            print("Bundled Clearings served the 0.4.4 page from disposable settings.")
+            print("Bundled Clearings served the 0.4.5 page from disposable settings.")
         finally:
             if child.poll() is None:
                 child.terminate()
