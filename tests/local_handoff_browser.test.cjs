@@ -19,7 +19,7 @@ async function waitReady(url,child){for(let i=0;i<100;i++){if(child.exitCode!==n
 async function run(){
  const temp=fs.mkdtempSync(path.join(os.tmpdir(),'clearings-handoff-test-'));
  const port=await freePort(),url=`http://127.0.0.1:${port}/`;
- const child=spawn(python,['-B',path.join(root,'tools','clearings_local.py'),'--config-dir',path.join(temp,'config'),'serve','--port',String(port),'--no-browser'],{windowsHide:true,stdio:'pipe'});
+ const child=spawn(python,['-B',path.join(root,'tools','clearings_local.py'),'--config-dir',path.join(temp,'config'),'serve','--port',String(port),'--no-browser','--no-tray'],{windowsHide:true,stdio:'pipe'});
  let childLog='';child.stderr.on('data',x=>childLog+=x.toString());child.stdout.on('data',x=>childLog+=x.toString());
  let browser;try{
   await waitReady(url,child);

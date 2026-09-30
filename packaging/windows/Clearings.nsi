@@ -1,7 +1,7 @@
 ; SPDX-License-Identifier: MPL-2.0
 ; Build with makensis /DSOURCE_DIR=<native dist> /DOUTPUT_DIR=<artifacts>.
 !include "MUI2.nsh"
-!define VERSION "0.4.3"
+!define VERSION "0.4.4"
 
 Name "Clearings"
 OutFile "${OUTPUT_DIR}\Clearings-Setup-${VERSION}-Windows-x64.exe"

@@ -8,7 +8,7 @@ import shutil
 import subprocess
 import tempfile
 
-VERSION = "0.4.3"
+VERSION = "0.4.4"
 
 
 def main():

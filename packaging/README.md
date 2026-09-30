@@ -12,9 +12,9 @@ stop for review. See [toolchain versions](../docs/TOOLCHAIN.md).
 
 | System | Review artifact | What installing does |
 | --- | --- | --- |
-| Windows x64 | `Clearings-Setup-0.4.3-Windows-x64.exe` | Installs under the current user's local Programs folder. Desktop and Start Menu shortcuts are separate installer choices, both unchecked by default. No administrator rights or separate Python install is intended. |
+| Windows x64 | `Clearings-Setup-0.4.4-Windows-x64.exe` | Installs under the current user's local Programs folder. Desktop and Start Menu shortcuts are separate installer choices, both unchecked by default. No administrator rights or separate Python install is intended. |
 | macOS Apple silicon / Intel | Architecture-specific `.dmg` | Open the image and drag `Clearings.app` into Applications. This is a review image with ad-hoc signing only, not Developer ID signed or notarized. |
-| Linux x64 | `Clearings-Install-0.4.3-Linux-x64.run` | Installs under the current user's local data folder and creates an application-menu entry and, where possible, a Desktop shortcut. Some desktops require “Allow launching” for downloaded files or shortcuts. `sh Clearings-Install-0.4.3-Linux-x64.run` is the fallback. |
+| Linux x64 | `Clearings-Install-0.4.4-Linux-x64.run` | Installs under the current user's local data folder and creates an application-menu entry and, where possible, a Desktop shortcut. Some desktops require “Allow launching” for downloaded files or shortcuts. `sh Clearings-Install-0.4.4-Linux-x64.run` is the fallback. |
 
 The installed helper opens Clearings in the user's ordinary browser at
 `http://127.0.0.1:18765/`. That address must remain the same across updates
@@ -59,3 +59,7 @@ Build from the allowlisted source directory, never the personal working folder:
 `python -B packaging/build_native.py --output build-output`. Run `tools/make_share_package.py --verify-dir PATH` to reject
 missing, extra or changed release files; the native builder checks listed bytes. The CI workflow is manual and uploads
 artifacts; release publication is a separate operation.
+
+## 0.4.4 tray and upgrade checks
+
+Windows tray support uses standard Windows APIs through ctypes, with no new runtime dependency. The source native tray fixture can be opted into with `CLEARINGS_NATIVE_TRAY_TEST=1`; ordinary headless checks pass `--no-tray`. Windows CI downloads the exact checksummed private 0.4.3 installer and tests an actual 0.4.3-to-0.4.4 upgrade, same-version reinstall and uninstall while preserving fixture handoff bytes. The installer still copies the complete bundle; it is not a delta updater or version/downgrade manager. This release removes no previous bundle paths.

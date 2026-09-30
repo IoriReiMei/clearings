@@ -134,7 +134,7 @@ class DeliveryChecks(unittest.TestCase):
             probe.bind(('127.0.0.1',0));port=probe.getsockname()[1]
         errors=[]
         def serve():
-            try:local.run_server(self.bridge,port,False)
+            try:local.run_server(self.bridge,port,False,show_tray=False)
             except Exception as exc:errors.append(exc)
         with patch.object(local,'CHANNEL','release'), patch.object(socket,'getfqdn',side_effect=AssertionError('Loopback must not depend on DNS')):
             worker=threading.Thread(target=serve,daemon=True);worker.start()

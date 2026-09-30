@@ -34,10 +34,12 @@ import uuid
 import webbrowser
 
 from clearings_commit import merge_documents, validate_document, stamp_attribution
+from clearings_tray import WindowsTray
 
 MAX_BYTES = 16 * 1024 * 1024
 FILE_NAME = "clearings_handoff.json"
-VERSION = "0.4.3"
+VERSION = "0.4.4"
+WINDOWS_TRAY = os.name == "nt"
 # The working helper already owns 8765 and its existing browser workspace.
 # Keep it there; installed/public Clearings has a separate, stable origin.
 ROOT = (Path(sys._MEIPASS) if getattr(sys, "frozen", False)
@@ -53,7 +55,8 @@ PROGRAM = Path(sys.executable).resolve() if getattr(sys, "frozen", False) else R
 if getattr(sys, "frozen", False) and PROGRAM.name == "ClearingsCLI.exe":
     PROGRAM = PROGRAM.with_name("Clearings.exe")
 HELPER_SHA256 = (hashlib.sha256(PROGRAM.read_bytes()).hexdigest() if getattr(sys, "frozen", False)
-                 else hashlib.sha256(Path(__file__).read_bytes() + Path(__file__).with_name("clearings_commit.py").read_bytes()).hexdigest())
+                 else hashlib.sha256(b"".join(Path(__file__).with_name(name).read_bytes()
+                     for name in ("clearings_local.py", "clearings_commit.py", "clearings_tray.py"))).hexdigest())
 APP_SHA256 = hashlib.sha256(APP.read_bytes()).hexdigest()
 
 
@@ -806,7 +809,7 @@ class LocalServer(ThreadingHTTPServer):
         self.server_name, self.server_port = self.server_address[:2]
 
 
-def run_server(bridge: Bridge, port: int, open_browser: bool):
+def run_server(bridge: Bridge, port: int, open_browser: bool, show_tray: bool = True):
     session_path = bridge.root / "session.json"
     previous = load_json(session_path, {})
     if previous.get("port") == port and previous.get("token"):
@@ -861,15 +864,23 @@ def run_server(bridge: Bridge, port: int, open_browser: bool):
     except OSError as exc:
         raise RuntimeError(f"Clearings cannot use 127.0.0.1:{port}. Close the other program "
                            "using this address, then reopen Clearings; no data was changed.") from exc
-    atomic_json(session_path, {"port": port, "token": token, "pid": os.getpid(), "startedAt": now()})
-    if open_browser:
-        webbrowser.open(f"http://127.0.0.1:{port}/")
-    if sys.stdout is not None:
-        print(f"Clearings local helper ready on 127.0.0.1:{port}", flush=True)
+    tray = None
     try:
+        if WINDOWS_TRAY and show_tray:
+            tray = WindowsTray(title=f"Clearings {VERSION}" + (" · working" if CHANNEL == "working" else ""),
+                               address=f"127.0.0.1:{port}", identity=str(bridge.root),
+                               open_app=lambda: webbrowser.open(f"http://127.0.0.1:{port}/"),
+                               stop_helper=server.shutdown).start()
+        atomic_json(session_path, {"port": port, "token": token, "pid": os.getpid(), "startedAt": now()})
+        if open_browser:
+            webbrowser.open(f"http://127.0.0.1:{port}/")
+        if sys.stdout is not None:
+            print(f"Clearings local helper ready on 127.0.0.1:{port}", flush=True)
         server.serve_forever()
     finally:
         server.server_close()
+        if tray is not None:
+            tray.close()
 
 
 def main():
@@ -886,6 +897,7 @@ def main():
     serve = sub.add_parser("serve", help="Start the local helper and open Clearings")
     serve.add_argument("--port", type=int, default=PORT)
     serve.add_argument("--no-browser", action="store_true")
+    serve.add_argument("--no-tray", action="store_true", help="Run without Windows tray UI for detached tests or headless use")
     stop = sub.add_parser("stop", help="Stop this installation's local helper without changing workspace data")
     stop.add_argument("--installation", help="Exact installed executable path when called by an installer")
     sub.add_parser("status", help="Show handoff state without checklist contents")
@@ -922,7 +934,7 @@ def main():
         return
     bridge = Bridge(config_dir(args.config_dir))
     if args.command == "serve":
-        run_server(bridge, args.port, not args.no_browser)
+        run_server(bridge, args.port, not args.no_browser, not args.no_tray)
     elif args.command == "stop":
         stop_server(bridge, installation=args.installation)
     elif args.command == "status":

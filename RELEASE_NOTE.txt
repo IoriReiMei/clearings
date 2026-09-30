@@ -1,5 +1,5 @@
 SPDX-License-Identifier: MPL-2.0
-Clearings 0.4.3 - shared tasks with durable attribution.
+Clearings 0.4.4 - visible Windows helper with tray controls.
 Assistants can create and edit signed shared work before browser Refresh.
 Move to and explicit same-list deletion use shared task rules.
 Windows includes a console CLI and an installer that stops its own helper before upgrade or uninstall.

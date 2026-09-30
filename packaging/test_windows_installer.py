@@ -23,6 +23,7 @@ def wait_for(test, message, timeout=30):
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--installer',type=Path,required=True)
+    parser.add_argument('--previous-installer',type=Path)
     args=parser.parse_args()
     installer=args.installer.resolve()
     with tempfile.TemporaryDirectory(prefix='clearings-installer-check-') as temp:
@@ -37,7 +38,9 @@ def main():
         def start():
             with socket.socket() as probe:
                 probe.bind(('127.0.0.1',0));port=probe.getsockname()[1]
-            child=subprocess.Popen([str(install/'Clearings.exe'),'serve','--port',str(port),'--no-browser'],env=env,**hidden)
+            version=subprocess.run([str(install/'ClearingsCLI.exe'),'--version'],env=env,check=True,capture_output=True,text=True,**hidden).stdout.strip()
+            headless=[] if version=='Clearings 0.4.3' else ['--no-tray']
+            child=subprocess.Popen([str(install/'Clearings.exe'),'serve','--port',str(port),'--no-browser',*headless],env=env,**hidden)
             children.append(child)
             session=config/'session.json'
             wait_for(lambda:session.exists() and json.loads(session.read_text())['pid']==child.pid,'Installed helper did not start')
@@ -50,8 +53,11 @@ def main():
             return child,request
         children=[]
         try:
-            run([str(installer),'/S',f'/D={install}'])
+            first=args.previous_installer.resolve() if args.previous_installer else installer
+            run([str(first),'/S',f'/D={install}'])
             assert (install/'Clearings.exe').is_file()
+            first_version=subprocess.run([str(install/'ClearingsCLI.exe'),'--version'],env=env,check=True,capture_output=True,text=True,**hidden).stdout.strip()
+            assert first_version==('Clearings 0.4.3' if args.previous_installer else 'Clearings 0.4.4'),first_version
             cli=subprocess.run([str(install/'ClearingsCLI.exe'),'status'],env=env,check=True,capture_output=True,text=True,**hidden)
             assert json.loads(cli.stdout)['home']==str(home.resolve())
             child,request=start()
@@ -64,12 +70,18 @@ def main():
             run([str(installer),'/S',f'/D={install}'])
             wait_for(lambda:child.poll() is not None,'Update left the earlier helper running')
             assert hashlib.sha256(handoff.read_bytes()).hexdigest()==before
+            version=subprocess.run([str(install/'ClearingsCLI.exe'),'--version'],env=env,check=True,capture_output=True,text=True,**hidden).stdout.strip()
+            assert version=='Clearings 0.4.4',version
+            child,request=start()
+            run([str(installer),'/S',f'/D={install}'])
+            wait_for(lambda:child.poll() is not None,'Reinstall left the earlier helper running')
+            assert hashlib.sha256(handoff.read_bytes()).hexdigest()==before
             child,request=start()
             run([str(install/'Uninstall.exe'),'/S'])
             wait_for(lambda:child.poll() is not None,'Uninstall left the helper running')
             wait_for(lambda:not (install/'Clearings.exe').exists() and not (install/'_internal').exists(),'Uninstall left program files behind')
             assert hashlib.sha256(handoff.read_bytes()).hexdigest()==before
-            print('PASS fresh install, running-helper update, running-helper uninstall, and exact handoff preservation')
+            print(f'PASS {first_version} install, running-helper upgrade to 0.4.4, reinstall, uninstall, and exact handoff preservation')
         finally:
             for child in children:
                 if child.poll() is None:

@@ -56,3 +56,7 @@ for review.
 The included tests use disposable home folders and browser profiles. They do
 not establish persistence in your own browser; follow `docs/NATIVE_SMOKE_TEST.md`
 there before relying on a new path.
+
+### Windows tray control — 0.4.4
+
+The tray icon belongs to one running helper and shows its version, working/release label and loopback address. Stop helper asks the human to save browser edits first. The CLI stop and authenticated shutdown route also remove the icon. An already-running matching helper is reused without adding another icon. Windows can place the icon in its overflow area. Detached tests explicitly pass `--no-tray`; normal source and installed launchers display it.

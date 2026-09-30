@@ -9,7 +9,7 @@ import os
 import tarfile
 
 ROOT = Path(__file__).resolve().parent
-VERSION = "0.4.3"
+VERSION = "0.4.4"
 
 
 def main():

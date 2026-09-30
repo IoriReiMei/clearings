@@ -1831,7 +1831,7 @@ $('refreshInput').addEventListener('change',async e=>{
 });
 
 // This small read-only surface supports reproducible UI tests and personal backups.
-const readOnlyAPI=Object.freeze({snapshot:()=>clone(workspace),validate:validateWorkspace,validateDocument,migrateDocument,aiHash,planAIChanges,formatVersion:1,appVersion:'0.4.3',storage:()=>Object.freeze({ready:storageReady,available:!!browserDB,saving:browserSaving,dirty,error:browserError,savedAt:browserSavedAt,persisted:persistedStorage,draft:!!pendingDraft,generation:baseGeneration})});
+const readOnlyAPI=Object.freeze({snapshot:()=>clone(workspace),validate:validateWorkspace,validateDocument,migrateDocument,aiHash,planAIChanges,formatVersion:1,appVersion:'0.4.4',storage:()=>Object.freeze({ready:storageReady,available:!!browserDB,saving:browserSaving,dirty,error:browserError,savedAt:browserSavedAt,persisted:persistedStorage,draft:!!pendingDraft,generation:baseGeneration})});
 Object.defineProperty(window,'Clearings',{value:readOnlyAPI,writable:false});
 Object.defineProperty(window,'ChecklistStudio',{value:readOnlyAPI,writable:false});
 // Read-only legacy test/backup alias; no project-specific runtime dependency.

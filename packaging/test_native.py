@@ -44,7 +44,7 @@ def main() -> None:
             probe.bind(("127.0.0.1", 0))
             port = probe.getsockname()[1]
         child = subprocess.Popen([str(app), "--config-dir", str(config), "serve",
-                                  "--port", str(port), "--no-browser"],
+                                  "--port", str(port), "--no-browser", "--no-tray"],
                                  stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
         try:
             # Intel macOS runners can take longer to launch an ad-hoc-signed app.
@@ -80,7 +80,7 @@ def main() -> None:
             assert identity["config"] == str(config.resolve()), identity
             with urllib.request.urlopen(f"http://127.0.0.1:{port}/", timeout=2) as response:
                 page = response.read()
-            assert b"appVersion:'0.4.3'" in page
+            assert b"appVersion:'0.4.4'" in page
             assert b"window.__CLEARINGS_LOCAL_TOKEN__" in page
             command_app = app.with_name("ClearingsCLI.exe") if sys.platform == "win32" else app
             if sys.platform == "win32":
@@ -91,7 +91,7 @@ def main() -> None:
             stopped = subprocess.run([str(command_app), "--config-dir", str(config), "stop"], timeout=20)
             assert stopped.returncode == 0
             child.wait(timeout=15)
-            print("Bundled Clearings served the 0.4.3 page from disposable settings.")
+            print("Bundled Clearings served the 0.4.4 page from disposable settings.")
         finally:
             if child.poll() is None:
                 child.terminate()

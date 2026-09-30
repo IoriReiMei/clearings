@@ -1,5 +1,5 @@
 <!-- SPDX-License-Identifier: MPL-2.0 -->
-# Clearings 0.4.3
+# Clearings 0.4.4
 
 Clearings is a local checklist and outline for people and their AI collaborators.
 Your workspace stays on your device. There is no account, telemetry, bundled AI,
@@ -13,10 +13,10 @@ Get the matching file from [Releases](https://github.com/IoriReiMei/clearings/re
 
 | Computer | Download | Install |
 | --- | --- | --- |
-| Windows x64 | `Clearings-Setup-0.4.3-Windows-x64.exe` | Open the installer, choose shortcuts, finish, then open Clearings. No administrator rights or separate Python installation. |
-| Mac Apple silicon | `Clearings-0.4.3-macOS-arm64.dmg` | Open the image and drag Clearings into Applications. |
-| Mac Intel | `Clearings-0.4.3-macOS-x86_64.dmg` | Open the image and drag Clearings into Applications. |
-| Linux x64 | `Clearings-Install-0.4.3-Linux-x64.run` | Run `sh Clearings-Install-0.4.3-Linux-x64.run`, then open Clearings from the app menu. |
+| Windows x64 | `Clearings-Setup-0.4.4-Windows-x64.exe` | Open the installer, choose shortcuts, finish, then open Clearings. No administrator rights or separate Python installation. |
+| Mac Apple silicon | `Clearings-0.4.4-macOS-arm64.dmg` | Open the image and drag Clearings into Applications. |
+| Mac Intel | `Clearings-0.4.4-macOS-x86_64.dmg` | Open the image and drag Clearings into Applications. |
+| Linux x64 | `Clearings-Install-0.4.4-Linux-x64.run` | Run `sh Clearings-Install-0.4.4-Linux-x64.run`, then open Clearings from the app menu. |
 
 The installed app opens your normal browser at `http://127.0.0.1:18765/`.
 Windows binaries are unsigned; macOS builds are ad-hoc signed, not notarized.
@@ -27,6 +27,10 @@ signing. See [verification limits](CLEARINGS_VERIFICATION.md).
 The source ZIP also contains `index.html`, usable directly without installing a
 runtime. Direct-file and hosted use support JSON import/export; local assistant
 handoff requires the installed helper (or Python for the source launcher).
+
+## Windows tray icon
+
+While its helper runs, Clearings has an icon in the Windows notification area (possibly under the hidden-icons arrow). Click it for **Running locally**, **Open Clearings**, and **Stop helper…**. Save browser edits before stopping from the tray. Closing a browser tab leaves the helper and icon running; stopping the helper removes the icon. No launch-at-login task is added. Mac and Linux keep their existing launch behavior.
 
 ## Work together
 

@@ -353,6 +353,7 @@ class BridgeChecks(unittest.TestCase):
         (alternate / "tools").mkdir(parents=True)
         shutil.copyfile(MODULE, alternate / "tools" / "clearings_local.py")
         shutil.copyfile(MODULE.with_name("clearings_commit.py"), alternate / "tools" / "clearings_commit.py")
+        shutil.copyfile(MODULE.with_name("clearings_tray.py"), alternate / "tools" / "clearings_tray.py")
         alternate_app = "LC_CHECKLIST.html" if expected[0] == "release" else "index.html"
         (alternate / alternate_app).write_text("alternate test page", encoding="utf-8")
         spec = importlib.util.spec_from_file_location("clearings_alternate_test", alternate / "tools" / "clearings_local.py")
@@ -382,10 +383,10 @@ class BridgeChecks(unittest.TestCase):
         port = server.server_address[1]
         try:
             local.atomic_json(bridge.root / "session.json", {"port": port, "token": "fixture-token"})
-            local.run_server(bridge, port, False)
+            local.run_server(bridge, port, False, show_tray=False)
             response["value"] = {**identity, "program": "another-installation"}
             with self.assertRaisesRegex(RuntimeError, "Another Clearings copy or version"):
-                local.run_server(bridge, port, False)
+                local.run_server(bridge, port, False, show_tray=False)
             self.assertEqual(local.load_json(bridge.root / "session.json")["token"], "fixture-token")
         finally:
             server.shutdown()
@@ -460,7 +461,7 @@ class BridgeChecks(unittest.TestCase):
 
     def _serve_and_capture(self, port, failures):
         try:
-            local.run_server(self.bridge, port, False)
+            local.run_server(self.bridge, port, False, show_tray=False)
         except Exception as exc:
             failures.append(exc)
 
@@ -468,7 +469,7 @@ class BridgeChecks(unittest.TestCase):
         server = ThreadingHTTPServer(("127.0.0.1", 0), BaseHTTPRequestHandler)
         try:
             with self.assertRaisesRegex(RuntimeError, "cannot use 127.0.0.1"):
-                local.run_server(self.bridge, server.server_address[1], False)
+                local.run_server(self.bridge, server.server_address[1], False, show_tray=False)
             self.assertFalse((self.bridge.root / "session.json").exists())
         finally:
             server.server_close()

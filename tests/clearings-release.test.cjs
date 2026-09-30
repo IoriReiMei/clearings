@@ -43,7 +43,7 @@ try {
     assert.ok(html.includes("STORE='checklist-studio:recovery:v1'"));
     assert.ok(html.includes("LEGACY_STORE='lc:checklist-studio:recovery:v1'"));
     assert.ok(html.includes("const AI_FORMAT='checklist-studio-changes'"));
-    assert.ok(html.includes("appVersion:'0.4.3'"));
+    assert.ok(html.includes("appVersion:'0.4.4'"));
     assert.ok(!html.includes("format:'clearings-document'"));
   });
   test('overview folding and drag-to-focus interaction ships in the app', () => {
@@ -141,9 +141,9 @@ try {
     }
   });
   const zip=path.join(temp,'clearings.zip');
-  test('release source and builder agree on 0.4.3',()=>{
-    assert.match(html,/appVersion:'0\.4\.3'/);
-    assert.match(fs.readFileSync(packager,'utf8'),/Clearings 0\.4\.3 - shared tasks with durable attribution/);
+  test('release source and builder agree on 0.4.4',()=>{
+    assert.match(html,/appVersion:'0\.4\.4'/);
+    assert.match(fs.readFileSync(packager,'utf8'),/Clearings 0\.4\.4 - visible Windows helper with tray controls/);
     const publicLauncher=fs.existsSync(path.join(root,'docs/GITHUB_START_CLEARINGS.cmd'))
       ?path.join(root,'docs/GITHUB_START_CLEARINGS.cmd'):path.join(root,'Start_Clearings.cmd');
     assert.match(fs.readFileSync(publicLauncher,'utf8'),/py\.exe -3 -c/);
