@@ -1,5 +1,28 @@
-<!-- SPDX-License-Identifier: MPL-2.0 -->
-# Clearings 0.4.5
+<!--
+SPDX-License-Identifier: MIT
+MIT License
+
+Copyright (c) 2026 The Hermit
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+-->
+# Clearings 0.4.6
 
 Clearings is a local checklist and outline for people and their AI collaborators.
 Your workspace stays on your device. There is no account, telemetry, bundled AI,
@@ -13,10 +36,10 @@ Get the matching file from [Releases](https://github.com/IoriReiMei/clearings/re
 
 | Computer | Download | Install |
 | --- | --- | --- |
-| Windows x64 | `Clearings-Setup-0.4.5-Windows-x64.exe` | Open the installer, choose shortcuts, finish, then open Clearings. No administrator rights or separate Python installation. |
-| Mac Apple silicon | `Clearings-0.4.5-macOS-arm64.dmg` | Open the image and drag Clearings into Applications. |
-| Mac Intel | `Clearings-0.4.5-macOS-x86_64.dmg` | Open the image and drag Clearings into Applications. |
-| Linux x64 | `Clearings-Install-0.4.5-Linux-x64.run` | Run `sh Clearings-Install-0.4.5-Linux-x64.run`, then open Clearings from the app menu. |
+| Windows x64 | `Clearings-Setup-0.4.6-Windows-x64.exe` | Open the installer, choose shortcuts, finish, then open Clearings. No administrator rights or separate Python installation. |
+| Mac Apple silicon | `Clearings-0.4.6-macOS-arm64.dmg` | Open the image and drag Clearings into Applications. |
+| Mac Intel | `Clearings-0.4.6-macOS-x86_64.dmg` | Open the image and drag Clearings into Applications. |
+| Linux x64 | `Clearings-Install-0.4.6-Linux-x64.run` | Run `sh Clearings-Install-0.4.6-Linux-x64.run`, then open Clearings from the app menu. |
 
 The installed app opens your normal browser at `http://127.0.0.1:18765/`.
 Windows binaries are unsigned; macOS builds are ad-hoc signed, not notarized.
@@ -34,6 +57,12 @@ handoff requires the installed helper (or Python for the source launcher).
 While its helper runs, Clearings has an icon in the Windows notification area (possibly under the hidden-icons arrow). Click it for **Running locally**, **Open Clearings**, and **Stop helper…**. Save browser edits before stopping from the tray. Closing a browser tab leaves the helper and icon running; stopping the helper removes the icon. No launch-at-login task is added. Mac and Linux keep their existing launch behavior.
 
 ## Work together
+
+Changes inside a group now mark its ancestors with a **CHANGES INSIDE** count,
+including collapsed groups, tracked shortcuts and the outline. Shared items
+count once per group. Clear indicators, Undo and Mark indicator as seen affect
+notifications without changing checkmarks. Long groups load in bounded pages
+so other work stays reachable.
 
 Create a workspace, choose your display name, and add checklists. Click titles
 to explore or fold groups; click checkboxes to complete work. Parent closure does
@@ -69,6 +98,13 @@ the helper. If saving needs attention, it keeps Clearings open with an explanati
 
 ## Keep your work
 
+Local-helper sessions are protected for your account. The public loopback page
+does not expose a reusable helper credential. The helper preserves recovery
+metadata when replacing a stale session, and larger aggregate handoffs have a
+64 MiB limit. Individual JSON documents and browser workspaces keep their own
+limits. Resolved proposal history can be archived explicitly through the CLI;
+pending work is retained.
+
 Ordinary changes save to this browser's IndexedDB. The helper keeps a saved local
 handoff plus pending signed work. Export a backup regularly. A different browser,
 profile, file path or address has separate browser storage: export from the old
@@ -91,5 +127,5 @@ workspace exports, helper session files and access tokens out of public reports.
 See [local handoff](docs/LOCAL_HANDOFF.md), [installer build notes](packaging/README.md),
 [real-browser check](docs/NATIVE_SMOKE_TEST.md), and [hosting](docs/HOSTING.md).
 Only reviewed, allowlisted source and fictional examples enter release packages.
-The app and designated files use MPL 2.0; see [license](LICENSE),
+The app and designated files use the MIT License; see [license](LICENSE),
 [scope](LICENSE_SCOPE.md), and [third-party notes](THIRD_PARTY_NOTES.md).

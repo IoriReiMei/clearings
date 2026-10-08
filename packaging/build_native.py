@@ -1,11 +1,38 @@
 #!/usr/bin/env python3
-# SPDX-License-Identifier: MPL-2.0
+# SPDX-License-Identifier: MIT
+# MIT License
+#
+# Copyright (c) 2026 The Hermit
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
 """Build Clearings' bundled helper from an exact public source snapshot.
 
 Run this on each target operating system. It creates no installer and performs
 no upload; the platform packagers consume its dist/ output afterward.
 """
 from __future__ import annotations
+
+# Isolated mode keeps this untrusted source tree and PYTHONPATH out of the
+# import search path before importing hashlib or other build dependencies.
+import sys
+if not sys.flags.isolated:
+    raise SystemExit("Run the native builder with python -I -B packaging/build_native.py")
 
 import argparse
 import hashlib
@@ -15,11 +42,10 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
-import sys
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSION = "0.4.5"
+VERSION = "0.4.6"
 
 
 def source_files() -> list[Path]:
@@ -37,8 +63,17 @@ def source_files() -> list[Path]:
         if hashlib.sha256(path.read_bytes()).hexdigest() != digest:
             raise ValueError(f"Public source differs from manifest: {name}")
         files.append(path)
-    if b"appVersion:'0.4.5'" not in (ROOT / "index.html").read_bytes():
-        raise ValueError("The public app version is not 0.4.5")
+    # Manifest validation must also reject additions, particularly a nearby
+    # Python module that could be imported by a later build step.
+    actual = {path.relative_to(ROOT).as_posix() for path in ROOT.rglob("*")
+              if (path.is_file() or path.is_symlink())
+              and path.relative_to(ROOT).parts[0] not in (".git", "build-output", "artifacts")
+              and not ("__pycache__" in path.relative_to(ROOT).parts and path.suffix == ".pyc")}
+    extra = actual - set(manifest) - {"MANIFEST.json"}
+    if extra:
+        raise ValueError(f"Unlisted public source file: {sorted(extra)[0]}")
+    if b"appVersion:'0.4.6'" not in (ROOT / "index.html").read_bytes():
+        raise ValueError("The public app version is not 0.4.6")
     return files
 
 
@@ -81,7 +116,7 @@ def main() -> None:
     if output.exists() and any(output.iterdir()):
         raise ValueError(f"Build output is not empty: {output}")
     output.mkdir(parents=True, exist_ok=True)
-    command = [sys.executable, "-m", "PyInstaller", "--noconfirm", "--clean",
+    command = [sys.executable, "-I", "-m", "PyInstaller", "--noconfirm", "--clean",
                "--onedir", "--name", "Clearings", "--distpath", str(output),
                "--workpath", str(output / "build"), "--specpath", str(output / "spec"),
                "--add-data", str(ROOT / "index.html") + os.pathsep + "."]

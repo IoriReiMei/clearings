@@ -1,8 +1,26 @@
 <!--
-SPDX-License-Identifier: MPL-2.0
-This Source Code Form is subject to the terms of the Mozilla Public
-License, v. 2.0. If a copy of the MPL was not distributed with this
-file, You can obtain one at https://mozilla.org/MPL/2.0/.
+SPDX-License-Identifier: MIT
+MIT License
+
+Copyright (c) 2026 The Hermit
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 -->
 # Clearings — known inputs and review boundaries
 
@@ -11,6 +29,13 @@ implementation. This note describes observable release inputs, not a claim that
 every generated line has been proven unique.
 
 ## Runtime and assets
+
+An unreleased working change embeds the owner's supplied 512 × 512 PNG as the
+top-left Clearings mark, without altering its bytes (SHA-256
+`721d33078041e4a1852525dd0c336fbe6f7d2d0c50968fc27072e24d12d68824`).
+Its source was supplied for this change; no independent rights review or public
+release of the new mark is claimed here. Earlier release snapshots remain as
+they were.
 
 The release app contains inline HTML, CSS and JavaScript. It does not import an
 external script/stylesheet, runtime UI package, icon library or downloadable font.
@@ -44,8 +69,9 @@ https://github.com/microsoft/playwright/blob/main/LICENSE
 (checked September 27, 2026). No Playwright package or browser binary is
 included in the intended Clearings release.
 
-The standard MPL text in LICENSE is reproduced as a license, not attributed to
-the Clearings author. See LICENSE_SCOPE.md for its source.
+The standard MIT permission wording is reproduced in LICENSE with the project's
+copyright notice. See LICENSE_SCOPE.md for the licensed scope and preserved
+earlier MPL-2.0 releases. Third-party components retain their existing terms.
 
 ## Scope of inspection
 

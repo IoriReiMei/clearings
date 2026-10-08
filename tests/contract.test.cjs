@@ -1,7 +1,25 @@
-// SPDX-License-Identifier: MPL-2.0
-// This Source Code Form is subject to the terms of the Mozilla Public
-// License, v. 2.0. If a copy of the MPL was not distributed with this
-// file, You can obtain one at https://mozilla.org/MPL/2.0/.
+// SPDX-License-Identifier: MIT
+// MIT License
+//
+// Copyright (c) 2026 The Hermit
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 'use strict';
 // No npm dependencies. Tests execute the app's actual pure validation block.
 const assert = require('node:assert/strict');
@@ -42,8 +60,60 @@ const blankItem=(id,text)=>({id,order:1,parents:[],label:'',tags:[],text,detail:
  await reject('unsafe file path rejected',()=>{const w=clone(workspace);w.index.entries[0].file='../secret.json';api.validateWorkspace(w)},/filename/);
  await reject('case-insensitive filename collision rejected',()=>{const w=clone(workspace);w.index.entries[1].file=w.index.entries[0].file.toUpperCase();api.validateWorkspace(w)},/filename/);
  await reject('javascript link rejected',()=>{const d=clone(original);d.references=[{title:'Unsafe',href:'javascript:alert(1)'}];api.validateDocument(d)},/links/);
+ for(const href of [' javascript:alert(1)','\tjavascript:alert(1)',' //attacker.example/path','\ufeffjavascript:alert(1)','https://example.test/path\n'])
+  await reject('trimmed unsafe reference '+JSON.stringify(href),()=>{const d=clone(original);d.references=[{title:'Unsafe',href}];api.validateDocument(d)},/links/);
+ await test('ordinary HTTP and relative references remain valid',()=>{const d=clone(original);d.references=[{title:'Web',href:'https://example.test/path'},{title:'Local',href:'docs/notes with spaces.html'}];api.validateDocument(d)});
  await reject('tracked dangling item rejected',()=>{const w=clone(workspace);w.index.tracked[0].itemId='gone';api.validateWorkspace(w)},/missing/);
  await test('shared items do not become duplicates',()=>{const d=clone(original);d.model.items.find(i=>i.id==='make').requires.push('purpose');assert.equal(api.validateDocument(d).model.items.length,original.model.items.length)});
+ await test('center rendering bounds a valid shared-task diamond without deleting links',()=>{
+ const rendering=html.split('const CENTER_ROW_LIMIT=1200;')[1]?.split('function renderCenter(){')[0];
+  assert.ok(rendering,'bounded center renderer is present');
+  const presentation=['tagPreview','rowTags','inlineTags','previewText'].map(name=>{
+   const line=html.match(new RegExp('^function '+name+'\\(.*$', 'm'))?.[0];
+   assert.ok(line,`presentation helper ${name} is present`);return line;
+  }).join('\n');
+  const items=[];
+  for(let level=0;level<24;level++)for(const side of ['a','b']){
+   const id=side+level,requires=level===23?['last']:['a'+(level+1),'b'+(level+1)];
+   items.push({id,text:id,requires,label:'',tags:[],detail:''});
+  }
+  items.push({id:'last',text:'last',requires:[],label:'',tags:[],detail:''});
+  const byId=new Map(items.map(item=>[item.id,item]));
+  Object.assign(box,{node:(_doc,id)=>byId.get(id),isLocked:()=>false,centerIsCollapsed:()=>false,
+   // This graph fixture has no activity; notification behavior has its own browser checks.
+   highlightedActivity:()=>null,latestActivity:()=>null,changesInside:()=>null,insideTag:()=>'',contextLocked:()=>false,
+   gripHTML:()=>'',progressHTML:()=>'',menuButton:()=>'',
+   esc:String,detailsOpen:new Set()});
+  vm.runInContext(presentation+'\nconst CENTER_ROW_LIMIT=1200;'+rendering+'\nthis.renderRowsForTest=renderRows;this.setCenterPageForTest=(key,index)=>centerPages.set(key,index);',box);
+  const d={documentId:'diamond',state:{},model:{items,roots:['a0']}};
+  const rendered=box.renderRowsForTest(d,['a0'],null,{count:0,notice:false});
+  const occurrences=(rendered.match(/data-step-row=/g)||[]).length;
+  assert.ok(occurrences>items.length,'valid shared links remain visible');
+  assert.ok(occurrences<=1200,`rendered ${occurrences} occurrences`);
+  assert.ok(rendered.length<2_000_000,'HTML allocation is bounded');
+  assert.match(rendered,/This view shows a bounded part of the checklist/);
+  assert.equal(items.length,49,'the underlying graph is preserved');
+  const flat=Array.from({length:1201},(_,n)=>({id:'flat'+n,text:'Flat '+n,requires:[],label:'',tags:[],detail:''}));
+  const flatById=new Map(flat.map(item=>[item.id,item]));box.node=(_doc,id)=>flatById.get(id);
+  const flatDoc={documentId:'flat',state:{},model:{items:flat,roots:flat.map(i=>i.id)}};
+  const first=box.renderRowsForTest(flatDoc,flat.map(i=>i.id),'parent',{count:0,notice:false});
+  assert.equal((first.match(/data-step-row=/g)||[]).length,1200);
+  assert.match(first,/data-index="1200"/);
+  box.setCenterPageForTest('flat:parent',1200);
+  const last=box.renderRowsForTest(flatDoc,flat.map(i=>i.id),'parent',{count:0,notice:false});
+  assert.equal((last.match(/data-step-row=/g)||[]).length,1);
+  assert.match(last,/flat1200/);
+  const shared=byId.get('last');
+  shared.text='T'.repeat(200_000);shared.label='L'.repeat(10_000);
+  shared.tags=Array(1000).fill('G'.repeat(1000));shared.detail='D'.repeat(100_000);
+  box.detailsOpen.add('diamond:last');
+  box.node=(_doc,id)=>byId.get(id);
+  const loaded=box.renderRowsForTest(d,['a0'],null,{count:0,notice:false});
+  assert.ok(loaded.length<2_000_000,`shared expanded rows allocated ${loaded.length} characters`);
+  assert.ok(!loaded.includes('T'.repeat(1000))&&!loaded.includes('L'.repeat(1000)),'long repeated text is previewed');
+  assert.equal(shared.text.length,200_000,'stored title is unchanged');
+  assert.equal(shared.tags.length,1000,'stored tags are unchanged');
+ });
  await test('AI hash ignores fold state and write timestamp',async()=>{const d=clone(original);d.view.collapsed=['shape'];d.updatedAt='2026-09-25T12:00:00Z';assert.equal(await api.aiHash(d),await api.aiHash(original))});
  await test('AI hash is stable under object key order',async()=>{const d=Object.fromEntries(Object.entries(original).reverse());assert.equal(await api.aiHash(d),await api.aiHash(original))});
  await test('AI title edit is scoped and leaves input untouched',async()=>{const p=await packet(original,[{op:'update-item',id:'purpose',changes:{text:'A clearer purpose'}}]);const result=await api.planAIChanges(original,p);assert.equal(result.document.model.items.find(i=>i.id==='purpose').text,'A clearer purpose');assert.equal(original.model.items.find(i=>i.id==='purpose').text,'Describe who it helps');assert.equal(JSON.stringify(result.document.state),JSON.stringify(original.state))});

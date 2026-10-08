@@ -1,42 +1,75 @@
-<!-- SPDX-License-Identifier: MPL-2.0 -->
-# Clearings 0.4.5 verification boundary
+<!--
+SPDX-License-Identifier: MIT
+MIT License
 
-Group menus offer Collapse all when open and Expand all when collapsed. Both
-include nested groups. In a focused view, the title remains visible and its menu
-folds or unfolds the descendant groups. Leaf tasks have no fold command. Shared
-groups retain one fold state across their occurrences, consistent with existing
-title clicks. Center folds last for the page session; outline folds remain separate.
-The operation does not modify checklist contents, checks, attribution or unread
-indicators. No saved document or proposal format changes.
+Copyright (c) 2026 The Hermit
 
-Save and quit now waits for an in-flight browser save, saves any newer edits,
-then waits for local handoff completion before requesting helper shutdown. The
-interface is temporarily inert while this completes. A failed save or blocked
-handoff keeps the helper running and restores the interface with an explanation.
-The tray's Stop helper command still requires browser edits to be saved first.
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-The real Chromium handoff check covers nested collapse/expand, focused scope,
-unaffected sibling groups and outline, exact workspace equality after folding,
-retained checked children and assistant indicators. It also exercises a blocked
-handoff on quit and a deliberately delayed sync with a newer edit, comparing the
-final handoff snapshot before shutdown. All browser data and helpers are fixtures.
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 
-The four-platform build validates packaged source and native helpers. Windows
-uses the exact checksummed 0.4.4 installer to exercise running-helper upgrade to
-0.4.5, reinstall and uninstall with byte-identical fictional handoff retention.
-The installer replaces bundled files; it does not compare installed versions,
-prevent downgrades, discover updates or remove arbitrary obsolete bundle files.
-This update removes no previous program paths.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+-->
+# Clearings 0.4.6 verification boundary
 
-The working browser origin and installed origin stay separate. Names and commit
-receipts remain declared local attribution, not authenticated identities or
-cryptographic signatures. Clearings coordinates authorized assistants; it does
-not launch them. Older documents remain readable; attribution exports require
-0.4.3 or newer.
+Clearings 0.4.6 brings the current working app into the MIT release: protected
+local-helper sessions, bind-first startup, explicit resolved-history archiving,
+larger aggregate handoffs, bounded group navigation, nested change indicators
+and the supplied Clearings mark. Existing document, workspace and proposal
+identifiers remain compatible. The release page records the exact source commit,
+build results and download checksums.
 
-Windows binaries are unsigned. Mac builds are ad-hoc signed and not notarized.
-The owner's Firefox workspace, Safari, interactive Mac/Linux installation,
-assistive technologies and every display scale are not certified by these
-automated checks. Release as a beta with these limits until broader hands-on
-coverage and distribution signing justify a stronger claim. Repository visibility
-remains the owner's decision.
+## Local helper and saved work
+
+The public loopback page contains no reusable session credential. A launch uses
+a short-lived, one-use ticket, and helper control checks the responding process
+before sending an authenticated command. Windows protects session metadata with
+the current account's DPAPI context; POSIX requires owner-private metadata.
+Startup retains an exclusive listener before replacing stale session metadata
+and preserves a protected recovery copy. Unit and browser checks use disposable
+settings, fictional work and separate ports.
+
+Aggregate handoffs allow up to 64 MiB, while ordinary imported/proposed JSON and
+HTTP request bodies retain their 16 MiB limits. Explicit resolved-history
+archiving preserves an exact preimage and retains pending work. This does not
+increase browser workspace capacity or remove other resource limits.
+
+## App and installer checks
+
+Source checks cover contracts, merge and delivery behavior, preferences, MIT
+notices, allowlisted packaging and exact-file manifests. Browser checks cover
+local handoff, save and reopen, folding, change indicators and long-group paging.
+The native build checks the source manifest and exercises the bundled helper
+against a disposable configuration on each target platform.
+
+Windows upgrade checks use the exact checksummed 0.4.5 installer, close its own
+running helper through the installed CLI, and check upgrade, reinstall and
+uninstall with byte-identical fictional handoff retention. Linux closes the
+existing installed helper before switching its managed version link. Close
+Clearings with Save and quit before replacing the macOS app.
+
+## Beta limits
+
+Windows binaries are unsigned. macOS builds use ad-hoc signing and are not
+notarized. Interactive Mac/Linux installation, Safari/Firefox persistence,
+assistive technologies and every display scale need broader hands-on coverage.
+Automated checks do not certify those journeys. Export a workspace backup before
+upgrading or changing browser origins, and verify the reopened copy before
+discarding an older backup.
+
+Clearings coordinates authorized assistants; it does not launch them. Actor
+names and receipts record declared local attribution. Automatic updates,
+downgrade prevention and arbitrary obsolete-file cleanup remain future work.
+Earlier release artifacts retain their original notices and verification scope.

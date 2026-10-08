@@ -1,8 +1,10 @@
-SPDX-License-Identifier: MPL-2.0
-Clearings 0.4.5 - nested group folding and complete saves before quitting.
+SPDX-License-Identifier: MIT
+Clearings 0.4.6 - nested change indicators, protected local sessions and MIT licensing.
+Collapsed groups, tracked shortcuts and the outline show changes inside.
 Assistants can create and edit signed shared work before browser Refresh.
 Move to and explicit same-list deletion use shared task rules.
 Windows includes a console CLI and an installer that stops its own helper before upgrade or uninstall.
+The local helper protects session credentials and supports a bounded 64 MiB aggregate handoff with explicit resolved-history archival.
 The app contains no model, account, telemetry or external runtime download.
 Native binaries bundle Python; this source ZIP is also usable as a standalone browser app.
 Older exports remain readable; attribution-enriched exports need 0.4.3 or newer.

@@ -1,7 +1,25 @@
-# SPDX-License-Identifier: MPL-2.0
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+# SPDX-License-Identifier: MIT
+# MIT License
+#
+# Copyright (c) 2026 The Hermit
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
 """Pure, conservative Clearings document merge for the local AI handoff.
 
 The browser retains its independent validator and merge. This module refuses
@@ -62,7 +80,9 @@ def validate_document(document):
         if not isinstance(reference.get("title"), str) or not isinstance(reference.get("href"), str):
             raise ValueError("Invalid checklist reference")
         href = reference["href"]
-        if (len(href) > 2000 or any(ord(c) < 32 for c in href) or "\\" in href or
+        edge_space = " \t\n\r\f\v\u00a0\u1680\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u2028\u2029\u202f\u205f\u3000\ufeff"
+        if (not href or href[0] in edge_space or href[-1] in edge_space or len(href) > 2000 or
+                any(ord(c) < 32 or ord(c) == 127 for c in href) or "\\" in href or
                 href.startswith(("//", "\\\\")) or
                 (re.match(r"[A-Za-z][A-Za-z0-9+.-]*:", href) and not href.lower().startswith(("http://", "https://")))):
             raise ValueError("Unsafe checklist reference")

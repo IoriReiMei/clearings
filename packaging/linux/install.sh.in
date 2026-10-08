@@ -1,5 +1,26 @@
 #!/bin/sh
-# SPDX-License-Identifier: MPL-2.0
+# SPDX-License-Identifier: MIT
+# MIT License
+#
+# Copyright (c) 2026 The Hermit
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
 # Per-user Clearings installer. No sudo, remote fetch, or user-data removal.
 set -eu
 VERSION='@VERSION@'
@@ -29,7 +50,7 @@ if [ ! -x "$STAGE/Clearings/Clearings" ] || [ ! -f "$STAGE/Clearings/source.zip"
     exit 1
 fi
 if [ -x "$APP_ROOT/current/Clearings" ]; then
-    "$STAGE/Clearings/Clearings" stop --installation "$(readlink -f "$APP_ROOT/current/Clearings")"
+    "$APP_ROOT/current/Clearings" stop --installation "$(readlink -f "$APP_ROOT/current/Clearings")"
 fi
 mv "$STAGE/Clearings" "$DEST"
 ln -sfn "$DEST" "$APP_ROOT/current"

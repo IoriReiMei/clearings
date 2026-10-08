@@ -1,8 +1,26 @@
 #!/usr/bin/env python3
-# SPDX-License-Identifier: MPL-2.0
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+# SPDX-License-Identifier: MIT
+# MIT License
+#
+# Copyright (c) 2026 The Hermit
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
 """Create an explicit-allowlist release, never a recursive copy of user data.
 
 Run from any directory. Only the named app/docs/tests and fictional samples are
@@ -12,8 +30,10 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
 import sys
+import tempfile
 import zipfile
 # Running the packager inside an extracted release must not add cache files to
 # that release and invalidate its exact-file manifest.
@@ -27,7 +47,7 @@ FILES = {
     'LC_CHECKLIST.html': 'index.html',
     'docs/GITHUB_RELEASE_README.md': 'README.md',
     'AI_CHECKLIST_GUIDE.md': 'AI_CHECKLIST_GUIDE.md',
-    'docs/RELEASE_VERIFICATION_0_4_5.md': 'CLEARINGS_VERIFICATION.md',
+    'docs/RELEASE_VERIFICATION_0_4_6.md': 'CLEARINGS_VERIFICATION.md',
     'LICENSE': 'LICENSE',
     'LICENSE_SCOPE.md': 'LICENSE_SCOPE.md',
     'THIRD_PARTY_NOTES.md': 'THIRD_PARTY_NOTES.md',
@@ -80,6 +100,14 @@ FILES.update({
     'tests/test_clearings_local.py':'tests/test_clearings_local.py',
     'tests/test_clearings_commit.py':'tests/test_clearings_commit.py',
     'tests/test_clearings_delivery.py':'tests/test_clearings_delivery.py',
+    'tests/test_clearings_security.py':'tests/test_clearings_security.py',
+    'tests/test_clearings_startup.py':'tests/test_clearings_startup.py',
+    'tests/test_clearings_capacity.py':'tests/test_clearings_capacity.py',
+    'tests/test_clearings_resolved_archive.py':'tests/test_clearings_resolved_archive.py',
+    'tests/test_clearings_handoff_size_repair.py':'tests/test_clearings_handoff_size_repair.py',
+    'tests/handoff_refresh_repair.test.cjs':'tests/handoff_refresh_repair.test.cjs',
+    'tests/center_mixed_root_paging_browser.test.cjs':'tests/center_mixed_root_paging_browser.test.cjs',
+    'tests/deep_activity_browser.test.cjs':'tests/deep_activity_browser.test.cjs',
 })
 
 # Notices for JSON/image files travel with the exact allowlisted assets.
@@ -115,13 +143,26 @@ def main() -> None:
         if args.force: parser.error('--force cannot be used with --verify-dir.')
         verify_directory(args.verify_dir.resolve())
         return
-    output=args.output.resolve()
+    # resolve() follows an output symlink and could make --force truncate its
+    # target. Keep the final path lexical and refuse non-regular outputs.
+    output=Path(os.path.abspath(args.output))
+    # Resolve parent aliases once, while keeping the final entry unresolved.
+    # Refuse a reparse-point parent rather than letting a junction redirect a
+    # replacement after source-file checks.
+    parent=output.parent
+    while parent != parent.parent:
+        if parent.is_symlink() or (hasattr(parent, 'is_junction') and parent.is_junction()):
+            parser.error(f'Output parent is a link or junction: {parent}')
+        parent=parent.parent
+    output=output.parent.resolve()/output.name
+    if output.is_symlink() or (output.exists() and not output.is_file()):
+        parser.error(f'Output is not a regular file: {output}')
     if output.exists() and not args.force:
         parser.error(f'Output exists: {output}. Choose another name or explicitly pass --force.')
     app_source = ROOT/'LC_CHECKLIST.html'
     if not app_source.exists(): app_source = ROOT/'index.html'
-    if b"appVersion:'0.4.5'" not in app_source.read_bytes():
-        raise ValueError('This packager is for Clearings 0.4.5 only; review the allowlist and release note for another version.')
+    if b"appVersion:'0.4.6'" not in app_source.read_bytes():
+        raise ValueError('This packager is for Clearings 0.4.6 only; review the allowlist and release note for another version.')
     assert_current(app_source, ROOT)
     payload: dict[str,bytes]={}
     extracted_release = app_source.name == 'index.html'
@@ -136,15 +177,31 @@ def main() -> None:
         # The preview image is the only binary input in this explicit allowlist.
         if destination != 'docs/preview.png': data=data.replace(b'\r\n',b'\n')
         payload[destination]=data
-    payload['.gitignore']=b'# SPDX-License-Identifier: MPL-2.0\n# Keep personal libraries under data/ and review before sharing.\n/data/\n/checklist_index.json\n/checklist-*.json\n/program_overview.json\n/build-output/\n/artifacts/\n*.zip\n*.dmg\n*.run\n__pycache__/\n'
+    payload['.gitignore']=b'# SPDX-License-Identifier: MIT\n# Keep personal libraries under data/ and review before sharing.\n/data/\n/checklist_index.json\n/checklist-*.json\n/program_overview.json\n/build-output/\n/artifacts/\n*.zip\n*.dmg\n*.run\n__pycache__/\n'
     payload['.nojekyll']=b''
-    payload['RELEASE_NOTE.txt']=b'SPDX-License-Identifier: MPL-2.0\nClearings 0.4.5 - nested group folding and complete saves before quitting.\nAssistants can create and edit signed shared work before browser Refresh.\nMove to and explicit same-list deletion use shared task rules.\nWindows includes a console CLI and an installer that stops its own helper before upgrade or uninstall.\nThe app contains no model, account, telemetry or external runtime download.\nNative binaries bundle Python; this source ZIP is also usable as a standalone browser app.\nOlder exports remain readable; attribution-enriched exports need 0.4.3 or newer.\nSigning and platform verification limits are documented in CLEARINGS_VERIFICATION.md.\nOnly allowlisted source, docs, tests and fictional examples are included.\nSee LICENSE, LICENSE_SCOPE.md and THIRD_PARTY_NOTES.md.\n'
+    payload['RELEASE_NOTE.txt']=b'SPDX-License-Identifier: MIT\nClearings 0.4.6 - nested change indicators, protected local sessions and MIT licensing.\nCollapsed groups, tracked shortcuts and the outline show changes inside.\nAssistants can create and edit signed shared work before browser Refresh.\nMove to and explicit same-list deletion use shared task rules.\nWindows includes a console CLI and an installer that stops its own helper before upgrade or uninstall.\nThe local helper protects session credentials and supports a bounded 64 MiB aggregate handoff with explicit resolved-history archival.\nThe app contains no model, account, telemetry or external runtime download.\nNative binaries bundle Python; this source ZIP is also usable as a standalone browser app.\nOlder exports remain readable; attribution-enriched exports need 0.4.3 or newer.\nSigning and platform verification limits are documented in CLEARINGS_VERIFICATION.md.\nOnly allowlisted source, docs, tests and fictional examples are included.\nSee LICENSE, LICENSE_SCOPE.md and THIRD_PARTY_NOTES.md.\n'
     manifest={name:hashlib.sha256(data).hexdigest() for name,data in payload.items()}
     payload['MANIFEST.json']=(json.dumps(manifest,indent=2)+'\n').encode()
     output.parent.mkdir(parents=True,exist_ok=True)
-    mode='w' if args.force else 'x'
-    with zipfile.ZipFile(output,mode,compression=zipfile.ZIP_DEFLATED) as archive:
-        for name,data in payload.items(): archive.writestr(name,data)
+    if args.force:
+        # Replace only after the complete archive has been written. The second
+        # check closes the ordinary race; os.replace does not follow a final
+        # symlink if another process swaps it between the check and replace.
+        handle=tempfile.NamedTemporaryFile(prefix='.clearings-share-',suffix='.zip',dir=output.parent,delete=False)
+        temporary=Path(handle.name)
+        try:
+            with handle:
+                with zipfile.ZipFile(handle,'w',compression=zipfile.ZIP_DEFLATED) as archive:
+                    for name,data in payload.items(): archive.writestr(name,data)
+                handle.flush();os.fsync(handle.fileno())
+            if output.is_symlink() or (output.exists() and not output.is_file()):
+                raise ValueError(f'Output changed to an unsafe path: {output}')
+            os.replace(temporary,output)
+        finally:
+            if temporary.exists(): temporary.unlink()
+    else:
+        with zipfile.ZipFile(output,'x',compression=zipfile.ZIP_DEFLATED) as archive:
+            for name,data in payload.items(): archive.writestr(name,data)
     print(f'Created {output} ({len(payload)} explicitly included files).')
     print('No user library or repository history was collected. Review the ZIP before sharing.')
 

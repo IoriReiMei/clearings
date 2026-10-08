@@ -1,9 +1,27 @@
 <!doctype html>
 <!--
-SPDX-License-Identifier: MPL-2.0
-This Source Code Form is subject to the terms of the Mozilla Public
-License, v. 2.0. If a copy of the MPL was not distributed with this
-file, You can obtain one at https://mozilla.org/MPL/2.0/.
+SPDX-License-Identifier: MIT
+MIT License
+
+Copyright (c) 2026 The Hermit
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 -->
 <html lang="en">
 <head>
@@ -131,6 +149,10 @@ html[data-theme=dark] .rows>li:has(>.task-row.change-highlight.ai){--change-ink:
 .rows>li:has(>.task-row.change-highlight):first-child::before,.rows>li:not(:has(>.task-row.change-highlight))+li:has(>.task-row.change-highlight)::before{border-top:2px solid var(--change-ink);border-top-left-radius:4px}
 .rows>li:has(>.task-row.change-highlight):not(:has(+li>.task-row.change-highlight))::before{border-bottom:2px solid var(--change-ink);border-bottom-left-radius:4px}
 .library-card.change-highlight{padding-left:12px}
+.brand-mark{display:block;width:28px;height:28px;flex:none;object-fit:contain;border-radius:4px}
+.scope-tag{white-space:nowrap}
+.tracked-change{display:block;margin-top:3px}
+.tree-row .change-tag{font-size:8px;line-height:1.2;white-space:normal;text-align:center;max-width:56px}
 </style>
 </head>
 <body class="booting">
@@ -156,7 +178,7 @@ html[data-theme=dark] .rows>li:has(>.task-row.change-highlight.ai){--change-ink:
 <div id="scrim" class="scrim" hidden data-action="close-overlays"></div>
 <aside id="libraryPane" class="library-pane" aria-label="Checklists and tracked items">
  <header class="library-header">
-  <div class="brand"><span class="brand-mark" aria-hidden="true">c<span> /</span></span><span>CLEARINGS</span><button id="appMenu" class="icon-button" type="button" data-menu="app" aria-label="Workspace options" aria-haspopup="menu">•••</button></div>
+  <div class="brand"><img class="brand-mark" src="data:image/png;base64,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" alt="" aria-hidden="true"><span>CLEARINGS</span><button id="appMenu" class="icon-button" type="button" data-menu="app" aria-label="Workspace options" aria-haspopup="menu">•••</button></div>
   <button class="new-list" data-action="new-checklist" type="button"><span class="add-plus" aria-hidden="true"></span> New checklist</button>
   <button class="new-list" id="addItemButton" data-action="new-step" type="button" disabled title="Open a checklist to add an item"><span class="add-plus" aria-hidden="true"></span> New item</button>
  </header>
@@ -217,7 +239,7 @@ const arr=(a,where)=>{if(!Array.isArray(a))fail(`${where} must be an array.`);re
 function distinctStrings(a,where){arr(a,where);if(a.some(x=>typeof x!=='string')||new Set(a).size!==a.length)fail(`${where} must contain distinct strings.`)}
 function allowedKeys(o,keys,where){if(!isObj(o))fail(`${where} must be an object.`);for(const k of Object.keys(o))if(!keys.includes(k))fail(`${where}: unsupported field “${k}”. Nothing has been discarded.`)}
 function text(v,where,max=200000){if(typeof v!=='string'||v.length>max)fail(`${where} must be text (${max} characters maximum).`)}
-function safeHref(href){if(typeof href!=='string'||href.length>2000||/[\x00-\x1f]/.test(href))return false;return /^https?:\/\//i.test(href)||(!/^[a-z][a-z0-9+.-]*:/i.test(href)&&!/^[/\\]{2}/.test(href)&&!href.includes('\\'))}
+function safeHref(href){if(typeof href!=='string'||!href||href.length>2000||/[\x00-\x1f\x7f\\]/.test(href)||/^[\x09-\x0d\x20\xa0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]|[\x09-\x0d\x20\xa0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]$/.test(href))return false;return /^https?:\/\//i.test(href)||(!/^[a-z][a-z0-9+.-]*:/i.test(href)&&!/^[/\\]{2}/.test(href))}
 function orderedRoots(items){const nested=new Set(items.flatMap(i=>i.requires||[]));return items.filter(i=>!nested.has(i.id)).sort((a,b)=>(a.order||0)-(b.order||0)).map(i=>i.id)}
 function validateDocument(input){
  const d=clone(input);
@@ -549,9 +571,31 @@ const CLEAR_REFRESH_KEY='clearings:clear-on-refresh:v1';
 let clearOnRefreshPress=false;try{clearOnRefreshPress=localStorage.getItem(CLEAR_REFRESH_KEY)==='1'}catch{}
 const CLEAR_BUTTON_KEY='clearings:show-clear-indicators:v1';
 let showClearIndicators=false;try{showClearIndicators=localStorage.getItem(CLEAR_BUTTON_KEY)==='1'}catch{}
-const localBridgeToken=window.__CLEARINGS_LOCAL_TOKEN__||null;
+const LOCAL_BRIDGE_SESSION_KEY='clearings:local-bridge-token:v1';
+let localBridgeToken=null;
+let localLaunchError='';
+async function initializeLocalBridge(){
+ if(location.protocol!=='http:'||location.hostname!=='127.0.0.1')return;
+ const fragment=new URLSearchParams(location.hash.slice(1)),nonce=fragment.get('clearings-launch');
+ if(nonce!==null){
+  // Fragments are not sent in HTTP requests. Remove the launch ticket from
+  // address bar/history before loading the browser workspace.
+  history.replaceState(history.state,'',location.pathname);
+  try{sessionStorage.removeItem(LOCAL_BRIDGE_SESSION_KEY)}catch{}
+  try{
+   const response=await fetch('/api/bootstrap',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nonce}),cache:'no-store'});
+   const packet=await response.json();
+   if(!response.ok||typeof packet.token!=='string'||!/^[A-Za-z0-9_-]{32,80}$/.test(packet.token))throw new Error('Clearings launch expired. Reopen it from the launcher.');
+   localBridgeToken=packet.token;
+   try{sessionStorage.setItem(LOCAL_BRIDGE_SESSION_KEY,localBridgeToken)}catch{}
+  }catch(error){localLaunchError=error.message+' Reopen Clearings from its launcher.';localError=localLaunchError}
+ }else{
+  try{const prior=sessionStorage.getItem(LOCAL_BRIDGE_SESSION_KEY);if(prior&&/^[A-Za-z0-9_-]{32,80}$/.test(prior))localBridgeToken=prior}catch{}
+ }
+}
 let localHome='',localPending=[],localBusy=false,lastRefreshAt=0,localError='',localKnownGeneration=null,localSyncBlocked=false;
-let refreshClearArmed=false,leftChecklistsCollapsed=false,leftTrackedCollapsed=false;
+ let refreshClearArmed=false,leftChecklistsCollapsed=false,leftTrackedCollapsed=false;
+ let activityScopeCache=new Map();
 function upgradeIndex(){if(workspace.index.schemaVersion<4){workspace.index.schemaVersion=4;workspace.index.preferences={...PREFERENCE_DEFAULTS,...workspace.index.preferences};workspace.index.activity=[]}}
 function activity(){return workspace.index.activity||[]}
 function recordActivity(action,checklistId,itemId=null,{actor=preferences().displayName,role='human',approvedBy=null,highlight=false,unread=false}={}){
@@ -559,11 +603,31 @@ function recordActivity(action,checklistId,itemId=null,{actor=preferences().disp
  if(d&&itemId&&d.model.items.some(i=>i.id===itemId)){d.attribution??={};const record=d.attribution[itemId]??={},stamp={actor:name,role,at,approvedBy};if(action==='new'&&!record.created)record.created=clone(stamp);if(action==='completed'&&!record.completed)record.completed=clone(stamp);if(action==='reopened')delete record.completed;}
  workspace.index.activity.push({id:uid(),at,actor:name,role,action,checklistId,itemId,approvedBy,highlight,unread});
  if(workspace.index.activity.length>500)workspace.index.activity.splice(0,workspace.index.activity.length-500);
+ activityScopeCache.clear();
 }
 function latestActivity(checklistId,itemId=null,action=null){const key=action==='new'?'created':action==='completed'?'completed':null,stamp=key&&itemId?getDoc(checklistId)?.attribution?.[itemId]?.[key]:null;if(stamp)return {...stamp,action,checklistId,itemId};return [...activity()].reverse().find(a=>a.checklistId===checklistId&&a.itemId===itemId&&(!action||a.action===action))||null}
 function highlightedActivity(checklistId,itemId=null){return [...activity()].reverse().find(a=>a.highlight&&a.checklistId===checklistId&&(itemId===null||a.itemId===itemId))||null}
 function activityTone(a){return a?.role==='assistant'?'ai':''}
-function activityTag(a){return a?`<span class="change-tag ${activityTone(a)}">${a.action==='new'?'NEW':a.action==='completed'?'COMPLETED':'UPDATED'}</span>`:''}
+ function activityTag(a){return a?`<span class="change-tag ${activityTone(a)}">${a.action==='new'?'NEW':a.action==='completed'?'COMPLETED':'UPDATED'}</span>`:''}
+ // Follow every parent path once per changed item. Shared descendants count once
+ // in each scope; the parent's own action remains a separate indicator.
+ function changesInside(docId,itemId,flag='highlight'){
+  const key=docId+'\0'+flag;let scopes=activityScopeCache.get(key);
+  if(!scopes){scopes=new Map();const ix=indexes.get(docId);
+   if(ix)for(const event of activity()){
+    if(!event[flag]||event.checklistId!==docId||!event.itemId||!ix.byId.has(event.itemId))continue;
+    const seen=new Set([event.itemId]),todo=[...(ix.parents.get(event.itemId)||[])];
+    while(todo.length){const parent=todo.pop();if(seen.has(parent))continue;seen.add(parent);
+     let scope=scopes.get(parent);if(!scope){scope={items:new Map(),latest:event};scopes.set(parent,scope)}
+     scope.items.set(event.itemId,event);scope.latest=event;
+     todo.push(...(ix.parents.get(parent)||[]));
+    }
+   }
+   activityScopeCache.set(key,scopes);
+  }
+  return scopes.get(itemId)||null;
+ }
+ function insideTag(scope,compact=false){if(!scope)return '';const count=scope.items.size,detail=`${count} changed ${count===1?'item':'items'} inside this group. Open it to find the changes.`;return `<span class="change-tag scope-tag ${activityTone(scope.latest)}" title="${esc(detail)}" aria-label="${esc(detail)}">${count} ${compact?'INSIDE':`${count===1?'CHANGE':'CHANGES'} INSIDE`}</span>`}
 function checklistActivityTag(docId){
  const events=activity().filter(a=>a.checklistId===docId&&a.highlight);if(!events.length)return '';
  const items=new Map();for(const event of events)items.set(event.itemId,event);
@@ -571,9 +635,12 @@ function checklistActivityTag(docId){
  const names=[...new Set(events.map(a=>a.actor))].join(', '),detail=`${count} changed ${count===1?'entry':'entries'} inside this checklist${completed?`; ${completed} task${completed===1?'':'s'} marked complete`:''}. By ${names}.`;
  return `<span class="change-tag checklist-changes ${events.some(a=>a.role==='assistant')?'ai':''}" title="${esc(detail)}" aria-label="${esc(detail)}">${count} ${count===1?'CHANGE':'CHANGES'}</span>`;
 }
-function rowTags(i){const tags=[i.label,...i.tags].filter(Boolean);return tags.length?`<span class="row-tags" aria-label="Item tags">${tags.map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</span>`:''}
+function tagPreview(i,container){const count=(i.label?1:0)+i.tags.length;if(!count)return '';let tags='',shown=0;if(i.label){tags+=`<span class="tag">${previewText(i.label,80)}</span>`;shown++}for(let j=0;j<i.tags.length&&shown<8;j++){if(!i.tags[j])continue;tags+=`<span class="tag">${previewText(i.tags[j],80)}</span>`;shown++}return `<span class="${container}" aria-label="Item tags">${tags}${count>shown?`<span class="tag">+${count-shown}</span>`:''}</span>`}
+function rowTags(i){return tagPreview(i,'row-tags')}
+function inlineTags(i){return tagPreview(i,'inline-tags')}
+function previewText(value,limit=180){const text=String(value);return esc(text.length>limit?text.slice(0,limit)+'…':text)}
 function actorTag(a,visible=false){return a?`<span class="actor-label ${visible?'completer':''} ${a.role==='assistant'?'json':'browser'}" title="${esc(a.actor+(a.approvedBy?' · approved by '+a.approvedBy:''))}">${esc(a.actor)}</span>`:''}
-function clearHighlights(){let changed=false;for(const a of activity())if(a.highlight||a.unread){a.highlight=false;a.unread=false;changed=true}if(changed){markChanged();renderLibrary();renderCenter()}}
+ function clearHighlights(){let changed=false;for(const a of activity())if(a.highlight||a.unread){a.highlight=false;a.unread=false;changed=true}if(changed){markChanged();renderLibrary();renderCenter();renderTree()}}
 function clearIndicatorsWithUndo(message){
  const previous=activity().filter(a=>a.highlight||a.unread).map(a=>({id:a.id,highlight:a.highlight,unread:a.unread}));
  if(!previous.length)return false;
@@ -582,13 +649,13 @@ function clearIndicatorsWithUndo(message){
   if(revision!==clearedRevision){toast('Newer edits exist. The old indicators were not restored.');return}
   const byId=new Map(previous.map(a=>[a.id,a]));
   for(const a of activity()){const before=byId.get(a.id);if(before){a.highlight=before.highlight;a.unread=before.unread}}
-  markChanged();renderLibrary();renderCenter();toast('Notifications restored.');
+   markChanged();renderLibrary();renderCenter();renderTree();toast('Notifications restored.');
  },10000);
  return true;
 }
 function markChecklistIndicatorSeen(docId){
  let changed=false;for(const a of activity())if(a.checklistId===docId&&(a.highlight||a.unread)){a.highlight=false;a.unread=false;changed=true}
- if(changed){markChanged();renderLibrary();renderCenter();toast('Indicator marked as seen.')}else toast('No indicator on this checklist.');
+  if(changed){markChanged();renderLibrary();renderCenter();renderTree();toast('Indicator marked as seen.')}else toast('No indicator on this checklist.');
 }
 async function localRequest(path,body){
  if(!localBridgeToken)throw new Error('Open Clearings with Start_Clearings.cmd to use the home-folder handoff.');
@@ -596,7 +663,7 @@ async function localRequest(path,body){
  try{response=await fetch('/api/'+path,{method:body===undefined?'GET':'POST',headers:{'X-Clearings-Token':localBridgeToken,...(body===undefined?{}:{'Content-Type':'application/json'})},body:body===undefined?undefined:JSON.stringify(body),cache:'no-store',signal:controller.signal});result=await response.json()}
  catch(error){if(error.name==='AbortError')throw new Error('The local handoff did not respond within five seconds.');throw error}
  finally{clearTimeout(timer)}
- if(!response.ok)throw new Error(result.error||'The local handoff did not respond.');return result;
+ if(!response.ok)throw new Error(response.status===403?'Local handoff credentials expired. Reopen Clearings from its launcher.':result.error||'The local handoff did not respond.');return result;
 }
 let localSyncQueue=Promise.resolve();
 function localSync(savedWorkspace,generation){
@@ -605,7 +672,7 @@ function localSync(savedWorkspace,generation){
 }
 async function performLocalSync(savedWorkspace,generation){
  if(!localBridgeToken)return false;
- if(localSyncBlocked){localError='The local handoff is paused after a mismatch. Review it in Settings before resuming.';updateSaveStatus();return false}
+ if(localSyncBlocked){if(!localError)localError='The local handoff is paused. Review it in Settings before resuming.';updateSaveStatus();return false}
  try{await localRequest('sync',{workspace:savedWorkspace,generation,expectedGeneration:localKnownGeneration??0});localKnownGeneration=generation;localError='';updateSaveStatus();return true;}
  catch(error){localSyncBlocked=true;localError=error.message;updateSaveStatus();toast('Browser saved; local handoff needs attention: '+error.message,null,10000);return false}
 }
@@ -640,6 +707,7 @@ function openLocalNewPreview(proposal){
  beginDialog({mode:'local-new',proposalId:proposal.id},'Add incoming checklist?',incomingChecklistPreview(d),'Add checklist');return true;
 }
 async function commitLocalNewProposal(proposal){
+ if(localSyncBlocked)throw new Error(localError||'The local handoff is paused. Review it in Settings before applying incoming changes.');
  const latest=(await loadLocalPending()).find(p=>p.id===proposal.id&&p.kind==='create');
  if(!latest)fail('This incoming checklist is no longer pending.');
  const d=validateIncomingChecklist(latest);
@@ -659,9 +727,9 @@ async function commitLocalNewProposal(proposal){
  await commitBrowserSnapshot(record,baseGeneration);
  workspace=candidate;baseGeneration=record.generation;browserSavedAt=record.savedAt;dirty=false;firstDirtyAt=0;revision++;refreshIndexes();render();
  const synced=await localSync(candidate,baseGeneration);
- if(!synced){toast('Checklist was saved in this browser, but the handoff did not sync. The proposal stays pending for recovery.',null,12000);return d}
+ if(!synced){toast('Checklist was saved in this browser, but the handoff did not sync. The proposal stays pending for recovery.',null,12000);throw new Error(localError||'The local handoff did not sync.')}
  try{await localRequest('mark',{proposalId:latest.id,status:'applied',summary:`Added validated checklist with ${d.model.items.length} unchecked item(s)`,actor:preferences().displayName})}
- catch(error){localError='Added in browser, but receipt is pending: '+error.message;toast(localError,null,10000)}
+ catch(error){localSyncBlocked=true;localError='Added in browser, but receipt is pending: '+error.message;updateSaveStatus();toast(localError,null,10000);throw new Error(localError)}
  return d;
 }
 let refreshInert=[];
@@ -673,7 +741,7 @@ function setRefreshBusy(value,label='↻ Refreshing…'){
  if(wait)setTimeout(()=>{if(!localBusy)button.disabled=false},wait);
 }
 async function commitLocalProposal(proposal,plan,clearPrevious){
- if(localSyncBlocked)throw new Error('The local handoff is paused after a mismatch. Review its Settings before applying incoming changes.');
+ if(localSyncBlocked)throw new Error(localError||'The local handoff is paused. Review its Settings before applying incoming changes.');
  if(browserSaving&&!await browserSavePromise)throw new Error('Wait for the current browser save before applying incoming changes.');
  if(dirty&&!await saveBrowser(false))throw new Error('Save the browser workspace before applying incoming changes.');
  const candidate=clone(workspace),old=getDoc(proposal.documentId),next=validateDocument(plan.merged),position=candidate.documents.findIndex(d=>d.documentId===proposal.documentId);
@@ -697,14 +765,14 @@ async function commitLocalProposal(proposal,plan,clearPrevious){
  await commitBrowserSnapshot(record,baseGeneration);
  workspace=candidate;baseGeneration=record.generation;browserSavedAt=record.savedAt;dirty=false;firstDirtyAt=0;revision++;refreshIndexes();render();
  const synced=await localSync(candidate,baseGeneration);
- if(!synced){toast('Changes were saved in this browser, but the handoff did not sync. The proposal stays pending for recovery.',null,12000);return changed.length}
+ if(!synced){toast('Changes were saved in this browser, but the handoff did not sync. The proposal stays pending for recovery.',null,12000);throw new Error(localError||'The local handoff did not sync.')}
  try{await localRequest('mark',{proposalId:proposal.id,status:'applied',summary:`Applied ${changed.length} visible change(s) after comparison`,actor:preferences().displayName});}
- catch(error){localError='Applied in browser, but receipt is pending: '+error.message;toast(localError,null,10000)}
+ catch(error){localSyncBlocked=true;localError='Applied in browser, but receipt is pending: '+error.message;updateSaveStatus();toast(localError,null,10000);throw new Error(localError)}
  return changed.length;
 }
 async function refreshLocal(){
  if(localBusy)return;if(Date.now()-lastRefreshAt<750)return;lastRefreshAt=Date.now();
- if(localSyncBlocked){toast('The local handoff is paused after a mismatch. Open Settings and retry after reviewing the current browser copy.',null,10000);return}
+ if(localSyncBlocked){toast('The local handoff is paused: '+(localError||'Review Settings before retrying.'),null,10000);return}
  if(!started){toast('Start a workspace first.');return}if(browserConflict||!browserDB){toast('This browser copy cannot save right now. Export a backup before refreshing.',null,10000);return}
  setRefreshBusy(true);try{
   const pending=await loadLocalPending();let count=0,held=new Set(),cleared=false;
@@ -831,9 +899,10 @@ async function initializeBrowser(){
  else if(legacy){await saveBrowser(false);toast('Recovered your earlier browser workspace. The old recovery copy is untouched.',null,11000);}
  if(navigator.storage?.persisted){try{persistedStorage=await navigator.storage.persisted();}catch{persistedStorage=false;}}
  if(localBridgeToken){try{const state=await localRequest('state');localHome=state.home;localKnownGeneration=state.generation;if(started){if(state.generation>baseGeneration){localSyncBlocked=true;localError='The local handoff has a newer saved browser generation. Review that copy before editing here.';updateSaveStatus();toast(localError,null,10000)}else await localSync(workspace,baseGeneration);await loadLocalPending();if(localSyncBlocked)updateSaveStatus()}else{const packet=await localRequest('handoff');$('restoreHandoff').hidden=!packet.snapshot;}}catch(error){localError=error.message;toast('Local handoff: '+error.message,null,10000)}}
+ else if(localLaunchError)toast(localLaunchError,null,12000);
 }
 function showWelcome(){
- $('welcomeStorage').textContent=browserDB?localBridgeToken?'Your checklists save in this browser. If you used the standalone HTML before, export a workspace backup there and import it here once; this local address has its own browser storage.':'Your checklists save automatically in this browser, on this device. No account or folder setup.':`${browserError} You can still try Clearings, but this is an export-only session. Download JSON before closing.`;
+ $('welcomeStorage').textContent=localLaunchError?`${localLaunchError} Your browser workspace is preserved here.`:browserDB?localBridgeToken?'Your checklists save in this browser. If you used the standalone HTML before, export a workspace backup there and import it here once; this local address has its own browser storage.':'Your checklists save automatically in this browser, on this device. No account or folder setup.':`${browserError} You can still try Clearings, but this is an export-only session. Download JSON before closing.`;
  $('localFileNote').hidden=location.protocol!=='file:';
  $('startWorkspace').textContent=browserDB?'Start a workspace':'Start an export-only session';
  if(!$('welcomeDialog').open)$('welcomeDialog').showModal();
@@ -871,7 +940,7 @@ async function reloadBrowserCopy(){
 
 function currentDoc(){return workspace.documents.find(d=>d.documentId===route.docId)||null}
 function getDoc(id){return workspace.documents.find(d=>d.documentId===id)}
-function refreshIndexes(){indexes=new Map();for(const d of workspace.documents){const byId=new Map(d.model.items.map(i=>[i.id,i])),parents=new Map();for(const i of d.model.items)for(const child of i.requires){if(!parents.has(child))parents.set(child,[]);parents.get(child).push(i.id)}indexes.set(d.documentId,{byId,parents})}}
+function refreshIndexes(){indexes=new Map();activityScopeCache.clear();for(const d of workspace.documents){const byId=new Map(d.model.items.map(i=>[i.id,i])),parents=new Map();for(const i of d.model.items)for(const child of i.requires){if(!parents.has(child))parents.set(child,[]);parents.get(child).push(i.id)}indexes.set(d.documentId,{byId,parents})}}
 function node(docId,id){return indexes.get(docId)?.byId.get(id)||null}
 function ancestorLocks(docId,id){const d=getDoc(docId),ix=indexes.get(docId);if(!d||!ix)return[];const found=[],seen=new Set([id]),stack=[...(ix.parents.get(id)||[])];while(stack.length){const a=stack.pop();if(seen.has(a))continue;seen.add(a);if(d.state[a]===true)found.push(a);stack.push(...(ix.parents.get(a)||[]))}return found}
 function isLocked(docId,id){return ancestorLocks(docId,id).length>0}
@@ -919,7 +988,7 @@ function touch(docId=null){
  markChanged();
 }
 function markChanged(alsoFile=true){
- revision++;dirty=true;demo=false;
+  revision++;dirty=true;demo=false;activityScopeCache.clear();
  if(alsoFile&&directory)fileDirty=true;
  if(!firstDirtyAt)firstDirtyAt=Date.now();
  updateSaveStatus();scheduleSave();if(alsoFile)scheduleFolderSave();
@@ -952,7 +1021,7 @@ function updateSaveStatus(){
  else if(dirty){label=p.autosave?'Waiting to save':'Unsaved · autosave off';status='pending';}
  else{label=pendingDraft?'Saved · editor draft kept':'Saved on this device';}
  if(directory){if(ioError){label+=' · folder not saved';status='error';}else if(busy){label+=' · writing folder';}else if(fileDirty)label+=' · folder pending';}
- if(localBridgeToken&&localError){label+=' · handoff needs attention';status='error';}
+ if((localBridgeToken&&localError)||localLaunchError){label+=' · handoff needs attention';status='error';}
  const d=currentDoc();$('saveStatus').textContent=d?.title||'My workspace';
  $('saveStatus').classList.toggle('unsaved',status==='error'||status==='pending');
  $('saveStatus').title='Workspace storage and backup options';
@@ -969,8 +1038,8 @@ function renderLibrary(){
  const y=document.querySelector('.library-scroll').scrollTop;
  const row=d=>{const change=highlightedActivity(d.documentId),last=latestActivity(d.documentId);return `<div class="library-row ${route.docId===d.documentId&&route.view!=='library'?'active':''} ${change?'change-highlight '+activityTone(change):''}" data-library-id="${esc(d.documentId)}">${gripHTML('library',d.documentId,'',null,d.archived)}<button class="library-open" type="button" data-action="open-checklist" data-doc="${esc(d.documentId)}" title="${esc(d.title)}">${esc(d.title)}</button>${last?actorTag(last):''}${change?checklistActivityTag(d.documentId):''}${hasLocalConflict(d.documentId)?`<button class="conflict-warning" type="button" data-action="review-local-conflict" data-doc="${esc(d.documentId)}" title="Incoming JSON and browser changes need review" aria-label="Review conflict in ${esc(d.title)}">⚠</button>`:''}${progressHTML(d.documentId,null,'sidebar')}${menuButton('checklist',d.documentId,'',null,`Options for ${d.title}`)}</div>`};
  const docs=workspace.index.entries.map(e=>getDoc(e.id));$('libraryList').innerHTML=docs.filter(d=>!d.archived).map(row).join('')||'<p class="track-hint">No active checklists.</p>';$('archiveList').innerHTML=docs.filter(d=>d.archived).map(row).join('');$('libraryList').hidden=leftChecklistsCollapsed;$('archiveSection').hidden=leftChecklistsCollapsed||!docs.some(d=>d.archived);$('checklistsLabel').setAttribute('aria-expanded',String(!leftChecklistsCollapsed));$('archiveSummary').textContent=`Archived · ${docs.filter(d=>d.archived).length}`;
- $('trackedList').innerHTML=workspace.index.tracked.map(t=>{const d=getDoc(t.checklistId),i=t.itemId?node(t.checklistId,t.itemId):null,change=highlightedActivity(d.documentId,t.itemId);return `<div class="tracked-row ${i&&d.state[i.id]?'done':''} ${change?'change-highlight '+activityTone(change):''}" data-track-id="${esc(t.id)}">${gripHTML('tracked',t.id)}<button type="button" class="tracked-open" data-action="open-tracked" data-id="${esc(t.id)}" data-drag="tracked-title"><span class="tracked-title">${esc(i?.text||d.title)}</span><span class="tracked-source">${esc(d.title)}${d.archived?' · archived':''}</span></button>${change?(t.itemId?activityTag(change):checklistActivityTag(d.documentId)):''}${progressHTML(d.documentId,t.itemId,'sidebar')}${menuButton('shortcut',d.documentId,t.id,null,'Shortcut options')}</div>`}).join('');
- const unread=activity().filter(a=>a.unread);$('checklistUnread').hidden=!unread.length;$('checklistUnread').classList.toggle('ai',unread.length>0&&unread[unread.length-1].role==='assistant');const tracked=new Set(workspace.index.tracked.map(t=>t.checklistId+'\0'+t.itemId));const trackedUnread=unread.filter(a=>tracked.has(a.checklistId+'\0'+a.itemId)||tracked.has(a.checklistId+'\0null'));$('trackedUnread').hidden=!trackedUnread.length;$('trackedUnread').classList.toggle('ai',trackedUnread.length>0&&trackedUnread[trackedUnread.length-1].role==='assistant');
+  $('trackedList').innerHTML=workspace.index.tracked.map(t=>{const d=getDoc(t.checklistId),i=t.itemId?node(t.checklistId,t.itemId):null,own=highlightedActivity(d.documentId,t.itemId),inside=i?changesInside(d.documentId,i.id):null,change=own||inside?.latest;return `<div class="tracked-row ${i&&d.state[i.id]?'done':''} ${change?'change-highlight '+activityTone(change):''}" data-track-id="${esc(t.id)}">${gripHTML('tracked',t.id)}<button type="button" class="tracked-open" data-action="open-tracked" data-id="${esc(t.id)}" data-drag="tracked-title"><span class="tracked-title">${esc(i?.text||d.title)}</span><span class="tracked-source">${esc(d.title)}${d.archived?' · archived':''}</span>${inside?`<span class="tracked-change">${insideTag(inside,true)}</span>`:''}</button>${own?(i?activityTag(own):checklistActivityTag(d.documentId)):''}${progressHTML(d.documentId,t.itemId,'sidebar')}${menuButton('shortcut',d.documentId,t.id,null,'Shortcut options')}</div>`}).join('');
+  const unread=activity().filter(a=>a.unread);$('checklistUnread').hidden=!unread.length;$('checklistUnread').classList.toggle('ai',unread.length>0&&unread[unread.length-1].role==='assistant');const trackedUnread=unread.filter(a=>workspace.index.tracked.some(t=>t.checklistId===a.checklistId&&(t.itemId===null||t.itemId===a.itemId||changesInside(t.checklistId,t.itemId,'unread')?.items.has(a.itemId))));$('trackedUnread').hidden=!trackedUnread.length;$('trackedUnread').classList.toggle('ai',trackedUnread.length>0&&trackedUnread[trackedUnread.length-1].role==='assistant');
  $('trackedList').hidden=leftTrackedCollapsed;$('trackHint').hidden=leftTrackedCollapsed||workspace.index.tracked.length>0;$('trackedLabel').setAttribute('aria-expanded',String(!leftTrackedCollapsed));document.querySelector('.library-scroll').scrollTop=y;
 }
 function renderBreadcrumbs(){if(route.view==='library'){$('breadcrumbs').innerHTML='<div class="crumbs-inner">Your workspace</div>';return}const d=currentDoc();let h=`<div class="crumbs-inner"><button type="button" data-action="open-checklist" data-doc="${esc(d.documentId)}" ${!focusId()?'class="current" aria-current="page"':''}>${esc(d.title)}</button>`;for(let n=0;n<route.trail.length;n++){const id=route.trail[n];h+=`<span class="crumb-sep">/</span><button type="button" data-action="breadcrumb" data-level="${n}" ${n===route.trail.length-1?'class="current" aria-current="page"':''}>${esc(node(d.documentId,id).text)}</button>`}$('breadcrumbs').innerHTML=h+'</div>'}
@@ -978,7 +1047,7 @@ function refsHTML(d){return d.references.length?`<nav class="references" aria-la
 function centerFoldKey(docId,id){return docId+'\0'+id}
 function centerIsCollapsed(docId,id){return centerCollapsed.has(centerFoldKey(docId,id))}
 function ensureOverviewDefaults(d){
- if(overviewLibraryId!==workspace.index.libraryId){centerCollapsed.clear();overviewInitialized.clear();overviewLibraryId=workspace.index.libraryId}
+ if(overviewLibraryId!==workspace.index.libraryId){centerCollapsed.clear();overviewInitialized.clear();centerRootPages.clear();overviewLibraryId=workspace.index.libraryId}
  if(overviewInitialized.has(d.documentId))return;
  for(const item of d.model.items)if(item.requires.length)centerCollapsed.add(centerFoldKey(d.documentId,item.id));
  const first=d.model.roots.find(id=>node(d.documentId,id)?.requires.length&&d.state[id]!==true);
@@ -1007,11 +1076,32 @@ function toggleCenterFold(trigger,docId,id){
  if(opening&&newList){const height=newList.scrollHeight;newList.style.overflow='hidden';const animation=newList.animate([{height:'0px',opacity:0,transform:'translateY(-5px)'},{height:height+'px',opacity:1,transform:'translateY(0)'}],timing);const finish=()=>{if(newList.isConnected){animation.cancel();newList.style.overflow=''}};animation.finished.then(finish,finish)}
  else if(!opening&&oldList&&newOwner){const visual=oldList.cloneNode(true);visual.dataset.foldVisual='';visual.setAttribute('aria-hidden','true');visual.inert=true;visual.style.pointerEvents='none';visual.style.overflow='hidden';visual.style.height=oldHeight+'px';newOwner.appendChild(visual);const animation=visual.animate([{height:oldHeight+'px',opacity:1},{height:'0px',opacity:0}],timing);animation.finished.then(()=>visual.remove(),()=>visual.remove())}
 }
-function rowHTML(d,id,parent){
+const CENTER_ROW_LIMIT=1200;
+const centerPages=new Map();
+const centerRootPages=new Map();
+function renderRows(d,ids,parent,budget){
+ let html='';
+ if(!ids.length)return html;
+ const key=d.documentId+':'+(parent||'roots:'+ids[0]);
+ const start=Math.min(centerPages.get(key)||0,ids.length-1);
+ const pageButton=(index,label)=>`<li class="muted"><button type="button" data-action="center-page" data-doc="${esc(d.documentId)}" data-id="${esc(parent||'')}" data-page-key="${esc(key)}" data-index="${index}">${label}</button></li>`;
+ if(start)html+=pageButton(Math.max(0,start-CENTER_ROW_LIMIT),'Show earlier supporting items');
+ for(let index=start;index<ids.length;index++){
+  if(budget.count>=CENTER_ROW_LIMIT){
+   if(!budget.notice){html+='<li class="muted" role="status">This view shows a bounded part of the checklist. Saved items remain intact.</li>';budget.notice=true}
+   html+=pageButton(index,'Show next supporting items');
+   break;
+  }
+  html+=rowHTML(d,ids[index],parent,budget);
+ }
+ return html;
+}
+function rowHTML(d,id,parent,budget){
+ budget.count++;
  const i=node(d.documentId,id),done=d.state[id]===true,locked=isLocked(d.documentId,id),has=i.requires.length>0,closed=centerIsCollapsed(d.documentId,id);const detailKey=d.documentId+':'+id;
  const action=has?'toggle-center-fold':'details';
- const change=highlightedActivity(d.documentId,id),last=done?latestActivity(d.documentId,id,'completed'):latestActivity(d.documentId,id),createdBy=latestActivity(d.documentId,id,'new');
- return `<li data-step-row="${esc(id)}" data-owner="${esc(parent||'')}" data-doc="${esc(d.documentId)}"><div class="task-row ${done?'done':''} ${locked?'locked':''} ${change?'change-highlight '+activityTone(change):''}" data-reorder-id="${esc(id)}" data-parent="${esc(parent||'')}">${gripHTML('step',id,d.documentId,parent,locked||contextLocked(d.documentId,parent))}<input class="check ${change?.action==='completed'?'check-highlight '+activityTone(change):''}" type="checkbox" data-check="${esc(id)}" data-doc="${esc(d.documentId)}" aria-label="Mark ${esc(i.text)} done" ${done?'checked':''} ${locked?'disabled':''}>${last?actorTag(last,done):''}<button class="row-title ${has?'has-children':''}" type="button" data-action="${action}" data-id="${esc(id)}" data-doc="${esc(d.documentId)}" data-parent="${esc(parent||'')}" ${has?`aria-expanded="${!closed}"`:''}>${esc(i.text)}</button>${rowTags(i)}${change?activityTag(change):''}${has?progressHTML(d.documentId,id,'compact'):''}${menuButton('step',d.documentId,id,parent,`Options for ${i.text}`)}</div>${detailsOpen.has(detailKey)?`<div class="inline-details"><div class="inline-tags">${[i.label,...i.tags].filter(Boolean).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>${createdBy?`<small>Created by ${esc(createdBy.actor)}${createdBy.approvedBy?' · approved by '+esc(createdBy.approvedBy):''}</small><br>`:''}${esc(i.detail||'No detail added yet.')}</div>`:''}${has&&!closed?`<ol class="rows" data-order-parent="${esc(id)}">${i.requires.map(x=>rowHTML(d,x,id)).join('')}</ol>`:''}</li>`
+  const own=highlightedActivity(d.documentId,id),inside=has?changesInside(d.documentId,id):null,change=own||inside?.latest,last=done?latestActivity(d.documentId,id,'completed'):latestActivity(d.documentId,id),createdBy=latestActivity(d.documentId,id,'new');
+  return `<li data-step-row="${esc(id)}" data-owner="${esc(parent||'')}" data-doc="${esc(d.documentId)}"><div class="task-row ${done?'done':''} ${locked?'locked':''} ${change?'change-highlight '+activityTone(change):''}" data-reorder-id="${esc(id)}" data-parent="${esc(parent||'')}">${gripHTML('step',id,d.documentId,parent,locked||contextLocked(d.documentId,parent))}<input class="check ${own?.action==='completed'?'check-highlight '+activityTone(own):''}" type="checkbox" data-check="${esc(id)}" data-doc="${esc(d.documentId)}" aria-label="Mark ${previewText(i.text)} done" ${done?'checked':''} ${locked?'disabled':''}>${last?actorTag(last,done):''}<button class="row-title ${has?'has-children':''}" type="button" data-action="${action}" data-id="${esc(id)}" data-doc="${esc(d.documentId)}" data-parent="${esc(parent||'')}" ${has?`aria-expanded="${!closed}"`:''}>${previewText(i.text)}</button>${rowTags(i)}${own?activityTag(own):''}${insideTag(inside)}${has?progressHTML(d.documentId,id,'compact'):''}${menuButton('step',d.documentId,id,parent,`Options for ${i.text.slice(0,120)}`)}</div>${detailsOpen.has(detailKey)?`<div class="inline-details">${inlineTags(i)}${createdBy?`<small>Created by ${esc(createdBy.actor)}${createdBy.approvedBy?' · approved by '+esc(createdBy.approvedBy):''}</small><br>`:''}${previewText(i.detail||'No detail added yet.',800)}</div>`:''}${has&&!closed?`<ol class="rows" data-order-parent="${esc(id)}">${renderRows(d,i.requires,id,budget)}</ol>`:''}</li>`
 }
 function renderCenter(){
  renderBreadcrumbs();
@@ -1026,18 +1116,34 @@ function renderCenter(){
  }
  const d=currentDoc(),id=focusId(),i=id?node(d.documentId,id):null;
  ensureOverviewDefaults(d);
- const title=i?.text||d.title,subtitle=i?(i.requires.length?`${i.requires.length} supporting items · your checkmarks remain independent`:'One step, in context'):d.subtitle;
+  const title=i?.text||d.title,subtitle=i?(i.requires.length?`${i.requires.length} supporting items · your checkmarks remain independent`:'One step, in context'):d.subtitle;
  const locked=id&&isLocked(d.documentId,id),ancestors=id?ancestorLocks(d.documentId,id):[];
-  const headerChange=id?highlightedActivity(d.documentId,id):highlightedActivity(d.documentId),headerChecked=id&&d.state[id]?latestActivity(d.documentId,id,'completed'):null;
-   $('pageHeader').innerHTML=`<div class="eyebrow">${id?i.requires.length?'In focus':'A closer look':d.archived?'Archived checklist':'Project overview'}</div><div class="header-line ${id?'has-title-checkbox':''} ${id&&d.state[id]?'is-done':''} ${headerChange?'change-highlight '+activityTone(headerChange):''}">${id?`<input type="checkbox" class="check header-title-checkbox ${headerChange?.action==='completed'?'check-highlight '+activityTone(headerChange):''}" data-check="${esc(id)}" data-doc="${esc(d.documentId)}" aria-label="Mark ${esc(title)} done" ${d.state[id]?'checked':''} ${locked?'disabled':''}>${headerChecked?actorTag(headerChecked,true):''}`:''}<h1 class="draggable-title" tabindex="0">${esc(title)}</h1>${id?rowTags(i):''}${headerChange?(id?activityTag(headerChange):checklistActivityTag(d.documentId)):''}<div class="header-actions">${progressHTML(d.documentId,id)}${menuButton(id?'step':'checklist',d.documentId,id||'',route.trail.at(-2)||null,id?'Current step options':'Checklist options')}</div></div><p class="header-subtitle">${esc(subtitle)}</p>${!id&&d.description?`<details class="about"><summary>About this checklist</summary><div class="about-text">${esc(d.description)}</div>${refsHTML(d)}${d.footer?`<div class="about-text">${esc(d.footer)}</div>`:''}</details>`:id&&i.requires.length&&i.detail?`<details class="about"><summary>What counts as done</summary><div class="about-text">${esc(i.detail)}</div></details>`:''}`;
+   const headerOwn=id?highlightedActivity(d.documentId,id):highlightedActivity(d.documentId),headerInside=id?changesInside(d.documentId,id):null,headerChange=headerOwn||headerInside?.latest,headerChecked=id&&d.state[id]?latestActivity(d.documentId,id,'completed'):null;
+    $('pageHeader').innerHTML=`<div class="eyebrow">${id?i.requires.length?'In focus':'A closer look':d.archived?'Archived checklist':'Project overview'}</div><div class="header-line ${id?'has-title-checkbox':''} ${id&&d.state[id]?'is-done':''} ${headerChange?'change-highlight '+activityTone(headerChange):''}">${id?`<input type="checkbox" class="check header-title-checkbox ${headerOwn?.action==='completed'?'check-highlight '+activityTone(headerOwn):''}" data-check="${esc(id)}" data-doc="${esc(d.documentId)}" aria-label="Mark ${esc(title)} done" ${d.state[id]?'checked':''} ${locked?'disabled':''}>${headerChecked?actorTag(headerChecked,true):''}`:''}<h1 class="draggable-title" tabindex="0">${esc(title)}</h1>${id?rowTags(i):''}${headerOwn?(id?activityTag(headerOwn):checklistActivityTag(d.documentId)):''}${insideTag(headerInside)}<div class="header-actions">${progressHTML(d.documentId,id)}${menuButton(id?'step':'checklist',d.documentId,id||'',route.trail.at(-2)||null,id?'Current step options':'Checklist options')}</div></div><p class="header-subtitle">${esc(subtitle)}</p>${!id&&d.description?`<details class="about"><summary>About this checklist</summary><div class="about-text">${esc(d.description)}</div>${refsHTML(d)}${d.footer?`<div class="about-text">${esc(d.footer)}</div>`:''}</details>`:id&&i.requires.length&&i.detail?`<details class="about"><summary>What counts as done</summary><div class="about-text">${esc(i.detail)}</div></details>`:''}`;
+ const centerBudget={count:0,notice:false};
  let content='';if(locked)content+=`<p class="lock-note">Read-only while ${ancestors.map(a=>`<button data-action="open-item" data-doc="${esc(d.documentId)}" data-id="${esc(a)}">${esc(node(d.documentId,a).text)}</button>`).join(' or ')} is marked done. Your saved sub-task checks have not changed.</p>`;
  if(id&&d.state[id]&&i.requires.length)content+='<p class="lock-note">This scope is closed. Supporting items remain visible and read-only. Uncheck this heading to edit them.</p>';
  if(id){
-  if(i.requires.length)content+=`<ol class="rows" data-order-parent="${esc(id)}">${i.requires.map(x=>rowHTML(d,x,id)).join('')}</ol>`;
+  if(i.requires.length)content+=`<ol class="rows" data-order-parent="${esc(id)}">${renderRows(d,i.requires,id,centerBudget)}</ol>`;
   else content+=`<div class="inline-tags">${[i.label,...i.tags].filter(Boolean).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div><div class="leaf-content">${esc(i.detail||'No additional detail. This item can stay beautifully simple.')}</div>`;
  }else{
-  let leaves=[];const flush=()=>{if(leaves.length){content+=`<ol class="rows" data-order-parent="">${leaves.map(x=>rowHTML(d,x,null)).join('')}</ol>`;leaves=[]}};
-   for(const rootId of d.model.roots){const r=node(d.documentId,rootId);if(!r.requires.length){leaves.push(rootId);continue}flush();const done=d.state[rootId]===true,closed=centerIsCollapsed(d.documentId,rootId),change=highlightedActivity(d.documentId,rootId),checkedBy=done?latestActivity(d.documentId,rootId,'completed'):null;content+=`<section class="section-block" data-root-group="${esc(rootId)}"><header class="group-header ${done?'done':''} ${change?'change-highlight '+activityTone(change):''}" data-reorder-id="${esc(rootId)}" data-parent="">${gripHTML('step',rootId,d.documentId,null,isLocked(d.documentId,rootId))}<input class="check ${change?.action==='completed'?'check-highlight '+activityTone(change):''}" type="checkbox" data-check="${esc(rootId)}" data-doc="${esc(d.documentId)}" aria-label="Mark ${esc(r.text)} done" ${done?'checked':''} ${isLocked(d.documentId,rootId)?'disabled':''}>${checkedBy?actorTag(checkedBy,true):''}<h2><button class="group-name" type="button" data-action="toggle-center-fold" data-doc="${esc(d.documentId)}" data-id="${esc(rootId)}" aria-expanded="${!closed}">${esc(r.text)}</button></h2>${rowTags(r)}${change?activityTag(change):''}${done?'<span class="closed-badge">closed</span>':''}${progressHTML(d.documentId,rootId,'compact')}${menuButton('step',d.documentId,rootId,null,`Options for ${r.text}`)}</header>${closed?'':`<ol class="rows" data-order-parent="${esc(rootId)}">${r.requires.map(x=>rowHTML(d,x,rootId)).join('')}</ol>`}</section>`}flush();
+  const roots=d.model.roots,rootKey=d.documentId+':root-level';
+  const rootStart=Math.min(centerRootPages.get(d.documentId)||0,Math.max(0,roots.length-1));
+  const rootPager=(index,label)=>`<ol class="rows" data-order-parent=""><li class="muted"><button type="button" data-action="center-page" data-root-page="1" data-doc="${esc(d.documentId)}" data-id="" data-page-key="${esc(rootKey)}" data-index="${index}">${label}</button></li></ol>`;
+  if(rootStart)content+=rootPager(0,'Show earlier supporting items');
+  let leaves=[];const flush=()=>{if(leaves.length){content+=`<ol class="rows" data-order-parent="">${renderRows(d,leaves,null,centerBudget)}</ol>`;leaves=[]}};
+  for(let rootIndex=rootStart;rootIndex<roots.length;rootIndex++){
+   const rootId=roots[rootIndex],r=node(d.documentId,rootId);
+   if(!r.requires.length){
+    if(centerBudget.count>=CENTER_ROW_LIMIT){content+=rootPager(rootIndex,'Show next supporting items');break}
+    leaves.push(rootId);continue;
+   }
+   flush();
+   if(centerBudget.count>=CENTER_ROW_LIMIT){content+=rootPager(rootIndex,'Show next supporting items');break}
+    const done=d.state[rootId]===true,closed=centerIsCollapsed(d.documentId,rootId),own=highlightedActivity(d.documentId,rootId),inside=changesInside(d.documentId,rootId),change=own||inside?.latest,checkedBy=done?latestActivity(d.documentId,rootId,'completed'):null;
+    content+=`<section class="section-block" data-root-group="${esc(rootId)}"><header class="group-header ${done?'done':''} ${change?'change-highlight '+activityTone(change):''}" data-reorder-id="${esc(rootId)}" data-parent="">${gripHTML('step',rootId,d.documentId,null,isLocked(d.documentId,rootId))}<input class="check ${own?.action==='completed'?'check-highlight '+activityTone(own):''}" type="checkbox" data-check="${esc(rootId)}" data-doc="${esc(d.documentId)}" aria-label="Mark ${esc(r.text)} done" ${done?'checked':''} ${isLocked(d.documentId,rootId)?'disabled':''}>${checkedBy?actorTag(checkedBy,true):''}<h2><button class="group-name" type="button" data-action="toggle-center-fold" data-doc="${esc(d.documentId)}" data-id="${esc(rootId)}" aria-expanded="${!closed}">${esc(r.text)}</button></h2>${rowTags(r)}${own?activityTag(own):''}${insideTag(inside)}${done?'<span class="closed-badge">closed</span>':''}${progressHTML(d.documentId,rootId,'compact')}${menuButton('step',d.documentId,rootId,null,`Options for ${r.text}`)}</header>${closed?'':`<ol class="rows" data-order-parent="${esc(rootId)}">${renderRows(d,r.requires,rootId,centerBudget)}</ol>`}</section>`;
+  }
+  flush();
   if(!d.model.items.length)content+='<div class="empty-state">A clear page.<br>Start with a heading or a single step; you can add depth later.</div>';
  }
  $('pageContent').innerHTML=content;
@@ -1065,17 +1171,18 @@ function renderTree(){
   const collapsed=new Set(d.view.collapsed);let html='<ul class="tree">';
   for(const id of ids){
    if(rendered>=1800){truncated=true;break}rendered++;
-   const i=node(d.documentId,id),path=[...trail,id],has=i.requires.length>0,done=d.state[id]===true,closed=done||collapsed.has(id);
+    const i=node(d.documentId,id),path=[...trail,id],has=i.requires.length>0,done=d.state[id]===true,closed=done||collapsed.has(id),own=highlightedActivity(d.documentId,id),insideChange=has?changesInside(d.documentId,id):null,change=own||insideChange?.latest;
    const sameDoc=route.view==='checklist'&&route.docId===d.documentId;
    const current=sameDoc&&JSON.stringify(path)===JSON.stringify(route.trail);
    const inside=sameDoc&&closed&&!current&&route.trail.slice(0,path.length).join('\0')===path.join('\0');
-   html+=`<li class="tree-node">${trail.length?`<button class="thread-line" type="button" data-fold="${esc(trail.at(-1))}" data-fold-doc="${esc(d.documentId)}" data-fold-only="1" title="Fold ${esc(node(d.documentId,trail.at(-1)).text)}" aria-label="Fold parent group"></button>`:''}<div class="tree-row">${has&&!done?`<button class="tree-fold" type="button" data-fold="${esc(id)}" data-fold-doc="${esc(d.documentId)}" aria-expanded="${!closed}" aria-label="${closed?'Expand':'Collapse'} ${esc(i.text)}">${closed?'+':'−'}</button>`:`<span class="tree-space" aria-hidden="true">${done?'✓':''}</span>`}<button type="button" class="tree-name ${has?'has-children':''} ${done?'done':''} ${current?'current':''} ${inside?'contains-current':''}" data-tree-doc="${esc(d.documentId)}" data-tree-path="${esc(JSON.stringify(path))}" ${current?'aria-current="page"':''}>${esc(i.text)}${inside?'<span class="current-inside"> · view inside</span>':''}</button></div>${has&&!closed?walk(d,i.requires,path):''}</li>`;
+    html+=`<li class="tree-node">${trail.length?`<button class="thread-line" type="button" data-fold="${esc(trail.at(-1))}" data-fold-doc="${esc(d.documentId)}" data-fold-only="1" title="Fold ${previewText(node(d.documentId,trail.at(-1)).text)}" aria-label="Fold parent group"></button>`:''}<div class="tree-row ${change?'change-highlight '+activityTone(change):''}">${has&&!done?`<button class="tree-fold" type="button" data-fold="${esc(id)}" data-fold-doc="${esc(d.documentId)}" aria-expanded="${!closed}" aria-label="${closed?'Expand':'Collapse'} ${previewText(i.text)}">${closed?'+':'−'}</button>`:`<span class="tree-space" aria-hidden="true">${done?'✓':''}</span>`}<button type="button" class="tree-name ${has?'has-children':''} ${done?'done':''} ${current?'current':''} ${inside?'contains-current':''}" data-tree-doc="${esc(d.documentId)}" data-tree-path="${esc(JSON.stringify(path))}" ${current?'aria-current="page"':''}>${previewText(i.text)}${inside?'<span class="current-inside"> · view inside</span>':''}</button>${own?activityTag(own):''}${insideTag(insideChange,true)}</div>${has&&!closed?walk(d,i.requires,path):''}</li>`;
   }
   return html+'</ul>';
  }
  let html='';for(const d of docs){if(rendered>=1800){truncated=true;break}
-  if(outline.scope==='all')html+=`<section class="outline-checklist"><button class="outline-checklist-title" type="button" data-action="outline-checklist" data-doc="${esc(d.documentId)}">${esc(d.title)} <span aria-hidden="true">→</span></button>${walk(d,d.model.roots)}</section>`;
-  else {const rootCurrent=route.view==='checklist'&&route.docId===d.documentId&&!route.trail.length;html+=`<section class="outline-checklist"><button class="outline-checklist-title outline-root ${rootCurrent?'current':''}" type="button" data-action="open-checklist" data-doc="${esc(d.documentId)}" ${rootCurrent?'aria-current="page"':''}>${esc(d.title)}</button>${walk(d,d.model.roots)}</section>`;}
+   const docChange=highlightedActivity(d.documentId),docTag=checklistActivityTag(d.documentId);
+   if(outline.scope==='all')html+=`<section class="outline-checklist"><button class="outline-checklist-title ${docChange?'change-highlight '+activityTone(docChange):''}" type="button" data-action="outline-checklist" data-doc="${esc(d.documentId)}">${esc(d.title)} ${docTag}<span aria-hidden="true">→</span></button>${walk(d,d.model.roots)}</section>`;
+   else {const rootCurrent=route.view==='checklist'&&route.docId===d.documentId&&!route.trail.length;html+=`<section class="outline-checklist"><button class="outline-checklist-title outline-root ${rootCurrent?'current':''} ${docChange?'change-highlight '+activityTone(docChange):''}" type="button" data-action="open-checklist" data-doc="${esc(d.documentId)}" ${rootCurrent?'aria-current="page"':''}>${esc(d.title)} ${docTag}</button>${walk(d,d.model.roots)}</section>`;}
  }
  el.innerHTML=(html||'<p class="track-hint">No active checklists. Create one from the left menu.</p>')+(truncated?'<p class="track-hint">Outline capped at 1,800 visible entries. Choose one checklist to explore further; no data was removed.</p>':'');el.scrollTop=scroll;
 }
@@ -1269,7 +1376,7 @@ async function openLocalSettings(){
  if(localBridgeToken){try{localHome=(await localRequest('state')).home}catch(error){localError=error.message}}
  const protection=persistedStorage===true?'Protected from automatic eviction.':persistedStorage===false?'Standard browser storage.':'Protection status not available yet.';
  const fields=`<section class="pref-section">${settingsHeading('Identity','Hold Shift outside text fields to see edit names; hold Ctrl (or Command) to see tags. Orange marks browser changes; blue marks AI changes. Names are labels, not identity checks.')}${field('humanName','Your username',preferences().displayName)}</section>
- <section class="pref-section">${settingsHeading('Refresh Clearings',localBridgeToken?'The launcher reads incoming changes from the selected Clearings home folder without a file picker.':'The standalone page uses a file picker for incoming changes; the local launcher provides one-click Refresh.')}${localBridgeToken?field('home','Clearings home folder',localHome):''}
+ <section class="pref-section">${settingsHeading('Refresh Clearings',localBridgeToken?'The launcher reads incoming changes from the selected Clearings home folder without a file picker.':localLaunchError?'The local launch could not connect. Reopen Clearings from its launcher to restore the handoff.':'The standalone page uses a file picker for incoming changes; the local launcher provides one-click Refresh.')}${localLaunchError?`<p class="dialog-error">${esc(localLaunchError)} Your browser workspace remains here.</p>`:''}${localBridgeToken?field('home','Clearings home folder',localHome):''}
  ${settingsToggle('clearOnRefreshPress','Clear indicators on first Refresh','When off, a no-update Refresh offers a second click to clear indicators. When on, one empty Refresh clears them. New changes clear previous indicators either way.')}
  ${localBridgeToken?`${localError?`<p class="dialog-error">Handoff: ${esc(localError)}</p><button class="button" type="button" data-action="retry-local-handoff">Retry handoff after reviewing</button>`:''}<button class="button" type="button" data-action="create-practice-conflict">Make a practice conflict</button>`:''}</section>
  <section class="pref-section" id="savingSettings">${settingsHeading('Saving & storage','The workspace lives in this browser on this device. Export a backup before clearing browser data or moving to another browser. Optional folder copies are separate.')}${settingsToggle('autosave','Autosave','Save locally in this browser after editing. It does not upload data or rewrite the HTML file.')}${prefSelect('saveDelay','Save after a pause',[['1000','1 second'],['3000','3 seconds'],['5000','5 seconds']])}
@@ -1423,6 +1530,15 @@ function dispatch(command,ctx={}){
   case 'new-subitem':openStepEditor(docId,null,id);break;
   case 'details':showDetails(docId,id);break;
   case 'focus-item':goItem(docId,id);break;
+  case 'center-page':{
+   const key=ctx.button?.dataset.pageKey,index=Number(ctx.button?.dataset.index);
+   if(!Number.isSafeInteger(index)||index<0)break;
+   if(ctx.button?.dataset.rootPage==='1')centerRootPages.set(docId,index);
+   else{if(!key)break;centerPages.set(key,index)}
+   if(id)goItem(docId,id);
+   renderCenter();
+   break;
+  }
   case 'track-item':track(docId,id);break;
   case 'track-checklist':track(docId,null);break;
   case 'track-current':if(route.view!=='library')track(route.docId,focusId());break;
@@ -1855,12 +1971,12 @@ $('refreshInput').addEventListener('change',async e=>{
 });
 
 // This small read-only surface supports reproducible UI tests and personal backups.
-const readOnlyAPI=Object.freeze({snapshot:()=>clone(workspace),validate:validateWorkspace,validateDocument,migrateDocument,aiHash,planAIChanges,formatVersion:1,appVersion:'0.4.5',storage:()=>Object.freeze({ready:storageReady,available:!!browserDB,saving:browserSaving,dirty,error:browserError,savedAt:browserSavedAt,persisted:persistedStorage,draft:!!pendingDraft,generation:baseGeneration})});
+const readOnlyAPI=Object.freeze({snapshot:()=>clone(workspace),validate:validateWorkspace,validateDocument,migrateDocument,aiHash,planAIChanges,formatVersion:1,appVersion:'0.4.6',storage:()=>Object.freeze({ready:storageReady,available:!!browserDB,saving:browserSaving,dirty,error:browserError,savedAt:browserSavedAt,persisted:persistedStorage,draft:!!pendingDraft,generation:baseGeneration})});
 Object.defineProperty(window,'Clearings',{value:readOnlyAPI,writable:false});
 Object.defineProperty(window,'ChecklistStudio',{value:readOnlyAPI,writable:false});
 // Read-only legacy test/backup alias; no project-specific runtime dependency.
 Object.defineProperty(window,'LCChecklist',{value:readOnlyAPI,writable:false});
-initializeBrowser();
+initializeLocalBridge().then(initializeBrowser,initializeBrowser);
 })();
 </script>
 </body>

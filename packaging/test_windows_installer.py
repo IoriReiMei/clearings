@@ -1,15 +1,46 @@
-# SPDX-License-Identifier: MPL-2.0
+# SPDX-License-Identifier: MIT
+# MIT License
+#
+# Copyright (c) 2026 The Hermit
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
 """Fresh install, live-helper update, and live-helper uninstall in a temporary home."""
 import argparse
 import hashlib
+import importlib.util
 import json
 import os
 from pathlib import Path
 import socket
 import subprocess
+import sys
 import tempfile
 import time
 import urllib.request
+
+# Read only the disposable session created by this fixture. The source helper
+# supplies the same DPAPI decoder as the native helper; no owner config is used.
+SOURCE = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(SOURCE / 'tools'))
+spec = importlib.util.spec_from_file_location('clearings_installer_fixture', SOURCE / 'tools' / 'clearings_local.py')
+local = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(local)
 
 
 def wait_for(test, message, timeout=30):
@@ -43,8 +74,11 @@ def main():
             child=subprocess.Popen([str(install/'Clearings.exe'),'serve','--port',str(port),'--no-browser',*headless],env=env,**hidden)
             children.append(child)
             session=config/'session.json'
-            wait_for(lambda:session.exists() and json.loads(session.read_text())['pid']==child.pid,'Installed helper did not start')
-            token=json.loads(session.read_text())['token']
+            def read_fixture_session():
+                outer=json.loads(session.read_text())
+                return local.load_private_session(session) if outer.get('format')=='clearings-protected-session-v1' else outer
+            wait_for(lambda:session.exists() and read_fixture_session()['pid']==child.pid,'Installed helper did not start')
+            token=read_fixture_session()['token']
             def request(path,value=None):
                 req=urllib.request.Request(f'http://127.0.0.1:{port}'+path,data=None if value is None else json.dumps(value).encode(),headers={'X-Clearings-Token':token,'Content-Type':'application/json'})
                 with urllib.request.urlopen(req,timeout=5) as response:return json.load(response)
@@ -57,7 +91,7 @@ def main():
             run([str(first),'/S',f'/D={install}'])
             assert (install/'Clearings.exe').is_file()
             first_version=subprocess.run([str(install/'ClearingsCLI.exe'),'--version'],env=env,check=True,capture_output=True,text=True,**hidden).stdout.strip()
-            assert first_version==('Clearings 0.4.4' if args.previous_installer else 'Clearings 0.4.5'),first_version
+            assert first_version==('Clearings 0.4.5' if args.previous_installer else 'Clearings 0.4.6'),first_version
             cli=subprocess.run([str(install/'ClearingsCLI.exe'),'status'],env=env,check=True,capture_output=True,text=True,**hidden)
             assert json.loads(cli.stdout)['home']==str(home.resolve())
             child,request=start()
@@ -71,7 +105,7 @@ def main():
             wait_for(lambda:child.poll() is not None,'Update left the earlier helper running')
             assert hashlib.sha256(handoff.read_bytes()).hexdigest()==before
             version=subprocess.run([str(install/'ClearingsCLI.exe'),'--version'],env=env,check=True,capture_output=True,text=True,**hidden).stdout.strip()
-            assert version=='Clearings 0.4.5',version
+            assert version=='Clearings 0.4.6',version
             child,request=start()
             run([str(installer),'/S',f'/D={install}'])
             wait_for(lambda:child.poll() is not None,'Reinstall left the earlier helper running')
@@ -81,7 +115,7 @@ def main():
             wait_for(lambda:child.poll() is not None,'Uninstall left the helper running')
             wait_for(lambda:not (install/'Clearings.exe').exists() and not (install/'_internal').exists(),'Uninstall left program files behind')
             assert hashlib.sha256(handoff.read_bytes()).hexdigest()==before
-            print(f'PASS {first_version} install, running-helper upgrade to 0.4.5, reinstall, uninstall, and exact handoff preservation')
+            print(f'PASS {first_version} install, running-helper upgrade to 0.4.6, reinstall, uninstall, and exact handoff preservation')
         finally:
             for child in children:
                 if child.poll() is None:

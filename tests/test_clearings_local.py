@@ -1,7 +1,25 @@
-# SPDX-License-Identifier: MPL-2.0
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+# SPDX-License-Identifier: MIT
+# MIT License
+#
+# Copyright (c) 2026 The Hermit
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
 """Disposable local-helper checks; never touch an owner's browser profile."""
 import importlib.util
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -363,7 +381,7 @@ class BridgeChecks(unittest.TestCase):
         self.assertEqual((module.CHANNEL, module.PORT), other)
         self.assertEqual(module.APP.resolve(), (alternate / alternate_app).resolve())
 
-    def test_only_the_same_installed_program_may_be_reused(self):
+    def test_unproved_legacy_listener_is_not_reused(self):
         bridge = self.bridge
         identity = local.program_identity(bridge)
         response = {"value": identity}
@@ -383,9 +401,10 @@ class BridgeChecks(unittest.TestCase):
         port = server.server_address[1]
         try:
             local.atomic_json(bridge.root / "session.json", {"port": port, "token": "fixture-token"})
-            local.run_server(bridge, port, False, show_tray=False)
+            with self.assertRaisesRegex(RuntimeError, "Close the other program"):
+                local.run_server(bridge, port, False, show_tray=False)
             response["value"] = {**identity, "program": "another-installation"}
-            with self.assertRaisesRegex(RuntimeError, "Another Clearings copy or version"):
+            with self.assertRaisesRegex(RuntimeError, "Close the other program"):
                 local.run_server(bridge, port, False, show_tray=False)
             self.assertEqual(local.load_json(bridge.root / "session.json")["token"], "fixture-token")
         finally:
@@ -393,71 +412,33 @@ class BridgeChecks(unittest.TestCase):
             server.server_close()
             thread.join(timeout=2)
 
-    def test_changed_working_helper_restarts_its_own_old_server(self):
+    def test_changed_legacy_helper_requires_manual_close_without_credential_leak(self):
         identity = {**local.program_identity(self.bridge), "helperSha256": "old-code"}
-
+        seen = []
         class OldHandler(BaseHTTPRequestHandler):
             def log_message(self, *_args):
                 pass
-
             def do_GET(self):
-                if self.path != "/api/identity" or self.headers.get("X-Clearings-Token") != "fixture-token":
-                    self.send_error(404)
-                    return
+                seen.append((self.path, dict(self.headers)))
                 raw = json.dumps(identity).encode("utf-8")
                 self.send_response(200)
+                self.send_header("Content-Type", "application/json")
                 self.send_header("Content-Length", str(len(raw)))
                 self.end_headers()
                 self.wfile.write(raw)
-
-            def do_POST(self):
-                if self.path != "/api/shutdown" or self.headers.get("X-Clearings-Token") != "fixture-token":
-                    self.send_error(404)
-                    return
-                raw = b'{"stopping": true}'
-                self.send_response(200)
-                self.send_header("Content-Length", str(len(raw)))
-                self.end_headers()
-                self.wfile.write(raw)
-                def stop():
-                    self.server.shutdown()
-                    self.server.server_close()
-                threading.Thread(target=stop, daemon=True).start()
-
         old_server = ThreadingHTTPServer(("127.0.0.1", 0), OldHandler)
         port = old_server.server_address[1]
         old_thread = threading.Thread(target=old_server.serve_forever, daemon=True)
         old_thread.start()
         local.atomic_json(self.bridge.root / "session.json",
                           {"port": port, "token": "fixture-token"})
-        failures = []
-        worker = threading.Thread(target=lambda: self._serve_and_capture(port, failures), daemon=True)
         try:
-            worker.start()
-            for _ in range(50):
-                session = local.load_json(self.bridge.root / "session.json")
-                if session["token"] != "fixture-token":
-                    break
-                time.sleep(0.1)
-            self.assertNotEqual(session["token"], "fixture-token", failures)
-            req = urllib.request.Request(f"http://127.0.0.1:{port}/api/identity",
-                                         headers={"X-Clearings-Token": session["token"]})
-            with urllib.request.urlopen(req, timeout=2) as response:
-                self.assertEqual(json.load(response), local.program_identity(self.bridge))
+            with self.assertRaisesRegex(RuntimeError, "Close the other program"):
+                local.run_server(self.bridge, port, False, show_tray=False)
+            self.assertEqual(seen, [])
+            self.assertEqual(local.load_json(self.bridge.root / "session.json")["token"], "fixture-token")
         finally:
-            session = local.load_json(self.bridge.root / "session.json")
-            if session["token"] != "fixture-token":
-                req = urllib.request.Request(f"http://127.0.0.1:{port}/api/shutdown", data=b"{}",
-                    headers={"X-Clearings-Token": session["token"], "Content-Type": "application/json"})
-                with urllib.request.urlopen(req, timeout=2) as response:
-                    self.assertEqual(json.load(response), {"stopping": True})
-            else:
-                old_server.shutdown()
-            old_server.server_close()
-            old_thread.join(timeout=2)
-            worker.join(timeout=2)
-        self.assertFalse(failures)
-        self.assertFalse(worker.is_alive())
+            old_server.shutdown();old_server.server_close();old_thread.join(2)
 
     def _serve_and_capture(self, port, failures):
         try:

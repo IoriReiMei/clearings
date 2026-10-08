@@ -1,4 +1,27 @@
-<!-- SPDX-License-Identifier: MPL-2.0 -->
+<!--
+SPDX-License-Identifier: MIT
+MIT License
+
+Copyright (c) 2026 The Hermit
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+-->
 # Clearings native installers
 
 The source ZIP is a reviewable input, not a native installer. The manual
@@ -12,9 +35,9 @@ stop for review. See [toolchain versions](../docs/TOOLCHAIN.md).
 
 | System | Review artifact | What installing does |
 | --- | --- | --- |
-| Windows x64 | `Clearings-Setup-0.4.5-Windows-x64.exe` | Installs under the current user's local Programs folder. Desktop and Start Menu shortcuts are separate installer choices, both unchecked by default. No administrator rights or separate Python install is intended. |
+| Windows x64 | `Clearings-Setup-0.4.6-Windows-x64.exe` | Installs under the current user's local Programs folder. Desktop and Start Menu shortcuts are separate installer choices, both unchecked by default. No administrator rights or separate Python install is intended. |
 | macOS Apple silicon / Intel | Architecture-specific `.dmg` | Open the image and drag `Clearings.app` into Applications. This is a review image with ad-hoc signing only, not Developer ID signed or notarized. |
-| Linux x64 | `Clearings-Install-0.4.5-Linux-x64.run` | Installs under the current user's local data folder and creates an application-menu entry and, where possible, a Desktop shortcut. Some desktops require “Allow launching” for downloaded files or shortcuts. `sh Clearings-Install-0.4.5-Linux-x64.run` is the fallback. |
+| Linux x64 | `Clearings-Install-0.4.6-Linux-x64.run` | Installs under the current user's local data folder and creates an application-menu entry and, where possible, a Desktop shortcut. Some desktops require “Allow launching” for downloaded files or shortcuts. `sh Clearings-Install-0.4.6-Linux-x64.run` is the fallback. |
 
 The installed helper opens Clearings in the user's ordinary browser at
 `http://127.0.0.1:18765/`. That address must remain the same across updates
@@ -56,10 +79,10 @@ close the old helper first. Earlier version directories stay intact. On macOS,
 use Save and quit Clearings before replacing the app in Applications.
 
 Build from the allowlisted source directory, never the personal working folder:
-`python -B packaging/build_native.py --output build-output`. Run `tools/make_share_package.py --verify-dir PATH` to reject
+`python -I -B packaging/build_native.py --output build-output`. Run `tools/make_share_package.py --verify-dir PATH` to reject
 missing, extra or changed release files; the native builder checks listed bytes. The CI workflow is manual and uploads
 artifacts; release publication is a separate operation.
 
-## 0.4.5 upgrade checks
+## 0.4.6 upgrade checks
 
-Windows tray support uses standard Windows APIs through ctypes, with no new runtime dependency. The source native tray fixture can be opted into with `CLEARINGS_NATIVE_TRAY_TEST=1`; ordinary headless checks pass `--no-tray`. Windows CI downloads the exact checksummed 0.4.4 installer and tests an actual 0.4.4-to-0.4.5 upgrade, same-version reinstall and uninstall while preserving fixture handoff bytes. The installer still copies the complete bundle; it is not a delta updater or version/downgrade manager. This release removes no previous bundle paths.
+Windows tray support uses standard Windows APIs through ctypes, with no new runtime dependency. The source native tray fixture can be opted into with `CLEARINGS_NATIVE_TRAY_TEST=1`; ordinary headless checks pass `--no-tray`. Windows CI downloads the exact checksummed 0.4.5 installer and tests an actual 0.4.5-to-0.4.6 upgrade, same-version reinstall and uninstall while preserving fixture handoff bytes. The installer still copies the complete bundle; it is not a delta updater or version/downgrade manager. This release removes no previous bundle paths.

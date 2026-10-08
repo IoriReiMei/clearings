@@ -1,5 +1,26 @@
 #!/usr/bin/env python3
-# SPDX-License-Identifier: MPL-2.0
+# SPDX-License-Identifier: MIT
+# MIT License
+#
+# Copyright (c) 2026 The Hermit
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
 """Exercise a built Clearings binary with disposable settings and no browser."""
 from pathlib import Path
 import argparse
@@ -34,7 +55,7 @@ def main() -> None:
             raise ValueError(f"Native bundle lacks {name}")
     with tempfile.TemporaryDirectory(prefix="clearings-native-check-") as temp:
         config = Path(temp) / "settings"
-        config.mkdir(exist_ok=True)
+        config.mkdir(exist_ok=True, mode=0o700)
         (Path(temp) / "handoff").mkdir()
         (config / "settings.json").write_text(json.dumps({"home": str(Path(temp) / "handoff")}), encoding="utf-8")
         if sys.platform == "win32":
@@ -64,25 +85,23 @@ def main() -> None:
                                        f"45 seconds; stderr tail: {detail or '[empty]'}")
                 time.sleep(0.05)
             session = json.loads((config / "session.json").read_text(encoding="utf-8"))
-            headers = {"X-Clearings-Token": session["token"]}
-            identity_request = urllib.request.Request(f"http://127.0.0.1:{port}/api/identity",
-                                                      headers=headers)
+            assert session["format"] == "clearings-protected-session-v1" and "token" not in session
             while True:
                 try:
-                    with urllib.request.urlopen(identity_request, timeout=1) as response:
-                        identity = json.load(response)
+                    with urllib.request.urlopen(f"http://127.0.0.1:{port}/", timeout=1) as response:
+                        page = response.read()
                     break
                 except OSError:
                     if time.monotonic() > deadline:
                         raise
                     time.sleep(0.05)
-            assert identity["channel"] == "release", identity
-            assert identity["config"] == str(config.resolve()), identity
-            with urllib.request.urlopen(f"http://127.0.0.1:{port}/", timeout=2) as response:
-                page = response.read()
-            assert b"appVersion:'0.4.5'" in page
-            assert b"window.__CLEARINGS_LOCAL_TOKEN__" in page
+            assert b"appVersion:'0.4.6'" in page
+            assert b"window.__CLEARINGS_LOCAL_TOKEN__" not in page
             command_app = app.with_name("ClearingsCLI.exe") if sys.platform == "win32" else app
+            reused = subprocess.run([str(command_app), "--config-dir", str(config), "serve",
+                                     "--port", str(port), "--no-browser", "--no-tray"],
+                                    timeout=10, capture_output=True)
+            assert reused.returncode == 0, reused.stderr
             if sys.platform == "win32":
                 result = subprocess.run([str(command_app), "--config-dir", str(config), "status"], check=True, capture_output=True, text=True)
                 assert json.loads(result.stdout)["generation"] == 0
@@ -91,7 +110,7 @@ def main() -> None:
             stopped = subprocess.run([str(command_app), "--config-dir", str(config), "stop"], timeout=20)
             assert stopped.returncode == 0
             child.wait(timeout=15)
-            print("Bundled Clearings served the 0.4.5 page from disposable settings.")
+            print("Bundled Clearings served the 0.4.6 page from disposable settings.")
         finally:
             if child.poll() is None:
                 child.terminate()

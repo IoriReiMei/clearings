@@ -1,4 +1,25 @@
-# SPDX-License-Identifier: MPL-2.0
+# SPDX-License-Identifier: MIT
+# MIT License
+#
+# Copyright (c) 2026 The Hermit
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
 # Copy the reviewed public source snapshot to its own repository before using.
 # Manual build only. Artifacts are for review; this workflow never publishes.
 name: Build Clearings installers for review
@@ -33,19 +54,36 @@ jobs:
       - name: Verify public source and focused checks
         shell: bash
         run: |
-          python -B packaging/build_native.py --output build-output --verify-only
+          python -I -B packaging/build_native.py --output build-output --verify-only
           python -B -m unittest discover -s tests -p 'test_clearings_*.py'
           node tests/contract.test.cjs
           node tests/merge.test.cjs
           node tests/delivery.test.cjs
           node tests/plan_changes_cli.test.cjs
           node tests/preferences.test.cjs
+          node tests/handoff_refresh_repair.test.cjs
           PYTHON=python node tests/clearings-release.test.cjs
+      - name: Check current UI and browser handoff with fictional work
+        if: runner.os != 'macOS'
+        shell: bash
+        env:
+          PYTHON: python
+          CLEARINGS_TEST_PYTHON: python
+        run: |
+          browser_tools="$RUNNER_TEMP/clearings-browser-tools"
+          npm install --prefix "$browser_tools" --no-audit --no-fund playwright@1.62.1
+          "$browser_tools/node_modules/.bin/playwright" install --with-deps chromium
+          export NODE_PATH="$browser_tools/node_modules"
+          export CHROMIUM_EXECUTABLE="$(node -e 'process.stdout.write(require("playwright").chromium.executablePath())')"
+          node tests/clearings_0_4_browser.test.cjs
+          node tests/deep_activity_browser.test.cjs
+          node tests/center_mixed_root_paging_browser.test.cjs
+          node tests/local_handoff_browser.test.cjs
       - name: Bundle local helper
         shell: bash
         run: |
           python -m pip install --disable-pip-version-check pyinstaller==6.22.3
-          python -B packaging/build_native.py --output build-output
+          python -I -B packaging/build_native.py --output build-output
           python -B packaging/test_native.py --dist build-output
       - name: Build Windows per-user installer
         if: runner.os == 'Windows'
@@ -61,11 +99,11 @@ jobs:
           if (-not (Test-Path -LiteralPath $compiler)) { throw 'NSIS compiler missing' }
           & $compiler /V2 "/DSOURCE_DIR=$pwd\build-output" "/DOUTPUT_DIR=$pwd\artifacts" packaging\windows\Clearings.nsi
           if ($LASTEXITCODE -ne 0) { throw 'Installer compilation failed' }
-          $installer = Get-Item -LiteralPath 'artifacts\Clearings-Setup-0.4.5-Windows-x64.exe'
-          gh release download v0.4.4 --repo "$env:GITHUB_REPOSITORY" --pattern 'Clearings-Setup-0.4.4-Windows-x64.exe' --dir previous-release
+          $installer = Get-Item -LiteralPath 'artifacts\Clearings-Setup-0.4.6-Windows-x64.exe'
+          gh release download v0.4.5 --repo "$env:GITHUB_REPOSITORY" --pattern 'Clearings-Setup-0.4.5-Windows-x64.exe' --dir previous-release
           if ($LASTEXITCODE -ne 0) { throw 'Previous private installer download failed' }
-          $previous = Get-Item -LiteralPath 'previous-release\Clearings-Setup-0.4.4-Windows-x64.exe'
-          if ((Get-FileHash -LiteralPath $previous.FullName -Algorithm SHA256).Hash -ne 'b1d3f3f3073aa5e5c16a4484b9ba67e14d96e728ce68e16436f2120a805dd5c0') { throw 'Previous installer checksum mismatch' }
+          $previous = Get-Item -LiteralPath 'previous-release\Clearings-Setup-0.4.5-Windows-x64.exe'
+          if ((Get-FileHash -LiteralPath $previous.FullName -Algorithm SHA256).Hash -ne 'bfc9e27eaef5b5f4f3a0df9a13c9318ca8c64abc4b33343cdd607cb1fc7689bd') { throw 'Previous installer checksum mismatch' }
           python -B packaging/test_windows_installer.py --installer $installer.FullName --previous-installer $previous.FullName
           if ($LASTEXITCODE -ne 0) { throw 'Running-helper installer lifecycle failed' }
       - name: Build macOS review image
@@ -77,7 +115,7 @@ jobs:
         run: |
           python -B packaging/build_linux_run.py --dist build-output --output artifacts
           test_home="$(mktemp -d)"
-          HOME="$test_home" XDG_DATA_HOME="$test_home/.local/share" sh artifacts/Clearings-Install-0.4.5-Linux-x64.run
+          HOME="$test_home" XDG_DATA_HOME="$test_home/.local/share" sh artifacts/Clearings-Install-0.4.6-Linux-x64.run
           HOME="$test_home" XDG_DATA_HOME="$test_home/.local/share" "$test_home/.local/bin/clearings" --version
           test -f "$test_home/.local/share/applications/Clearings.desktop"
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

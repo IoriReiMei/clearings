@@ -1,7 +1,28 @@
-; SPDX-License-Identifier: MPL-2.0
+; SPDX-License-Identifier: MIT
+; MIT License
+;
+; Copyright (c) 2026 The Hermit
+;
+; Permission is hereby granted, free of charge, to any person obtaining a copy
+; of this software and associated documentation files (the "Software"), to deal
+; in the Software without restriction, including without limitation the rights
+; to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+; copies of the Software, and to permit persons to whom the Software is
+; furnished to do so, subject to the following conditions:
+;
+; The above copyright notice and this permission notice shall be included in all
+; copies or substantial portions of the Software.
+;
+; THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+; IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+; FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+; AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+; LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+; SOFTWARE.
 ; Build with makensis /DSOURCE_DIR=<native dist> /DOUTPUT_DIR=<artifacts>.
 !include "MUI2.nsh"
-!define VERSION "0.4.5"
+!define VERSION "0.4.6"
 
 Name "Clearings"
 OutFile "${OUTPUT_DIR}\Clearings-Setup-${VERSION}-Windows-x64.exe"
@@ -27,12 +48,11 @@ ShowInstDetails show
 Section "-Install Clearings"
   SetShellVarContext current
   IfFileExists "$INSTDIR\Clearings.exe" 0 install_ready
-  ; Use the new helper for old releases that had no stop command.
-  InitPluginsDir
-  SetOutPath "$PLUGINSDIR\ClearingsStop"
-  File /r "${SOURCE_DIR}\Clearings\*"
+  ; The installed CLI proves the identity of its own running helper.
+  ; A different staged version must not authenticate or stop that process.
+  IfFileExists "$INSTDIR\ClearingsCLI.exe" 0 install_stop_failed
   ClearErrors
-  ExecWait '"$PLUGINSDIR\ClearingsStop\Clearings.exe" stop --installation "$INSTDIR\Clearings.exe"' $0
+  ExecWait '"$INSTDIR\ClearingsCLI.exe" stop --installation "$INSTDIR\Clearings.exe"' $0
   IfErrors install_stop_failed
   StrCmp $0 0 install_ready
   install_stop_failed:

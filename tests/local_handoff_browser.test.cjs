@@ -1,7 +1,25 @@
-// SPDX-License-Identifier: MPL-2.0
-// This Source Code Form is subject to the terms of the Mozilla Public
-// License, v. 2.0. If a copy of the MPL was not distributed with this
-// file, You can obtain one at https://mozilla.org/MPL/2.0/.
+// SPDX-License-Identifier: MIT
+// MIT License
+//
+// Copyright (c) 2026 The Hermit
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 'use strict';
 // Isolated loopback UI test. It never opens the owner's browser profile or handoff.
 const assert=require('node:assert/strict');
@@ -16,21 +34,34 @@ const python=process.env.CLEARINGS_TEST_PYTHON||process.env.PYTHON||'python';
 const executable=process.env.CHROMIUM_EXECUTABLE||'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
 async function freePort(){return new Promise((resolve,reject)=>{const s=net.createServer();s.once('error',reject);s.listen(0,'127.0.0.1',()=>{const p=s.address().port;s.close(()=>resolve(p))})})}
 async function waitReady(url,child){for(let i=0;i<100;i++){if(child.exitCode!==null)throw new Error('Helper stopped before opening');try{const r=await fetch(url);if(r.ok)return}catch{}await new Promise(r=>setTimeout(r,50))}throw new Error('Helper did not open')}
+const launcher=`import importlib.util,sys
+from pathlib import Path
+root=Path(sys.argv[1]);config=Path(sys.argv[2]);port=int(sys.argv[3]);sys.path.insert(0,str(root/'tools'))
+spec=importlib.util.spec_from_file_location('clearings_browser_fixture',root/'tools/clearings_local.py')
+local=importlib.util.module_from_spec(spec);spec.loader.exec_module(local)
+local._dpapi=lambda data,protect:data[::-1]
+local.webbrowser.open=lambda address:print('LAUNCH_URL='+address,flush=True) or True
+local.run_server(local.Bridge(config),port,True,show_tray=False)
+`;
 async function run(){
  const temp=fs.mkdtempSync(path.join(os.tmpdir(),'clearings-handoff-test-'));
  const port=await freePort(),url=`http://127.0.0.1:${port}/`;
- const child=spawn(python,['-B',path.join(root,'tools','clearings_local.py'),'--config-dir',path.join(temp,'config'),'serve','--port',String(port),'--no-browser','--no-tray'],{windowsHide:true,stdio:'pipe'});
+ const config=path.join(temp,'config');
+ const child=spawn(python,['-B','-c',launcher,root,config,String(port)],{windowsHide:true,stdio:'pipe'});
  let childLog='';child.stderr.on('data',x=>childLog+=x.toString());child.stdout.on('data',x=>childLog+=x.toString());
  let browser;try{
   await waitReady(url,child);
   assert.equal((await fetch(url+'api/handoff')).status,403);
-  const token=JSON.parse(fs.readFileSync(path.join(temp,'config','session.json'),'utf8')).token;
-  assert.equal((await fetch(url+'api/sync',{method:'POST',headers:{'X-Clearings-Token':token,'Content-Type':'application/json','Origin':'http://example.invalid'},body:'{}'})).status,403);
+  for(let n=0;n<50&&!childLog.includes('LAUNCH_URL=');n++)await new Promise(r=>setTimeout(r,20));
+  const firstLaunch=childLog.match(/LAUNCH_URL=(\S+)/)?.[1];assert.ok(firstLaunch,childLog);
   browser=await chromium.launch({headless:true,executablePath:executable});
   const page=await browser.newPage({viewport:{width:1440,height:980}}),errors=[];
   page.on('response',async r=>{if(r.url().endsWith('/api/sync')&&r.status()>=400)console.error('SYNC REFUSAL',r.status(),await r.text())});
   page.on('pageerror',e=>errors.push(e.message));page.on('dialog',d=>d.accept());
-  await page.goto(url);await page.waitForFunction(()=>window.Clearings?.storage().ready);
+  await page.goto(firstLaunch);await page.waitForFunction(()=>window.Clearings?.storage().ready);
+  const token=await page.evaluate(()=>sessionStorage.getItem('clearings:local-bridge-token:v1'));
+  assert.ok(token);assert.equal(await page.evaluate(()=>window.__CLEARINGS_LOCAL_TOKEN__),undefined);
+  assert.equal((await fetch(url+'api/sync',{method:'POST',headers:{'X-Clearings-Token':token,'Content-Type':'application/json','Origin':'http://example.invalid'},body:'{}'})).status,403);
   await page.locator('#welcomeName').fill('First editor');
   await page.locator('#tryExample').click();await page.waitForFunction(()=>Clearings.storage().savedAt&&!Clearings.storage().dirty);
   assert.equal((await page.evaluate(()=>Clearings.snapshot())).index.preferences.displayName,'First editor');
@@ -77,7 +108,7 @@ async function run(){
   const beforeNew=await page.evaluate(()=>Clearings.snapshot());
   const newDoc=structuredClone(beforeNew.documents.find(d=>d.documentId==='example-overview'));
   newDoc.documentId='incoming-fixture-list';newDoc.title='Incoming fixture list';newDoc.state={};
-  await page.evaluate(async incoming=>{const response=await fetch('/api/propose-new',{method:'POST',headers:{'Content-Type':'application/json','X-Clearings-Token':window.__CLEARINGS_LOCAL_TOKEN__},body:JSON.stringify({incoming,actor:'Morrow fixture'})});if(!response.ok)throw new Error(await response.text())},newDoc);
+  await page.evaluate(async incoming=>{const response=await fetch('/api/propose-new',{method:'POST',headers:{'Content-Type':'application/json','X-Clearings-Token':sessionStorage.getItem('clearings:local-bridge-token:v1')},body:JSON.stringify({incoming,actor:'Morrow fixture'})});if(!response.ok)throw new Error(await response.text())},newDoc);
   // This fixture represents an unsigned proposal saved by a pre-commit build.
   const fixtureHandoff=path.join(temp,'config','home','clearings_handoff.json');
   const legacyPacket=JSON.parse(fs.readFileSync(fixtureHandoff,'utf8'));
@@ -106,7 +137,7 @@ async function run(){
   linden.model.items.find(i=>i.id==='purpose').detail='Signed Linden detail';
   linden.model.items.find(i=>i.id==='boundaries').detail='Signed Linden boundary';
   morrow.model.items.find(i=>i.id==='make').text='Signed Morrow title';
-  async function submit(base,incoming,actor){return page.evaluate(async x=>{const r=await fetch('/api/propose',{method:'POST',headers:{'Content-Type':'application/json','X-Clearings-Token':window.__CLEARINGS_LOCAL_TOKEN__},body:JSON.stringify(x)});if(!r.ok)throw new Error(await r.text());return (await r.json()).proposalId},{base,incoming,actor})}
+  async function submit(base,incoming,actor){return page.evaluate(async x=>{const r=await fetch('/api/propose',{method:'POST',headers:{'Content-Type':'application/json','X-Clearings-Token':sessionStorage.getItem('clearings:local-bridge-token:v1')},body:JSON.stringify(x)});if(!r.ok)throw new Error(await r.text());return (await r.json()).proposalId},{base,incoming,actor})}
   function commit(id,author){const result=spawnSync(python,['-B',path.join(root,'tools','clearings_local.py'),'--config-dir',path.join(temp,'config'),'commit-proposal',id,'--author',author],{encoding:'utf8',windowsHide:true});if(result.status!==0)throw new Error(result.stderr||result.stdout);return JSON.parse(result.stdout)}
   const lindenId=await submit(baseShared,linden,'Morrow draft'),morrowId=await submit(baseShared,morrow,'Morrow');
   await page.waitForTimeout(800);await page.locator('#refreshButton').click();
@@ -123,7 +154,7 @@ async function run(){
   assert.notEqual(signedActivity.find(a=>a.actor==='Linden').commitId,signedActivity.find(a=>a.actor==='Morrow').commitId);
   assert.ok(signedActivity.every(a=>a.highlight&&a.unread));
   const signedNew=structuredClone(baseShared);signedNew.documentId='signed-fixture-list';signedNew.title='Signed fixture list';signedNew.state={};
-  const signedNewId=await page.evaluate(async incoming=>{const r=await fetch('/api/propose-new',{method:'POST',headers:{'Content-Type':'application/json','X-Clearings-Token':window.__CLEARINGS_LOCAL_TOKEN__},body:JSON.stringify({incoming,actor:'Wick'})});if(!r.ok)throw new Error(await r.text());return (await r.json()).proposalId},signedNew);
+  const signedNewId=await page.evaluate(async incoming=>{const r=await fetch('/api/propose-new',{method:'POST',headers:{'Content-Type':'application/json','X-Clearings-Token':sessionStorage.getItem('clearings:local-bridge-token:v1')},body:JSON.stringify({incoming,actor:'Wick'})});if(!r.ok)throw new Error(await r.text());return (await r.json()).proposalId},signedNew);
   commit(signedNewId,'Wick');
   const beforeDisplay=JSON.parse(spawnSync(python,['-B',path.join(root,'tools','clearings_local.py'),'--config-dir',path.join(temp,'config'),'read','--checklist',signedNew.documentId],{encoding:'utf8',windowsHide:true}).stdout).effectiveDocument;
   const secondAuthor=structuredClone(beforeDisplay);secondAuthor.state.purpose=true;
@@ -209,7 +240,7 @@ async function run(){
   if(process.env.CLEARINGS_PREVIEW)await page.screenshot({path:process.env.CLEARINGS_PREVIEW,animations:'disabled'});
   // A pending conflict in one list must not hold an independent list.
   await page.locator('#editorDialog [data-action="close-dialog"]').first().click();
-  await page.evaluate(async()=>{const base=structuredClone(Clearings.snapshot().documents.find(d=>d.documentId==='example-overview')),incoming=structuredClone(base);incoming.model.items.find(i=>i.id==='purpose').text='An independent JSON edit';const headers={'Content-Type':'application/json','X-Clearings-Token':window.__CLEARINGS_LOCAL_TOKEN__};const response=await fetch('/api/propose',{method:'POST',headers,body:JSON.stringify({base,incoming,actor:'Assistant tester',note:'Other checklist'})});if(!response.ok)throw new Error(await response.text());const proposalId=(await response.json()).proposalId;const signed=await fetch('/api/commit',{method:'POST',headers,body:JSON.stringify({proposalId,author:'Assistant tester'})});if(!signed.ok)throw new Error(await signed.text())});
+  await page.evaluate(async()=>{const base=structuredClone(Clearings.snapshot().documents.find(d=>d.documentId==='example-overview')),incoming=structuredClone(base);incoming.model.items.find(i=>i.id==='purpose').text='An independent JSON edit';const headers={'Content-Type':'application/json','X-Clearings-Token':sessionStorage.getItem('clearings:local-bridge-token:v1')};const response=await fetch('/api/propose',{method:'POST',headers,body:JSON.stringify({base,incoming,actor:'Assistant tester',note:'Other checklist'})});if(!response.ok)throw new Error(await response.text());const proposalId=(await response.json()).proposalId;const signed=await fetch('/api/commit',{method:'POST',headers,body:JSON.stringify({proposalId,author:'Assistant tester'})});if(!signed.ok)throw new Error(await signed.text())});
   await page.locator('#refreshButton').click();
   await page.waitForFunction(()=>Clearings.snapshot().documents.find(d=>d.documentId==='example-overview').model.items.find(i=>i.id==='purpose').text==='An independent JSON edit');
   assert.equal(await page.locator('#libraryList .conflict-warning').count(),1);
@@ -277,7 +308,7 @@ async function run(){
   await page.locator('[data-action="create-practice-conflict"]').click();
   await page.waitForFunction(()=>document.getElementById('dialogTitle').textContent==='Review checklist conflict');
   await page.locator('#editorDialog [data-action="close-dialog"]').first().click();
-  await page.evaluate(async()=>{const token=window.__CLEARINGS_LOCAL_TOKEN__,headers={'X-Clearings-Token':token};const packet=await (await fetch('/api/handoff',{headers})).json(),proposal=packet.proposals.findLast(p=>p.status==='pending'),item=proposal.base.model.items[0];const response=await fetch('/api/decide',{method:'POST',headers:{...headers,'Content-Type':'application/json'},body:JSON.stringify({proposalId:proposal.id,choices:{['item:'+item.id+':text']:'json'},actor:'Assistant tester'})});if(!response.ok)throw new Error(await response.text())});
+  await page.evaluate(async()=>{const token=sessionStorage.getItem('clearings:local-bridge-token:v1'),headers={'X-Clearings-Token':token};const packet=await (await fetch('/api/handoff',{headers})).json(),proposal=packet.proposals.findLast(p=>p.status==='pending'),item=proposal.base.model.items[0];const response=await fetch('/api/decide',{method:'POST',headers:{...headers,'Content-Type':'application/json'},body:JSON.stringify({proposalId:proposal.id,choices:{['item:'+item.id+':text']:'json'},actor:'Assistant tester'})});if(!response.ok)throw new Error(await response.text())});
   await page.waitForTimeout(800);
   await page.locator('#refreshButton').click();
   try{await page.waitForFunction(()=>Clearings.snapshot().documents.filter(d=>d.title==='Clearings · Conflict Practice').at(-1).model.items[0].text==='Incoming JSON version',null,{timeout:10000})}catch(e){console.error('assistant choice state',{toast:await page.locator('#toast').innerText(),pending:JSON.parse(fs.readFileSync(path.join(temp,'config','home','clearings_handoff.json'),'utf8')).proposals.filter(p=>p.status==='pending'),errors});throw e}
@@ -286,7 +317,10 @@ async function run(){
   assert.equal(packet.proposals.filter(p=>p.status==='pending').length,0);
   assert.equal(packet.receipts.length,9);
   const fresh=await browser.newContext(),recovered=await fresh.newPage();
-  await recovered.goto(url);await recovered.waitForFunction(()=>window.Clearings?.storage().ready);
+  const relaunch=spawnSync(python,['-B','-c',launcher,root,config,String(port)],{encoding:'utf8'});
+  assert.equal(relaunch.status,0,relaunch.stderr||relaunch.stdout);
+  const recoveredLaunch=relaunch.stdout.match(/LAUNCH_URL=(\S+)/)?.[1];assert.ok(recoveredLaunch,relaunch.stdout);
+  await recovered.goto(recoveredLaunch);await recovered.waitForFunction(()=>window.Clearings?.storage().ready);
   const olderGeneration=await page.evaluate(()=>Clearings.storage().generation);
   await recovered.locator('#restoreHandoff').click();
   await recovered.waitForFunction(()=>Clearings.snapshot().documents.some(d=>d.title==='Clearings · Conflict Practice'));

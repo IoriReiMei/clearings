@@ -1,7 +1,25 @@
-# SPDX-License-Identifier: MPL-2.0
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+# SPDX-License-Identifier: MIT
+# MIT License
+#
+# Copyright (c) 2026 The Hermit
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
 """Small loopback-only bridge for the optional one-click Clearings workflow.
 
 The browser's IndexedDB remains the live workspace. This helper owns one
@@ -10,16 +28,20 @@ user-selected handoff JSON; agents use the CLI rather than editing it in place.
 from __future__ import annotations
 
 import argparse
+import base64
+import binascii
 import copy
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import hashlib
+import hmac
 import json
 import os
 from pathlib import Path
 import re
 import secrets
+import select
 import shutil
 import socket
 import socketserver
@@ -29,6 +51,7 @@ import tempfile
 import threading
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 import uuid
 import webbrowser
@@ -37,8 +60,12 @@ from clearings_commit import merge_documents, validate_document, stamp_attributi
 from clearings_tray import WindowsTray
 
 MAX_BYTES = 16 * 1024 * 1024
+MAX_HANDOFF_BYTES = 64 * 1024 * 1024
+REQUEST_DEADLINE = 10.0
+MAX_HANDLERS = 8
+BOOTSTRAP_SECONDS = 30.0
 FILE_NAME = "clearings_handoff.json"
-VERSION = "0.4.5"
+VERSION = "0.4.6"
 WINDOWS_TRAY = os.name == "nt"
 # The working helper already owns 8765 and its existing browser workspace.
 # Keep it there; installed/public Clearings has a separate, stable origin.
@@ -100,37 +127,31 @@ def stop_legacy_windows_process(pid, executable):
 
 
 def stop_server(bridge, *, installation=None):
-    """Stop only the authenticated helper for this exact installed program."""
-    session = load_json(bridge.root / "session.json", {})
-    if not session.get("token") or not session.get("port"):
+    """Stop only a proved helper for the exact installed program."""
+    session_path = bridge.root / "session.json"
+    if not session_path.exists():
+        return False
+    try:
+        session = load_private_session(session_path)
+    except RuntimeError:
+        outer = load_json(session_path, {})
+        if outer.get("format") == "clearings-protected-session-v1":
+            raise
+        old_port = outer.get("port")
+        if type(old_port) is int and 1 <= old_port <= 65535 and _listener_present(old_port):
+            raise RuntimeError("Close the earlier Clearings helper manually before updating; no files were changed.")
         return False
     port = session["port"]
-    if type(port) is not int or not 1 <= port <= 65535:
-        raise ValueError("Invalid saved helper port")
-    headers = {"X-Clearings-Token": session["token"]}
-    try:
-        with urllib.request.urlopen(urllib.request.Request(f"http://127.0.0.1:{port}/api/identity", headers=headers), timeout=2) as response:
-            identity = json.load(response)
-    except urllib.error.HTTPError as exc:
-        raise RuntimeError("The running helper could not verify this installation. Close it before updating; no files were changed.") from exc
-    except urllib.error.URLError as exc:
-        # Refused connection means no listener; timeout/other errors do not.
-        if isinstance(exc.reason, ConnectionRefusedError) or getattr(exc.reason, "winerror", None) == 10061:
-            return False
-        raise RuntimeError("Cannot verify the running helper; no files were changed.") from exc
+    if not 1 <= port <= 65535:
+        raise RuntimeError("Invalid protected Clearings port")
     expected = program_identity(bridge)
-    expected_program = str(Path(installation).resolve()) if installation else expected["program"]
-    if (identity.get("program") != expected_program or identity.get("config") != expected["config"] or identity.get("channel") != expected["channel"]):
+    if installation and session["identity"].get("program") != str(Path(installation).resolve()):
         raise RuntimeError("A different Clearings installation owns this address; close it before updating.")
-    request = urllib.request.Request(f"http://127.0.0.1:{port}/api/shutdown", data=b"{}", headers={**headers, "Content-Type": "application/json"})
-    try:
-        with urllib.request.urlopen(request, timeout=3) as response:
-            if json.load(response) != {"stopping": True}:
-                raise RuntimeError("Helper did not acknowledge shutdown")
-    except urllib.error.HTTPError as exc:
-        if exc.code != 404 or not installation or CHANNEL != "release":
-            raise
-        stop_legacy_windows_process(session.get("pid"), expected_program)
+    if session["identity"] != expected:
+        raise RuntimeError("An earlier Clearings version needs manual closure before updating; no files were changed.")
+    if not verify_listener(session, bridge, port):
+        return False
+    authenticated_control(session, "shutdown", port)
     deadline = time.monotonic() + 12
     while time.monotonic() < deadline:
         with socket.socket() as probe:
@@ -141,22 +162,6 @@ def stop_server(bridge, *, installation=None):
             try:
                 probe.bind(("127.0.0.1", port))
                 probe.listen(1)
-                pid = session.get("pid")
-                if os.name == "nt" and type(pid) is int and pid != os.getpid():
-                    import ctypes
-                    from ctypes import wintypes
-                    kernel = ctypes.WinDLL('kernel32', use_last_error=True)
-                    kernel.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
-                    kernel.OpenProcess.restype = wintypes.HANDLE
-                    kernel.WaitForSingleObject.argtypes = [wintypes.HANDLE, wintypes.DWORD]
-                    kernel.CloseHandle.argtypes = [wintypes.HANDLE]
-                    handle = kernel.OpenProcess(0x00100000, False, pid)
-                    if handle:
-                        try:
-                            if kernel.WaitForSingleObject(handle, 10000) != 0:
-                                raise RuntimeError("The helper process is still exiting; retry before updating files")
-                        finally:
-                            kernel.CloseHandle(handle)
                 return True
             except OSError:
                 time.sleep(.1)
@@ -179,19 +184,300 @@ def program_identity(bridge: "Bridge") -> dict:
     return identity
 
 
-def load_json(path: Path, default=None):
+def control_mac(secret: str, purpose: str, challenge: str, identity: dict,
+                port: int, extra: str = "") -> str:
+    """Domain-separated proof for one exact helper, address and fresh request."""
+    message = json.dumps([purpose, challenge, identity, port, extra],
+                         ensure_ascii=False, separators=(",", ":"), sort_keys=True).encode("utf-8")
+    return hmac.new(secret.encode("utf-8"), message, hashlib.sha256).hexdigest()
+
+
+def _dpapi(data: bytes, *, protect: bool) -> bytes:
+    """Bind the complete Windows session to this OS account, with no UI."""
+    import ctypes
+    from ctypes import wintypes
+
+    class Blob(ctypes.Structure):
+        _fields_ = [("size", wintypes.DWORD), ("data", ctypes.POINTER(ctypes.c_ubyte))]
+
+    source = ctypes.create_string_buffer(data)
+    incoming = Blob(len(data), ctypes.cast(source, ctypes.POINTER(ctypes.c_ubyte)))
+    outgoing = Blob()
+    crypt = ctypes.WinDLL("crypt32", use_last_error=True)
+    kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+    function = crypt.CryptProtectData if protect else crypt.CryptUnprotectData
+    function.restype = wintypes.BOOL
+    function.argtypes = ([ctypes.POINTER(Blob), wintypes.LPCWSTR] if protect else
+                         [ctypes.POINTER(Blob), ctypes.POINTER(wintypes.LPWSTR)]) + [
+                             ctypes.POINTER(Blob), ctypes.c_void_p, ctypes.c_void_p,
+                             wintypes.DWORD, ctypes.POINTER(Blob)]
+    kernel.LocalFree.argtypes = [ctypes.c_void_p]
+    kernel.LocalFree.restype = ctypes.c_void_p
+    if not function(ctypes.byref(incoming), None, None, None, None, 1,
+                    ctypes.byref(outgoing)):
+        raise OSError(ctypes.get_last_error(), "Cannot protect or read the private Clearings session")
+    try:
+        return ctypes.string_at(outgoing.data, outgoing.size)
+    finally:
+        kernel.LocalFree(ctypes.cast(outgoing.data, ctypes.c_void_p))
+
+
+def _private_posix_path(path: Path) -> None:
+    for item in (path.parent, path):
+        if item.is_symlink() or item.stat().st_uid != os.getuid() or item.stat().st_mode & 0o077:
+            raise RuntimeError("Clearings session requires an owner-private config folder and file")
+
+
+def write_private_session(path: Path, session: dict) -> None:
+    raw = json.dumps(session, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+    if os.name == "nt":
+        payload = base64.b64encode(_dpapi(raw, protect=True)).decode("ascii")
+    else:
+        if path.parent.is_symlink() or path.parent.stat().st_uid != os.getuid() or path.parent.stat().st_mode & 0o077:
+            raise RuntimeError("Clearings config folder must be owner-private before serving")
+        payload = base64.b64encode(raw).decode("ascii")
+    atomic_json(path, {"format": "clearings-protected-session-v1", "payload": payload})
+    if os.name != "nt":
+        _private_posix_path(path)
+
+
+def load_private_session(path: Path):
+    if not path.exists():
+        return None
+    outer = load_json(path, {})
+    if outer.get("format") != "clearings-protected-session-v1" or not isinstance(outer.get("payload"), str):
+        raise RuntimeError("Earlier Clearings session cannot be verified; close its helper manually")
+    if os.name != "nt":
+        _private_posix_path(path)
+    try:
+        raw = base64.b64decode(outer["payload"], validate=True)
+        data = json.loads(_dpapi(raw, protect=False) if os.name == "nt" else raw)
+    except (ValueError, OSError, TypeError, binascii.Error) as exc:
+        raise RuntimeError("Clearings session protection could not be verified") from exc
+    if (not isinstance(data, dict) or not isinstance(data.get("token"), str)
+            or not isinstance(data.get("identity"), dict) or type(data.get("port")) is not int):
+        raise RuntimeError("Invalid protected Clearings session")
+    return data
+
+
+def preserve_session_bytes(path: Path, raw: bytes) -> Path:
+    """Keep an exact, private, reversible pre-replacement session snapshot."""
+    if len(raw) > MAX_BYTES:
+        raise RuntimeError("Earlier Clearings session is too large to preserve")
+    if os.name == "nt":
+        payload = _dpapi(raw, protect=True)
+    else:
+        _private_posix_path(path)
+        payload = raw
+    envelope = (json.dumps({"format": "clearings-session-recovery-v1",
+                            "payload": base64.b64encode(payload).decode("ascii")},
+                           separators=(",", ":")) + "\n").encode("ascii")
+    backup = path.with_name("session-recovery-" + uuid.uuid4().hex + ".json")
+    fd = os.open(backup, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+    try:
+        with os.fdopen(fd, "wb") as output:
+            output.write(envelope)
+            output.flush()
+            os.fsync(output.fileno())
+    except BaseException:
+        backup.unlink(missing_ok=True)
+        raise
+    return backup
+
+
+def restore_session_bytes(path: Path, raw: bytes) -> None:
+    """Restore a displaced session after a failed, owned-socket startup."""
+    fd, temp_name = tempfile.mkstemp(prefix=".clearings-session-", suffix=".tmp",
+                                     dir=path.parent)
+    temp = Path(temp_name)
+    try:
+        with os.fdopen(fd, "wb") as output:
+            output.write(raw)
+            output.flush()
+            os.fsync(output.fileno())
+        os.replace(temp, path)
+    finally:
+        temp.unlink(missing_ok=True)
+
+
+def read_session_bytes(path: Path) -> bytes:
+    with path.open("rb") as source:
+        raw = source.read(MAX_BYTES + 1)
+    if len(raw) > MAX_BYTES:
+        raise RuntimeError("Earlier Clearings session is too large to preserve")
+    return raw
+
+
+class LaunchState:
+    """Small, one-use launch and replay ledger for a single running helper."""
+    def __init__(self):
+        self.lock = threading.Lock()
+        self.pending = {}
+        self.used = {}
+
+    def _prune(self):
+        current = time.monotonic()
+        self.pending = {key: end for key, end in self.pending.items() if end > current}
+        self.used = {key: end for key, end in self.used.items() if end > current}
+
+    def claim(self, challenge: str, stamp: int) -> bool:
+        with self.lock:
+            self._prune()
+            current = int(time.monotonic() * 1000)
+            if (type(stamp) is not int or stamp <= current - 30000 or stamp > current + 2000
+                    or challenge in self.used or len(self.used) >= 32):
+                return False
+            self.used[challenge] = (stamp + 30000) / 1000
+            return True
+
+    def issue(self) -> str:
+        with self.lock:
+            self._prune()
+            if len(self.pending) >= 16:
+                raise ValueError("Too many pending Clearings launches; try again shortly")
+            nonce = secrets.token_urlsafe(32)
+            self.pending[nonce] = time.monotonic() + BOOTSTRAP_SECONDS
+            return nonce
+
+    def redeem(self, nonce: str) -> bool:
+        with self.lock:
+            self._prune()
+            return self.pending.pop(nonce, None) is not None
+
+
+def _listener_present(port: int) -> bool:
+    try:
+        with socket.create_connection(("127.0.0.1", port), timeout=0.5):
+            return True
+    except ConnectionRefusedError:
+        return False
+    except OSError as exc:
+        raise RuntimeError("Cannot establish who owns the Clearings address") from exc
+
+
+def local_json_request(port: int, path: str, body: dict | None = None) -> dict:
+    """Tiny direct-loopback client: no proxy/redirect, bounded bytes and wall time."""
+    deadline = time.monotonic() + 3
+    raw_body = b"" if body is None else json.dumps(body, separators=(",", ":")).encode("utf-8")
+    if len(raw_body) > 4096:
+        raise RuntimeError("Clearings control request is too large")
+    method = "GET" if body is None else "POST"
+    headers = (f"{method} {path} HTTP/1.0\r\nHost: 127.0.0.1:{port}\r\n"
+               "Accept: application/json\r\nConnection: close\r\n")
+    if body is not None:
+        headers += f"Content-Type: application/json\r\nContent-Length: {len(raw_body)}\r\n"
+    request = headers.encode("ascii") + b"\r\n" + raw_body
+    try:
+        with socket.create_connection(("127.0.0.1", port), timeout=3) as connection:
+            connection.settimeout(max(.01, deadline - time.monotonic()))
+            connection.sendall(request)
+            connection.setblocking(False)
+            packet = b""
+            length = None
+            while True:
+                header, marker, content = packet.partition(b"\r\n\r\n")
+                if marker:
+                    if len(header) > 2048:
+                        raise RuntimeError("Clearings control response headers are too large")
+                    lines = header.split(b"\r\n")
+                    if not re.fullmatch(rb"HTTP/1\.[01] 200(?: .*)?", lines[0]):
+                        raise RuntimeError("Clearings listener returned an unexpected status")
+                    fields = {}
+                    for line in lines[1:]:
+                        key, sep, value = line.partition(b":")
+                        if not sep:
+                            raise RuntimeError("Malformed Clearings control response")
+                        fields.setdefault(key.lower(), []).append(value.strip())
+                    sizes = fields.get(b"content-length", [])
+                    if (len(sizes) != 1 or not sizes[0].isdigit()
+                            or len(fields.get(b"content-type", [])) != 1
+                            or fields[b"content-type"][0] != b"application/json"):
+                        raise RuntimeError("Malformed Clearings control response")
+                    length = int(sizes[0])
+                    if length > 2048:
+                        raise RuntimeError("Clearings control response is too large")
+                    if len(content) >= length:
+                        answer = json.loads(content[:length])
+                        if not isinstance(answer, dict):
+                            raise RuntimeError("Malformed Clearings control reply")
+                        return answer
+                if len(packet) >= 4096:
+                    raise RuntimeError("Clearings control response is too large")
+                remaining = deadline - time.monotonic()
+                if remaining <= 0 or not select.select([connection], [], [], remaining)[0]:
+                    raise RuntimeError("Clearings control response timed out")
+                chunk = connection.recv(min(2048, 4096 - len(packet)))
+                if not chunk:
+                    raise RuntimeError("Clearings control response ended early")
+                packet += chunk
+    except (OSError, ValueError, IndexError) as exc:
+        raise RuntimeError("Clearings listener did not provide a valid bounded reply") from exc
+
+
+def verify_listener(session: dict, bridge: "Bridge", port: int) -> bool:
+    """Challenge the incumbent before giving it a token or opening its origin."""
+    if session["port"] != port or session["identity"] != program_identity(bridge):
+        raise RuntimeError("An earlier Clearings version may own this address. Close its helper manually; no data was changed.")
+    if not _listener_present(port):
+        return False
+    challenge = secrets.token_urlsafe(32)
+    try:
+        answer = local_json_request(port, f"/api/identity-proof?challenge={challenge}")
+    except RuntimeError as exc:
+        raise RuntimeError("The listener did not prove its Clearings identity; no credential was sent") from exc
+    expected = control_mac(session["token"], "identity", challenge, session["identity"], port)
+    if not isinstance(answer, dict) or not isinstance(answer.get("proof"), str) or not hmac.compare_digest(answer["proof"], expected):
+        raise RuntimeError("The listener did not prove its Clearings identity; no credential was sent")
+    return True
+
+
+def authenticated_control(session: dict, op: str, port: int) -> dict:
+    """Send a one-use MAC, never the reusable session secret, to a proved helper."""
+    challenge = secrets.token_urlsafe(32)
+    stamp = int(time.monotonic() * 1000)
+    identity = session["identity"]
+    claim = {"op": op, "challenge": challenge, "stamp": stamp,
+             "proof": control_mac(session["token"], "request-" + op, challenge,
+                                  identity, port, str(stamp))}
+    answer = local_json_request(port, "/api/control", claim)
+    nonce = answer.get("nonce", "") if isinstance(answer, dict) else ""
+    expected = control_mac(session["token"], "response-" + op, challenge, identity, port, nonce)
+    if not isinstance(answer, dict) or not isinstance(answer.get("proof"), str) or not hmac.compare_digest(answer["proof"], expected):
+        raise RuntimeError("Clearings helper control reply was not authentic")
+    return answer
+
+
+def _size_label(limit: int) -> str:
+    return (f"{limit // (1024 * 1024)} MiB" if limit % (1024 * 1024) == 0
+            else f"{limit} bytes")
+
+
+def read_bounded_bytes(path: Path, limit: int) -> bytes:
+    with path.open("rb") as source:
+        raw = source.read(limit + 1)
+    if len(raw) > limit:
+        raise ValueError(f"{path.name} exceeds {_size_label(limit)}")
+    return raw
+
+
+def load_json(path: Path, default=None, *, max_bytes: int | None = None):
     if not path.exists():
         return default
-    if path.stat().st_size > MAX_BYTES:
-        raise ValueError(f"{path.name} exceeds 16 MB")
-    return json.loads(path.read_text(encoding="utf-8"))
+    limit = MAX_BYTES if max_bytes is None else max_bytes
+    return json.loads(read_bounded_bytes(path, limit).decode("utf-8"))
 
 
-def atomic_json(path: Path, value) -> None:
+def atomic_json(path: Path, value, *, max_bytes: int | None = None,
+                compact: bool = False) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    raw = (json.dumps(value, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
-    if len(raw) > MAX_BYTES:
-        raise ValueError("Handoff exceeds 16 MB; nothing was written")
+    limit = MAX_BYTES if max_bytes is None else max_bytes
+    raw = ((json.dumps(value, ensure_ascii=False, separators=(",", ":")) if compact
+            else json.dumps(value, ensure_ascii=False, indent=2)) + "\n").encode("utf-8")
+    if len(raw) > limit and not compact:
+        raw = (json.dumps(value, ensure_ascii=False, separators=(",", ":")) + "\n").encode("utf-8")
+    if len(raw) > limit:
+        label = "Handoff" if path.name == FILE_NAME else path.name
+        raise ValueError(f"{label} exceeds {_size_label(limit)}; nothing was written")
     fd, temp_name = tempfile.mkstemp(prefix=".clearings-", suffix=".tmp", dir=path.parent)
     temp = Path(temp_name)
     try:
@@ -234,7 +520,7 @@ def file_lock(path: Path):
 class Bridge:
     def __init__(self, root: Path):
         self.root = root
-        self.root.mkdir(parents=True, exist_ok=True)
+        self.root.mkdir(parents=True, exist_ok=True, mode=0o700)
         self.config_path = root / "settings.json"
         self.lock_path = root / "handoff.lock"
         if not self.config_path.exists():
@@ -258,7 +544,7 @@ class Bridge:
         return self.home() / FILE_NAME
 
     def read(self):
-        packet = load_json(self.handoff_path())
+        packet = load_json(self.handoff_path(), max_bytes=MAX_HANDOFF_BYTES)
         if packet is None:
             return {"format": "clearings-local-handoff", "schemaVersion": 1,
                     "libraryId": None, "snapshot": None, "snapshotAt": None,
@@ -455,7 +741,78 @@ class Bridge:
             packet = self.read()
             result = edit(packet)
             if result is not None:
-                atomic_json(self.handoff_path(), packet)
+                atomic_json(self.handoff_path(), packet,
+                            max_bytes=MAX_HANDOFF_BYTES, compact=True)
+            return result
+
+    def archive_resolved(self, dry_run: bool = False):
+        """Explicitly archive terminal proposals; never touch pending work.
+
+        The archive is an exact, create-once preimage of the handoff. Writing
+        and verifying it *before* replacing the active file makes interruption
+        recoverable. This is deliberately not an automatic size rollover.
+        """
+        with file_lock(self.lock_path):
+            packet = self.read()
+            resolved = [p for p in packet["proposals"]
+                        if p.get("status") in ("applied", "already-current", "dismissed")]
+            if not resolved:
+                return {"archived": 0, "changed": False, "dryRun": dry_run}
+            prior = read_bounded_bytes(self.handoff_path(), MAX_HANDOFF_BYTES)
+            if json.loads(prior) != packet:
+                raise ValueError("Handoff changed while reading; nothing was archived")
+            digest = hashlib.sha256(prior).hexdigest()
+            relative = "archives/clearings-resolved-" + digest + ".json"
+            archives = packet.get("resolvedProposalArchives", [])
+            if not isinstance(archives, list):
+                raise ValueError("Unrecognized archive index; nothing was archived")
+            descriptor = {"file": relative, "sha256": digest,
+                          "bytes": len(prior), "libraryId": packet["libraryId"],
+                          "generation": packet["generation"],
+                          "resolvedProposalIds": [p["id"] for p in resolved]}
+            compact = copy.deepcopy(packet)
+            compact["proposals"] = [p for p in packet["proposals"] if p.get("status")
+                                    not in ("applied", "already-current", "dismissed")]
+            compact["resolvedProposalArchives"] = [*archives, descriptor]
+            after_bytes = len((json.dumps(compact, ensure_ascii=False,
+                                          separators=(",", ":")) + "\n").encode("utf-8"))
+            if after_bytes > MAX_HANDOFF_BYTES:
+                raise ValueError("Active handoff would still exceed 64 MiB; nothing was archived")
+            result = {"archived": len(resolved), "changed": not dry_run,
+                      "dryRun": dry_run, "archive": descriptor,
+                      "activeCompactBytes": after_bytes,
+                      "pendingPreserved": sum(p.get("status") == "pending"
+                                              for p in compact["proposals"])}
+            if dry_run:
+                return result
+            home = self.home().resolve()
+            archive = home / relative
+            archive.parent.mkdir(exist_ok=True)
+            if archive.parent.resolve() != home / "archives":
+                raise ValueError("Archive directory leaves Clearings home; active handoff unchanged")
+            if not archive.exists():
+                # Use ordinary inherited permissions, not mkstemp's restrictive
+                # temporary-file ACL. A crash leaves at most an orphan .part;
+                # the final archive name appears only after full verification.
+                staging = archive.parent / (".clearings-resolved-" + digest +
+                                            "." + uuid.uuid4().hex + ".part")
+                with staging.open("xb") as stream:
+                    stream.write(prior)
+                    stream.flush()
+                    os.fsync(stream.fileno())
+                if (staging.stat().st_size != len(prior) or
+                        hashlib.sha256(staging.read_bytes()).hexdigest() != digest or
+                        not os.access(staging, os.R_OK)):
+                    raise ValueError("Staged archive verification failed; active handoff unchanged")
+                if archive.exists():
+                    raise ValueError("Archive appeared during staging; active handoff unchanged")
+                os.replace(staging, archive)
+            if (not archive.is_file() or archive.stat().st_size != len(prior) or
+                    hashlib.sha256(archive.read_bytes()).hexdigest() != digest or
+                    not os.access(archive, os.R_OK)):
+                raise ValueError("Archive verification failed; active handoff unchanged")
+            atomic_json(self.handoff_path(), compact,
+                        max_bytes=MAX_HANDOFF_BYTES, compact=True)
             return result
 
     def set_home(self, text: str):
@@ -468,7 +825,7 @@ class Bridge:
                 raise ValueError("Resolve or export pending changes before changing home folders")
             target = candidate / FILE_NAME
             if target.exists():
-                existing = load_json(target)
+                existing = load_json(target, max_bytes=MAX_HANDOFF_BYTES)
                 if existing.get("format") != "clearings-local-handoff":
                     raise ValueError("That folder contains a different handoff file")
                 if (existing.get("libraryId") not in (None, old.get("libraryId")) or
@@ -691,10 +1048,40 @@ class Bridge:
         return self.change(edit)
 
 
-def handler_for(bridge: Bridge, token: str, port: int):
+def handler_for(bridge: Bridge, token: str, port: int, launches=None):
+    launches = launches or LaunchState()
+    identity = program_identity(bridge)
     class Handler(BaseHTTPRequestHandler):
+        def setup(self):
+            super().setup()
+            self.connection.settimeout(5)
+            self.deadline_timer = threading.Timer(REQUEST_DEADLINE, self.expire)
+            self.deadline_timer.daemon = True
+            self.deadline_timer.start()
+
+        def expire(self):
+            try:
+                self.connection.shutdown(socket.SHUT_RDWR)
+            except OSError:
+                pass
+
+        def finish(self):
+            try:
+                super().finish()
+            finally:
+                self.deadline_timer.cancel()
+
         def log_message(self, _format, *_args):
             return
+
+        def valid_authority(self):
+            expected = f"127.0.0.1:{port or self.server.server_port}"
+            return self.headers.get_all("Host", []) == [expected]
+
+        def valid_origin(self, *, required=False):
+            origins = self.headers.get_all("Origin", [])
+            expected = f"http://127.0.0.1:{port or self.server.server_port}"
+            return origins == [expected] if required else origins in ([], [expected])
 
         def send(self, status: int, value=None, content_type="application/json"):
             raw = (json.dumps(value, ensure_ascii=False).encode("utf-8") if content_type == "application/json"
@@ -710,9 +1097,13 @@ def handler_for(bridge: Bridge, token: str, port: int):
             self.wfile.write(raw)
 
         def authorized(self):
-            return self.headers.get("X-Clearings-Token") == token
+            values = self.headers.get_all("X-Clearings-Token", [])
+            return len(values) == 1 and hmac.compare_digest(values[0], token)
 
         def do_GET(self):
+            if not self.valid_authority() or not self.valid_origin():
+                self.send(403, {"error": "Clearings origin refused"})
+                return
             path = self.path.split("?", 1)[0]
             if path == "/":
                 html = APP.read_text(encoding="utf-8")
@@ -723,11 +1114,20 @@ def handler_for(bridge: Bridge, token: str, port: int):
                 # The portable file cannot contact anything. Only the served copy
                 # may speak to its own loopback origin for the handoff API.
                 html = html.replace("connect-src 'none'", "connect-src 'self'")
-                html = html.replace(marker, "<script>window.__CLEARINGS_LOCAL_TOKEN__=" + json.dumps(token) + ";</script>")
+                html = html.replace(marker, "")
                 self.send(200, html.encode("utf-8"), "text/html; charset=utf-8")
                 return
             if path == "/favicon.ico":
                 self.send(204, b"", "image/x-icon")
+                return
+            if path == "/api/identity-proof":
+                query = urllib.parse.parse_qs(urllib.parse.urlsplit(self.path).query)
+                challenges = query.get("challenge", [])
+                if len(challenges) != 1 or not re.fullmatch(r"[A-Za-z0-9_-]{32,80}", challenges[0]):
+                    self.send(400, {"error": "Invalid challenge"})
+                    return
+                self.send(200, {"proof": control_mac(token, "identity", challenges[0],
+                                                       identity, port or self.server.server_port)})
                 return
             if not self.authorized():
                 self.send(403, {"error": "Local bridge token required"})
@@ -748,7 +1148,11 @@ def handler_for(bridge: Bridge, token: str, port: int):
                 self.send(409, {"error": str(exc)})
 
         def do_POST(self):
-            if not self.authorized() or self.headers.get("Origin") not in (None, f"http://127.0.0.1:{port}"):
+            if not self.valid_authority() or not self.valid_origin():
+                self.send(403, {"error": "Clearings origin refused"})
+                return
+            path = self.path.split("?", 1)[0]
+            if path not in ("/api/bootstrap", "/api/control") and not self.authorized():
                 self.send(403, {"error": "Local bridge authorization failed"})
                 return
             if self.headers.get("Content-Type", "").split(";", 1)[0] != "application/json":
@@ -756,11 +1160,42 @@ def handler_for(bridge: Bridge, token: str, port: int):
                 return
             try:
                 size = int(self.headers.get("Content-Length", "0"))
-                if size < 0 or size > MAX_BYTES:
+                limit = 4096 if path in ("/api/bootstrap", "/api/control") else MAX_BYTES
+                if size < 0 or size > limit:
                     self.send(413, {"error": "Request exceeds 16 MB"})
                     return
                 data = json.loads(self.rfile.read(size))
-                path = self.path.split("?", 1)[0]
+                if path == "/api/bootstrap":
+                    if not self.valid_origin(required=True) or not isinstance(data, dict) or not isinstance(data.get("nonce"), str) or not launches.redeem(data["nonce"]):
+                        self.send(403, {"error": "Clearings launch expired or refused"})
+                    else:
+                        self.send(200, {"token": token})
+                    return
+                if path == "/api/control":
+                    if not isinstance(data, dict):
+                        self.send(403, {"error": "Invalid Clearings control"})
+                        return
+                    op, challenge, proof, stamp = (data.get("op"), data.get("challenge"),
+                                                   data.get("proof"), data.get("stamp"))
+                    if (op not in ("launch", "shutdown") or not isinstance(challenge, str)
+                            or not re.fullmatch(r"[A-Za-z0-9_-]{32,80}", challenge)
+                            or type(stamp) is not int
+                            or not isinstance(proof, str) or not hmac.compare_digest(proof,
+                                control_mac(token, "request-" + op, challenge, identity,
+                                            port or self.server.server_port, str(stamp)))
+                            or not launches.claim(challenge, stamp)):
+                        self.send(403, {"error": "Invalid Clearings control"})
+                        return
+                    nonce = launches.issue() if op == "launch" else ""
+                    answer = {"proof": control_mac(token, "response-" + op, challenge,
+                                                    identity, port or self.server.server_port, nonce)}
+                    if op == "launch":
+                        answer["nonce"] = nonce
+                    self.send(200, answer)
+                    if op == "shutdown":
+                        self.wfile.flush()
+                        threading.Thread(target=self.server.shutdown, daemon=True).start()
+                    return
                 if path == "/api/settings":
                     answer = {"home": bridge.set_home(data["home"])}
                 elif path == "/api/sync":
@@ -799,6 +1234,40 @@ class LocalServer(ThreadingHTTPServer):
     # SO_REUSEPORT stays disabled: concurrent listeners are never permitted.
     allow_reuse_address = os.name != "nt"
     allow_reuse_port = False
+    daemon_threads = True
+
+    def handle_error(self, request, client_address):
+        # A timed-out or deliberately closed local socket is an expected
+        # refusal, not a traceback containing application state.
+        if isinstance(sys.exc_info()[1], (ConnectionAbortedError, ConnectionResetError,
+                                          BrokenPipeError, TimeoutError)):
+            return
+        super().handle_error(request, client_address)
+
+    def __init__(self, *args, **kwargs):
+        self.request_slots = threading.BoundedSemaphore(MAX_HANDLERS)
+        super().__init__(*args, **kwargs)
+
+    def process_request(self, request, client_address):
+        if not self.request_slots.acquire(blocking=False):
+            try:
+                request.settimeout(.2)
+                request.sendall(b"HTTP/1.0 503 Service Unavailable\r\nConnection: close\r\nContent-Length: 0\r\n\r\n")
+            except OSError:
+                pass
+            self.shutdown_request(request)
+            return
+        try:
+            super().process_request(request, client_address)
+        except BaseException:
+            self.request_slots.release()
+            raise
+
+    def process_request_thread(self, request, client_address):
+        try:
+            super().process_request_thread(request, client_address)
+        finally:
+            self.request_slots.release()
 
     def server_bind(self):
         if os.name == "nt":
@@ -811,72 +1280,75 @@ class LocalServer(ThreadingHTTPServer):
 
 def run_server(bridge: Bridge, port: int, open_browser: bool, show_tray: bool = True):
     session_path = bridge.root / "session.json"
-    previous = load_json(session_path, {})
-    if previous.get("port") == port and previous.get("token"):
-        req = urllib.request.Request(f"http://127.0.0.1:{port}/api/identity",
-                                     headers={"X-Clearings-Token": previous["token"]})
+    previous = None
+    previous_bytes = None
+    if session_path.exists():
+        previous_bytes = read_session_bytes(session_path)
         try:
-            with urllib.request.urlopen(req, timeout=1) as response:
-                identity = json.load(response)
-                expected = program_identity(bridge)
-                if identity == expected:
-                    if open_browser:
-                        webbrowser.open(f"http://127.0.0.1:{port}/")
-                    return
-                same_working_helper = (isinstance(identity, dict)
-                    and "helperSha256" in identity
-                    and all(identity.get(key) == expected[key]
-                            for key in ("channel", "program", "config")))
-                if not same_working_helper:
-                    raise RuntimeError("Another Clearings copy or version is running on this address. "
-                                       "Close that Clearings helper before opening this one; no data was changed.")
-                shutdown = urllib.request.Request(
-                    f"http://127.0.0.1:{port}/api/shutdown", data=b"{}",
-                    headers={"X-Clearings-Token": previous["token"],
-                             "Content-Type": "application/json"})
-                try:
-                    with urllib.request.urlopen(shutdown, timeout=2) as stopped:
-                        if json.load(stopped) != {"stopping": True}:
-                            raise RuntimeError("The earlier Clearings helper did not acknowledge a restart.")
-                except (urllib.error.URLError, TimeoutError, ValueError) as exc:
-                    raise RuntimeError("The earlier Clearings helper could not be restarted. "
-                                       "Close it before opening this one; no data was changed.") from exc
-                for _ in range(30):
-                    try:
-                        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
-                            if os.name == "nt":
-                                probe.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
-                            else:
-                                probe.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-                            probe.bind(("127.0.0.1", port))
-                            probe.listen(1)
-                        break
-                    except OSError:
-                        time.sleep(0.1)
-                else:
-                    raise RuntimeError("The earlier Clearings helper did not release its address. "
-                                       "Close it before opening this one; no data was changed.")
-        except (urllib.error.URLError, TimeoutError, ValueError):
-            pass
+            previous = load_private_session(session_path)
+        except RuntimeError:
+            outer = load_json(session_path, {})
+            if not isinstance(outer, dict) or outer.get("format") == "clearings-protected-session-v1":
+                raise
+            # Legacy plaintext is preserved but never used as a credential.
     token = secrets.token_urlsafe(32)
+    launches = LaunchState()
     try:
-        server = LocalServer(("127.0.0.1", port), handler_for(bridge, token, port))
+        server = LocalServer(("127.0.0.1", port), handler_for(bridge, token, port, launches))
     except OSError as exc:
+        # A failed exclusive bind grants no authority. Reuse only an exact
+        # protected, same-identity incumbent that answers the MAC challenge.
+        if previous and previous["port"] == port and \
+                previous["identity"] == program_identity(bridge) and \
+                verify_listener(previous, bridge, port):
+            if open_browser:
+                nonce = authenticated_control(previous, "launch", port).get("nonce")
+                if not isinstance(nonce, str) or not re.fullmatch(r"[A-Za-z0-9_-]{32,80}", nonce):
+                    raise RuntimeError("The proved helper did not issue a valid launch")
+                webbrowser.open(f"http://127.0.0.1:{port}/?launch-view={secrets.token_urlsafe(8)}#clearings-launch={nonce}")
+            return
         raise RuntimeError(f"Clearings cannot use 127.0.0.1:{port}. Close the other program "
                            "using this address, then reopen Clearings; no data was changed.") from exc
     tray = None
+    def open_new_window():
+        nonce = launches.issue()
+        webbrowser.open(f"http://127.0.0.1:{port}/?launch-view={secrets.token_urlsafe(8)}#clearings-launch={nonce}")
+    serving = False
     try:
+        # The listener remains exclusively bound throughout replacement.
+        # Never let an old session be overwritten on a mere connect timeout.
+        if previous_bytes is not None:
+            if read_session_bytes(session_path) != previous_bytes:
+                raise RuntimeError("Clearings session changed during startup; no data was changed")
+            preserve_session_bytes(session_path, previous_bytes)
+        write_private_session(session_path, {"port": port, "token": token,
+                              "identity": program_identity(bridge), "pid": os.getpid(),
+                              "startedAt": now()})
         if WINDOWS_TRAY and show_tray:
             tray = WindowsTray(title=f"Clearings {VERSION}" + (" · working" if CHANNEL == "working" else ""),
                                address=f"127.0.0.1:{port}", identity=str(bridge.root),
-                               open_app=lambda: webbrowser.open(f"http://127.0.0.1:{port}/"),
+                               open_app=open_new_window,
                                stop_helper=server.shutdown).start()
-        atomic_json(session_path, {"port": port, "token": token, "pid": os.getpid(), "startedAt": now()})
         if open_browser:
-            webbrowser.open(f"http://127.0.0.1:{port}/")
+            open_new_window()
         if sys.stdout is not None:
             print(f"Clearings local helper ready on 127.0.0.1:{port}", flush=True)
+        serving = True
         server.serve_forever()
+    except BaseException:
+        if not serving:
+            # Only our own newly written token may be replaced. Restore the
+            # former exact bytes when present; its private backup also stays.
+            try:
+                current = load_private_session(session_path)
+                if current and hmac.compare_digest(current["token"], token):
+                    if previous_bytes is None:
+                        session_path.unlink()
+                    else:
+                        restore_session_bytes(session_path, previous_bytes)
+            except (OSError, RuntimeError):
+                pass
+        raise
     finally:
         server.server_close()
         if tray is not None:
@@ -901,6 +1373,8 @@ def main():
     stop = sub.add_parser("stop", help="Stop this installation's local helper without changing workspace data")
     stop.add_argument("--installation", help="Exact installed executable path when called by an installer")
     sub.add_parser("status", help="Show handoff state without checklist contents")
+    archive = sub.add_parser("archive-resolved", help="Explicitly archive terminal proposal history")
+    archive.add_argument("--dry-run", action="store_true", help="Inspect the change without writing")
     sub.add_parser("snapshot", help="Print the last browser-saved workspace JSON")
     sub.add_parser("refresh", help="Read saved workspace and all pending, unapplied AI proposals")
     read = sub.add_parser("read", help="Read one saved checklist or a marked partial branch")
@@ -945,7 +1419,10 @@ def main():
                                        "commitId": (p.get("commit") or {}).get("id"),
                                        "signedBy": (p.get("commit") or {}).get("author") or p.get("committedBy")}
                                       for p in packet["proposals"] if p["status"] == "pending"],
+                          "resolvedArchives": packet.get("resolvedProposalArchives", []),
                           "recentReceipts": packet["receipts"][-5:]}, indent=2))
+    elif args.command == "archive-resolved":
+        print(json.dumps(bridge.archive_resolved(dry_run=args.dry_run), indent=2))
     elif args.command == "snapshot":
         print(json.dumps(bridge.read()["snapshot"], ensure_ascii=False, indent=2))
     elif args.command == "refresh":

@@ -1,7 +1,25 @@
-// SPDX-License-Identifier: MPL-2.0
-// This Source Code Form is subject to the terms of the Mozilla Public
-// License, v. 2.0. If a copy of the MPL was not distributed with this
-// file, You can obtain one at https://mozilla.org/MPL/2.0/.
+// SPDX-License-Identifier: MIT
+// MIT License
+//
+// Copyright (c) 2026 The Hermit
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 'use strict';
 // Local release/compatibility checks; no network, accounts or user data writes.
 const assert = require('node:assert/strict');
@@ -28,7 +46,7 @@ function test(name, fn) { fn(); passed++; console.log('PASS ' + name); }
 const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'clearings-release-'));
 const python = process.env.PYTHON || (process.platform === 'win32' ? 'python' : 'python3');
 function runPython(args) {
-  const p = spawnSync(python, args, {encoding:'utf8'});
+  const p = spawnSync(python, ['-B',...args], {encoding:'utf8'});
   if (p.error) throw p.error;
   assert.equal(p.status, 0, p.stderr || p.stdout);
   return p.stdout;
@@ -43,7 +61,7 @@ try {
     assert.ok(html.includes("STORE='checklist-studio:recovery:v1'"));
     assert.ok(html.includes("LEGACY_STORE='lc:checklist-studio:recovery:v1'"));
     assert.ok(html.includes("const AI_FORMAT='checklist-studio-changes'"));
-    assert.ok(html.includes("appVersion:'0.4.5'"));
+    assert.ok(html.includes("appVersion:'0.4.6'"));
     assert.ok(!html.includes("format:'clearings-document'"));
   });
   test('overview folding and drag-to-focus interaction ships in the app', () => {
@@ -62,10 +80,10 @@ try {
     assert.ok(html.includes('class="progress-track"'));
     assert.ok(html.includes('class="progress-pie"'));
   });
-  test('standard MPL license wording survives source newline conversion', () => {
+  test('standard MIT license wording survives source newline conversion', () => {
     const text = fs.readFileSync(path.join(root,'LICENSE'),'utf8').replace(/\r\n/g,'\n');
     const hash = createHash('sha256').update(text,'utf8').digest('hex');
-    assert.equal(hash, '1f256ecad192880510e84ad60474eab7589218784b9a50bc7ceee34c2b91f1d5');
+    assert.equal(hash, 'b2dd045787a762f8e3746fb97ee7171ebc9e33f60cba080af0d404a3d44337c8');
   });
   test('bundled templates match reviewed JSON and start unchecked', () => {
     const block=html.match(/\/\* BUNDLED_TEMPLATES_BEGIN \*\/\s*const BUNDLED_TEMPLATES = ([\s\S]*?);\s*\/\* BUNDLED_TEMPLATES_END \*\//);
@@ -83,11 +101,11 @@ try {
     assert.match(guide,/`progressVisual`.*`bar`/);
     assert.match(guide,/AI change packets[\s\S]*version 1/);
   });
-  test('app and development source contain MPL notices', () => {
+  test('app and development source contain MIT notices', () => {
     for (const file of [appPath, ...['tools/contract.cjs','tools/validate_checklist.cjs',
       'tools/clearings_local.py','tools/clearings_commit.py','tools/make_share_package.py','tests/contract.test.cjs',
       'tests/clearings-release.test.cjs'].map(x => path.join(root,x))]) {
-      assert.ok(fs.readFileSync(file,'utf8').includes('SPDX-License-Identifier: MPL-2.0'), file);
+      assert.ok(fs.readFileSync(file,'utf8').includes('SPDX-License-Identifier: MIT'), file);
     }
   });
   test('release checklist passes the real document validator without mutation', () => {
@@ -137,13 +155,26 @@ try {
       'examples/generic/checklist_index.json','examples/generic/program_overview.json',
       'examples/generic/weekend_workshop.json','examples/proposals/add-feedback-step.json',
       'templates/clearings_github_release.json','templates/clearings_github_patch.json']) {
-      assert.match(read(file+'.license'),/SPDX-License-Identifier: MPL-2.0/);
+      assert.match(read(file+'.license'),/SPDX-License-Identifier: MIT/);
     }
   });
   const zip=path.join(temp,'clearings.zip');
-  test('release source and builder agree on 0.4.5',()=>{
-    assert.match(html,/appVersion:'0\.4\.5'/);
-    assert.match(fs.readFileSync(packager,'utf8'),/Clearings 0\.4\.5 - nested group folding and complete saves before quitting/);
+  test('packager rejects an unreviewed development version',()=>{
+    const fixture=path.join(temp,'wrong-version');
+    fs.mkdirSync(path.join(fixture,'tools'),{recursive:true});
+    for(const name of ['make_share_package.py','sync_templates.py'])
+      fs.copyFileSync(path.join(root,'tools',name),path.join(fixture,'tools',name));
+    fs.writeFileSync(path.join(fixture,'LC_CHECKLIST.html'),"appVersion:'0.4.6-dev'");
+    const p=spawnSync(python,[path.join(fixture,'tools/make_share_package.py'),'--output',zip],{encoding:'utf8'});
+    assert.notEqual(p.status,0);
+    assert.match(p.stderr+p.stdout,/0\.4\.6 only/);
+    assert.equal(fs.existsSync(zip),false);
+  });
+  // Artifact checks apply only to the explicitly selected release version.
+  if(html.includes("appVersion:'0.4.6'")) {
+  test('release source and builder agree on 0.4.6',()=>{
+    assert.match(html,/appVersion:'0\.4\.6'/);
+    assert.match(fs.readFileSync(packager,'utf8'),/Clearings 0\.4\.6 - nested change indicators, protected local sessions and MIT licensing/);
     const publicLauncher=fs.existsSync(path.join(root,'docs/GITHUB_START_CLEARINGS.cmd'))
       ?path.join(root,'docs/GITHUB_START_CLEARINGS.cmd'):path.join(root,'Start_Clearings.cmd');
     assert.match(fs.readFileSync(publicLauncher,'utf8'),/py\.exe -3 -c/);
@@ -172,7 +203,7 @@ with zipfile.ZipFile(sys.argv[1]) as z:
  assert set(m)==set(z.namelist())-{'MANIFEST.json'}
  for name,digest in m.items(): assert hashlib.sha256(z.read(name)).hexdigest()==digest,name
  assert b'<title>Clearings</title>' in z.read('index.html')
- assert b'SPDX-License-Identifier: MPL-2.0' in z.read('index.html')
+ assert b'SPDX-License-Identifier: MIT' in z.read('index.html')
  assert b'No license has been selected' not in z.read('RELEASE_NOTE.txt')
  assert json.loads(z.read('templates/clearings_github_release.json'))['state']=={}
 print('OK')`, zip]);
@@ -192,6 +223,31 @@ print('OK')`, zip]);
     const p=spawnSync(python,[packager,'--output',zip],{encoding:'utf8'});
     assert.notEqual(p.status,0);assert.deepEqual(fs.readFileSync(zip),before);
   });
+  test('force replaces a regular disposable ZIP only after a complete build', () => {
+    runPython([packager,'--output',zip,'--force']);
+    const names=JSON.parse(runPython(['-c','import json,sys,zipfile; print(json.dumps(zipfile.ZipFile(sys.argv[1]).namelist()))',zip]));
+    assert.ok(names.includes('MANIFEST.json'));
+  });
+  test('native verifier refuses adjacent import shadow and unlisted source', () => {
+    const extracted=path.join(temp,'native-inventory');
+    runPython(['-c','import sys,zipfile; zipfile.ZipFile(sys.argv[1]).extractall(sys.argv[2])',zip,extracted]);
+    const builder=path.join(extracted,'packaging/build_native.py');
+    assert.match(runPython(['-I','-B',builder,'--output',path.join(temp,'native-output'),'--verify-only']),/Verified/);
+    const sentinel=path.join(temp,'shadow-executed');
+    const shadow=path.join(extracted,'packaging/hashlib.py');
+    fs.writeFileSync(shadow,`from pathlib import Path\nPath(${JSON.stringify(sentinel)}).write_text('executed')\n`);
+    for(const flags of [[],['-I']]){
+      const p=spawnSync(python,[...flags,'-B',builder,'--output',path.join(temp,'native-output'),'--verify-only'],{encoding:'utf8'});
+      assert.notEqual(p.status,0);
+      assert.equal(fs.existsSync(sentinel),false,'adjacent module ran before verification');
+    }
+  });
+  if(process.platform!=='win32')test('force refuses a symlink output without changing its target',()=>{
+    const target=path.join(temp,'unrelated.txt'),link=path.join(temp,'linked.zip');
+    fs.writeFileSync(target,'KEEP');fs.symlinkSync(target,link);
+    const p=spawnSync(python,[packager,'--output',link,'--force'],{encoding:'utf8'});
+    assert.notEqual(p.status,0);assert.equal(fs.readFileSync(target,'utf8'),'KEEP');
+  });
   test('standalone package can be repackaged without development repository', () => {
     const extracted=path.join(temp,'standalone');
     runPython(['-c','import sys,zipfile; zipfile.ZipFile(sys.argv[1]).extractall(sys.argv[2])',zip,extracted]);
@@ -203,6 +259,7 @@ with zipfile.ZipFile(sys.argv[1]) as a, zipfile.ZipFile(sys.argv[2]) as b:
  for n in a.namelist(): assert a.read(n)==b.read(n), n
 print('OK')`,zip,second]);
   });
+  }
   if(fs.existsSync(archivedApp))test('archived 0.4.0 app keeps its version',()=>{
     assert.match(fs.readFileSync(archivedApp,'utf8'),/appVersion:'0\.4\.0'/);
   });

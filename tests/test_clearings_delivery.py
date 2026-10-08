@@ -1,4 +1,25 @@
-# SPDX-License-Identifier: MPL-2.0
+# SPDX-License-Identifier: MIT
+# MIT License
+#
+# Copyright (c) 2026 The Hermit
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
 """Delivery regressions use fictional work and disposable local helpers only."""
 import copy
 import json
@@ -104,66 +125,65 @@ class DeliveryChecks(unittest.TestCase):
         p=self.bridge.propose(next_base,edited,'Linden')['proposalId'];self.bridge.commit_proposal(p,'Linden')
         self.assertEqual(self.bridge.read_checklist(base['documentId'])['effectiveDocument']['title'],edited['title'])
 
-    def test_shutdown_rejects_untrusted_identity_before_request(self):
-        local.atomic_json(self.bridge.root/'session.json',{'port':12345,'token':'fixture','pid':os.getpid()})
-        for field in ['program','config','channel']:
-            identity=local.program_identity(self.bridge);identity[field]='another'
-            with patch.object(local.urllib.request,'urlopen',return_value=io.BytesIO(json.dumps(identity).encode())) as request, patch.object(local,'stop_legacy_windows_process') as legacy:
-                with self.assertRaisesRegex(RuntimeError,'different Clearings'):local.stop_server(self.bridge,installation=str(local.PROGRAM))
-                self.assertEqual(request.call_count,1);legacy.assert_not_called()
+    def test_shutdown_refuses_other_installation_before_contact(self):
+        session = {"port": 12345, "token": "fixture-token", "pid": os.getpid(),
+                   "identity": local.program_identity(self.bridge)}
+        with patch.object(local, "_dpapi", side_effect=lambda data, protect: data[::-1]):
+            local.write_private_session(self.bridge.root / "session.json", session)
+            with patch.object(local, "verify_listener") as verify:
+                with self.assertRaisesRegex(RuntimeError, "different Clearings installation"):
+                    local.stop_server(self.bridge, installation=str(self.bridge.root / "other.exe"))
+                verify.assert_not_called()
 
-    def test_legacy_shutdown_fallback_is_explicit_and_release_only(self):
-        with socket.socket() as probe:probe.bind(('127.0.0.1',0));port=probe.getsockname()[1]
-        local.atomic_json(self.bridge.root/'session.json',{'port':port,'token':'fixture','pid':os.getpid()})
-        for channel,explicit,allowed in [('working',True,False),('release',False,False),('release',True,True)]:
-            with patch.object(local,'CHANNEL',channel):
-                identity=local.program_identity(self.bridge)
-                absent=local.urllib.error.HTTPError('fixture',404,'No route',{},None)
-                with patch.object(local.urllib.request,'urlopen',side_effect=[io.BytesIO(json.dumps(identity).encode()),absent]), patch.object(local,'stop_legacy_windows_process') as legacy:
-                    if allowed:
-                        self.assertTrue(local.stop_server(self.bridge,installation=str(local.PROGRAM)))
-                        legacy.assert_called_once_with(os.getpid(),str(local.PROGRAM))
-                    else:
-                        with self.assertRaises(local.urllib.error.HTTPError):local.stop_server(self.bridge,installation=str(local.PROGRAM) if explicit else None)
-                        legacy.assert_not_called()
+    def test_legacy_shutdown_never_sends_plaintext_or_terminates_process(self):
+        with socket.socket() as probe:
+            probe.bind(("127.0.0.1", 0));port = probe.getsockname()[1]
+        local.atomic_json(self.bridge.root / "session.json",
+                          {"port": port, "token": "legacy-fixture", "pid": os.getpid()})
+        with patch.object(local, "_listener_present", return_value=True), patch.object(local, "stop_legacy_windows_process") as legacy:
+            with self.assertRaisesRegex(RuntimeError, "Close the earlier Clearings helper"):
+                local.stop_server(self.bridge, installation=str(local.PROGRAM))
+            legacy.assert_not_called()
+        with patch.object(local, "_listener_present", return_value=False):
+            self.assertFalse(local.stop_server(self.bridge))
 
     def test_release_helper_stops_without_touching_workspace(self):
-        self.bridge.sync(self.workspace,1)
-        packet=copy.deepcopy(self.bridge.read())
+        self.bridge.sync(self.workspace, 1)
+        packet = copy.deepcopy(self.bridge.read())
         with socket.socket() as probe:
-            probe.bind(('127.0.0.1',0));port=probe.getsockname()[1]
-        errors=[]
+            probe.bind(("127.0.0.1", 0));port = probe.getsockname()[1]
+        errors = []
         def serve():
-            try:local.run_server(self.bridge,port,False,show_tray=False)
-            except Exception as exc:errors.append(exc)
-        with patch.object(local,'CHANNEL','release'), patch.object(socket,'getfqdn',side_effect=AssertionError('Loopback must not depend on DNS')):
-            worker=threading.Thread(target=serve,daemon=True);worker.start()
-            deadline=time.monotonic()+10
-            ready=False
             try:
-                while time.monotonic()<deadline and not errors:
-                    if (self.bridge.root/'session.json').exists():
-                        session=local.load_json(self.bridge.root/'session.json')
-                        request=local.urllib.request.Request(f'http://127.0.0.1:{port}/api/identity',headers={'X-Clearings-Token':session['token']})
+                local.run_server(self.bridge, port, False, show_tray=False)
+            except Exception as exc:
+                errors.append(exc)
+        with patch.object(local, "CHANNEL", "release"), patch.object(local, "_dpapi", side_effect=lambda data, protect: data[::-1]):
+            worker = threading.Thread(target=serve, daemon=True);worker.start()
+            deadline = time.monotonic() + 10
+            ready = False
+            try:
+                while time.monotonic() < deadline and not errors:
+                    if (self.bridge.root / "session.json").exists():
+                        session = local.load_private_session(self.bridge.root / "session.json")
                         try:
-                            with local.urllib.request.urlopen(request,timeout=.5) as response:
-                                ready=json.load(response)==local.program_identity(self.bridge)
+                            ready = local.verify_listener(session, self.bridge, port)
                             if ready:break
-                        except (OSError,ValueError):pass
+                        except (OSError, RuntimeError, ValueError):pass
                     time.sleep(.02)
-                self.assertTrue(ready,repr(errors))
-                with self.assertRaisesRegex(RuntimeError,'different Clearings'):
-                    local.stop_server(self.bridge,installation=str(self.bridge.root/'not-this.exe'))
+                self.assertTrue(ready, repr(errors))
+                with self.assertRaisesRegex(RuntimeError, "different Clearings installation"):
+                    local.stop_server(self.bridge, installation=str(self.bridge.root / "not-this.exe"))
                 self.assertTrue(worker.is_alive())
                 self.assertTrue(local.stop_server(self.bridge))
             finally:
-                if worker.is_alive() and (self.bridge.root/'session.json').exists():
+                if worker.is_alive() and (self.bridge.root / "session.json").exists():
                     try:local.stop_server(self.bridge)
-                    except (OSError,RuntimeError):pass
+                    except (OSError, RuntimeError):pass
                 worker.join(5)
             self.assertFalse(worker.is_alive())
-            self.assertEqual(errors,[])
-        self.assertEqual(self.bridge.read(),packet)
+            self.assertEqual(errors, [])
+        self.assertEqual(self.bridge.read(), packet)
 
     def test_shutdown_delivers_acknowledgement_before_server_exits(self):
         handler=local.handler_for(self.bridge,'fixture-token',0)

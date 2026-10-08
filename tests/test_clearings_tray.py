@@ -1,4 +1,25 @@
-# SPDX-License-Identifier: MPL-2.0
+# SPDX-License-Identifier: MIT
+# MIT License
+#
+# Copyright (c) 2026 The Hermit
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
 """Tray behavior uses fakes; opt-in native checks use only a temporary icon."""
 import ctypes
 from ctypes import wintypes as w
@@ -40,7 +61,7 @@ class TrayLifetime(unittest.TestCase):
 
     def test_server_starts_and_removes_its_tray(self):
         local=fixtures.local;server=Mock();tray=Mock()
-        with patch.object(local,'WINDOWS_TRAY',True),patch.object(local,'LocalServer',return_value=server),patch.object(local,'WindowsTray',return_value=tray):
+        with patch.object(local,'_dpapi',side_effect=lambda data,protect:data[::-1]),patch.object(local,'WINDOWS_TRAY',True),patch.object(local,'LocalServer',return_value=server),patch.object(local,'WindowsTray',return_value=tray):
             tray.start.return_value=tray
             local.run_server(self.bridge,12345,False)
         tray.start.assert_called_once();server.serve_forever.assert_called_once()
@@ -48,14 +69,14 @@ class TrayLifetime(unittest.TestCase):
 
     def test_failed_tray_does_not_leave_server_or_publish_session(self):
         local=fixtures.local;server=Mock();tray=Mock();tray.start.side_effect=RuntimeError('tray unavailable')
-        with patch.object(local,'WINDOWS_TRAY',True),patch.object(local,'LocalServer',return_value=server),patch.object(local,'WindowsTray',return_value=tray):
+        with patch.object(local,'_dpapi',side_effect=lambda data,protect:data[::-1]),patch.object(local,'WINDOWS_TRAY',True),patch.object(local,'LocalServer',return_value=server),patch.object(local,'WindowsTray',return_value=tray):
             with self.assertRaisesRegex(RuntimeError,'tray unavailable'):local.run_server(self.bridge,12345,False)
         server.serve_forever.assert_not_called();server.server_close.assert_called_once()
         self.assertFalse((self.bridge.root/'session.json').exists())
 
     def test_headless_opt_out_creates_no_tray(self):
         local=fixtures.local;server=Mock()
-        with patch.object(local,'LocalServer',return_value=server),patch.object(local,'WindowsTray') as tray:
+        with patch.object(local,'_dpapi',side_effect=lambda data,protect:data[::-1]),patch.object(local,'LocalServer',return_value=server),patch.object(local,'WindowsTray') as tray:
             local.run_server(self.bridge,12345,False,show_tray=False)
         tray.assert_not_called();server.server_close.assert_called_once()
 
