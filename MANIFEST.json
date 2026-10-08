@@ -10,7 +10,7 @@
   "Start_Clearings.cmd": "996b25fb2897c79d0d7584b9cd979c6e3ee9996cfe5f79acfb91f414426a7db6",
   "templates/clearings_github_release.json": "e698c897e96c5dbb9f64183fcbbb7d9d514862df3acc1f476ad55000e6dfba8f",
   "templates/clearings_github_patch.json": "479a8775e7a436455a4b1d8765ee7e6d0d1e868cb3c070097d90de4ba9dba4eb",
-  "tests/clearings-release.test.cjs": "0084c9a16b2ba7309faeae3301ac5a686f7b9e5d17f75bcaa4d3d3cfcfcb6d7b",
+  "tests/clearings-release.test.cjs": "403377c5f065500e0299f8250585a115e69bf3746ad5c9c4e07abe350b43fec2",
   "schema/checklist-studio.schema.json": "1f132e06aa07c3ccb778280c809144d89cbbdcf52ababc0d87db79f23a656dfd",
   "examples/generic/checklist_index.json": "c3ecaa8e91261fb5f9bc071ca4baa7ed044028665ef4f20667694d067714307e",
   "examples/generic/program_overview.json": "db53fa4d338b4d2b21e4c017d987d7cd84cf9b79a020b72d0f50ce54ab5fe6f3",

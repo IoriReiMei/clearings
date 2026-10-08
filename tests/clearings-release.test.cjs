@@ -43,7 +43,9 @@ const patchDoc = json('templates/clearings_github_patch.json');
 const sourceDoc = clone(doc);
 let passed = 0;
 function test(name, fn) { fn(); passed++; console.log('PASS ' + name); }
-const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'clearings-release-'));
+// macOS exposes its temporary directory through /var -> /private/var.
+// Use its real path so packaging still refuses newly introduced output links.
+const temp = fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()), 'clearings-release-'));
 const python = process.env.PYTHON || (process.platform === 'win32' ? 'python' : 'python3');
 function runPython(args) {
   const p = spawnSync(python, ['-B',...args], {encoding:'utf8'});
