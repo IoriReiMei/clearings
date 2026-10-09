@@ -1,0 +1,2 @@
+# Optional stdio adapter only; the Clearings browser/helper does not need this.
+mcp==2.2.0

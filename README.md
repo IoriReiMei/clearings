@@ -90,6 +90,11 @@ still need their ordinary execution environment and user authorization: Clearing
 does not launch models or run tasks on its own. Names identify declared authors,
 not verified identities.
 
+An optional [local MCP source connector](docs/CLEARINGS_MCP.md) gives compatible
+assistants a checklist search and signed handoff through the same local Bridge.
+It needs a separately installed Python MCP SDK and explicit client setup. The
+0.4.6 installers do not bundle or enable this connector.
+
 The workspace menu contains **Settings**, **Preferences**, **Recent actions**,
 **Export workspace backup…**, and **Save and quit Clearings**. Templates provide
 blank GitHub release and patch checklists; they never publish anything.

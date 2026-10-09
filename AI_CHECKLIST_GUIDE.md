@@ -55,6 +55,10 @@ is context, never a full replacement. Source users run the same commands through
 `python -B tools/clearings_local.py`. On macOS the executable is inside
 `Clearings.app/Contents/MacOS/Clearings`; Linux installs `~/.local/bin/clearings`.
 
+An optional local stdio MCP adapter for trusted assistants is documented in
+`docs/CLEARINGS_MCP.md`. It uses the same handoff rules and is read-only unless
+its process is explicitly started with `--write`.
+
 The source package also includes `tools/plan_changes.cjs`. It needs Node and can
 materialize the documented operation packet; full-document helper commands do not
 need Node. Human **Move to…** and AI `move-items` preserve IDs and checks.
