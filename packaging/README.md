@@ -86,3 +86,18 @@ artifacts; release publication is a separate operation.
 ## 0.4.6 upgrade checks
 
 Windows tray support uses standard Windows APIs through ctypes, with no new runtime dependency. The source native tray fixture can be opted into with `CLEARINGS_NATIVE_TRAY_TEST=1`; ordinary headless checks pass `--no-tray`. Windows CI downloads the exact checksummed 0.4.5 installer and tests an actual 0.4.5-to-0.4.6 upgrade, same-version reinstall and uninstall while preserving fixture handoff bytes. The installer still copies the complete bundle; it is not a delta updater or version/downgrade manager. This release removes no previous bundle paths.
+
+The icon integration below applies to this source and future reviewed builds.
+Existing public 0.4.6 installer downloads remain unchanged by this source update.
+
+The Windows icon now comes from the owner's exact `assets/Clearings.png` (SHA-256
+`721d33078041e4a1852525dd0c336fbe6f7d2d0c50968fc27072e24d12d68824`).
+Its `assets/Clearings.ico` contains 16, 20, 24, 32, 40, 48, 64, 128 and
+256-pixel variants. The tray loads this one resource from source or the bundled
+`_internal/assets` directory; the GUI and CLI embed it, and NSIS uses it for
+setup and uninstall. The installed executable supplies the Start Menu, Desktop
+and Add/Remove Programs icon. The source ZIP includes both assets and their
+adjacent license notices, with binary bytes preserved by the manifest.
+No icon generator or image library is needed to run or build this version:
+the reviewed ICO is already included. Its original conversion receipt is in
+the local development scratch area, not the public package.

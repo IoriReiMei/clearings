@@ -24,6 +24,8 @@ SOFTWARE.
 -->
 # Clearings 0.4.6
 
+The current main source includes the reviewed custom Windows icon assets and optional local MCP read/write adapter. The existing 0.4.6 installer downloads have not been rebuilt for this source update; their historical verification limits and contents remain unchanged. See [MCP setup](docs/CLEARINGS_MCP.md) for the separate optional adapter.
+
 Clearings is a local checklist and outline for people and their AI collaborators.
 Your workspace stays on your device. There is no account, telemetry, bundled AI,
 API key, subscription or runtime download.
@@ -55,6 +57,9 @@ handoff requires the installed helper (or Python for the source launcher).
 ## Windows tray icon
 
 While its helper runs, Clearings has an icon in the Windows notification area (possibly under the hidden-icons arrow). Click it for **Running locally**, **Open Clearings**, and **Stop helper…**. Save browser edits before stopping from the tray. Closing a browser tab leaves the helper and icon running; stopping the helper removes the icon. No launch-at-login task is added. Mac and Linux keep their existing launch behavior.
+Builds from the current Windows source use size variants of the page-header
+mark for the tray, app shortcuts, setup and uninstaller. Existing published
+0.4.6 installers remain as originally released.
 
 ## Work together
 

@@ -13,7 +13,7 @@ SDK. For example, using a Python installation that supports `venv`:
 
 ```powershell
 python -m venv C:\path\to\clearings-mcp-venv
-& C:\path\to\clearings-mcp-venv\Scripts\python.exe -m pip install -r C:\path\to\checklists\working\tools\requirements-mcp.txt
+& C:\path\to\clearings-mcp-venv\Scripts\python.exe -m pip install -r C:\path\to\clearings\tools\requirements-mcp.txt
 ```
 
 Configure an MCP client to launch the environment's Python with these **fixed
@@ -21,7 +21,7 @@ startup arguments** (the paths shown are examples, not values supplied to
 tools):
 
 ```text
--B C:\path\to\checklists\working\tools\clearings_mcp.py
+-B C:\path\to\clearings\tools\clearings_mcp.py
 --config-dir C:\Users\YOU\AppData\Local\Clearings
 --home C:\Users\YOU\Documents\Clearings
 --actor Linden

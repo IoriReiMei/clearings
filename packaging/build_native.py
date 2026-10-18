@@ -120,6 +120,9 @@ def main() -> None:
                "--onedir", "--name", "Clearings", "--distpath", str(output),
                "--workpath", str(output / "build"), "--specpath", str(output / "spec"),
                "--add-data", str(ROOT / "index.html") + os.pathsep + "."]
+    if sys.platform == "win32":
+        icon = ROOT / "assets" / "Clearings.ico"
+        command += ["--icon", str(icon), "--add-data", str(icon) + os.pathsep + "assets"]
     if sys.platform in ("win32", "darwin"):
         command.append("--windowed")
     if sys.platform == "darwin":

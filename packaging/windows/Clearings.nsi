@@ -23,6 +23,8 @@
 ; Build with makensis /DSOURCE_DIR=<native dist> /DOUTPUT_DIR=<artifacts>.
 !include "MUI2.nsh"
 !define VERSION "0.4.6"
+!define MUI_ICON "${SOURCE_DIR}\Clearings\_internal\assets\Clearings.ico"
+!define MUI_UNICON "${SOURCE_DIR}\Clearings\_internal\assets\Clearings.ico"
 
 Name "Clearings"
 OutFile "${OUTPUT_DIR}\Clearings-Setup-${VERSION}-Windows-x64.exe"
@@ -69,6 +71,7 @@ Section "-Install Clearings"
   WriteUninstaller "$INSTDIR\Uninstall.exe"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Clearings" "DisplayName" "Clearings"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Clearings" "DisplayVersion" "${VERSION}"
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Clearings" "DisplayIcon" "$INSTDIR\Clearings.exe"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Clearings" "UninstallString" "$\"$INSTDIR\Uninstall.exe$\""
 SectionEnd
 

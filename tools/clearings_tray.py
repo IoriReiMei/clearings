@@ -29,31 +29,17 @@ from __future__ import annotations
 
 import ctypes
 from ctypes import wintypes as w
-import math
 import os
-import struct
+from pathlib import Path
+import sys
 import threading
 import uuid
 
 
-def icon_bitmap(size=32):
-    """A small Clearings C, as an in-memory 32-bit Windows icon resource."""
-    pixels=bytearray()
-    for y in reversed(range(size)):
-        for x in range(size):
-            channels=[0,0,0,0]
-            for sy in (.125,.375,.625,.875):
-                for sx in (.125,.375,.625,.875):
-                    px=(x+sx)*32/size-16;py=(y+sy)*32/size-16;r=math.hypot(px,py)
-                    if r>15:continue
-                    color=(71,101,76,255)
-                    if 7<r<10.5 and not (px>4 and abs(py)<6):color=(244,247,238,255)
-                    for i,c in enumerate(color):channels[i]+=c
-            red,green,blue,alpha=[round(c/16) for c in channels]
-            pixels.extend((blue,green,red,alpha))
-    mask=bytes(((size+31)//32)*4*size)
-    header=struct.pack('<IiiHHIIiiII',40,size,size*2,1,32,0,len(pixels),0,0,0,0)
-    return header+pixels+mask
+def icon_path():
+    """Find the same reviewed icon in source and PyInstaller layouts."""
+    root=Path(getattr(sys,'_MEIPASS',Path(__file__).resolve().parent.parent))
+    return root/'assets'/'Clearings.ico'
 
 
 class WindowsTray:
@@ -98,7 +84,7 @@ class WindowsTray:
         bind(self.user,'PostMessageW',[w.HWND,w.UINT,w.WPARAM,w.LPARAM],w.BOOL)
         bind(self.user,'PostQuitMessage',[ctypes.c_int],None)
         bind(self.user,'RegisterWindowMessageW',[w.LPCWSTR],w.UINT)
-        bind(self.user,'CreateIconFromResourceEx',[ctypes.c_void_p,w.DWORD,w.BOOL,w.DWORD,ctypes.c_int,ctypes.c_int,w.UINT],w.HICON)
+        bind(self.user,'LoadImageW',[w.HINSTANCE,w.LPCWSTR,w.UINT,ctypes.c_int,ctypes.c_int,w.UINT],w.HICON)
         bind(self.user,'DestroyIcon',[w.HICON],w.BOOL)
         bind(self.user,'CreatePopupMenu',[],w.HMENU)
         bind(self.user,'AppendMenuW',[w.HMENU,w.UINT,ctypes.c_size_t,w.LPCWSTR],w.BOOL)
@@ -179,8 +165,10 @@ class WindowsTray:
             self.hwnd=self.user.CreateWindowExW(0,class_name,self.title,0,0,0,0,0,None,None,instance,None)
             if not self.hwnd:raise ctypes.WinError(ctypes.get_last_error())
             # A hidden top-level window receives Explorer's TaskbarCreated message.
-            data=icon_bitmap();resource=ctypes.create_string_buffer(data)
-            icon=self.user.CreateIconFromResourceEx(resource,len(data),True,0x00030000,32,32,0)
+            # Keep this owned handle for Explorer restoration and destroy it on exit.
+            artwork=icon_path()
+            if not artwork.is_file():raise FileNotFoundError(f'Missing Clearings tray icon: {artwork}')
+            icon=self.user.LoadImageW(None,str(artwork),1,32,32,0x10) # IMAGE_ICON, LR_LOADFROMFILE
             if not icon:raise ctypes.WinError(ctypes.get_last_error())
             self.nid=self.NOTIFYICONDATA();self.nid.cbSize=ctypes.sizeof(self.nid)
             self.nid.hWnd=self.hwnd;self.nid.uID=1;self.nid.uFlags=0x1|0x2|0x4|0x20|0x80

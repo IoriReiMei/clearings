@@ -21,14 +21,50 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 """Tray behavior uses fakes; opt-in native checks use only a temporary icon."""
+import base64
 import ctypes
 from ctypes import wintypes as w
+import hashlib
 import os
+from pathlib import Path
+import re
+import struct
+import sys
 import threading
 import unittest
 from unittest.mock import Mock,patch
 import test_clearings_local as fixtures
-from clearings_tray import WindowsTray
+from clearings_tray import WindowsTray,icon_path
+
+
+class TrayArtwork(unittest.TestCase):
+    def test_source_artwork_matches_browser_brand_and_has_windows_sizes(self):
+        root=Path(__file__).resolve().parents[1]
+        png=(root/'assets'/'Clearings.png').read_bytes()
+        self.assertEqual(hashlib.sha256(png).hexdigest(),
+                         '721d33078041e4a1852525dd0c336fbe6f7d2d0c50968fc27072e24d12d68824')
+        html=(root/'index.html' if (root/'index.html').exists() else root/'LC_CHECKLIST.html').read_text(encoding='utf-8')
+        embedded=re.search(r'data:image/png;base64,([A-Za-z0-9+/=]+)',html)
+        self.assertIsNotNone(embedded)
+        self.assertEqual(base64.b64decode(embedded.group(1)),png)
+        ico=icon_path().read_bytes()
+        reserved,kind,count=struct.unpack_from('<HHH',ico)
+        self.assertEqual((reserved,kind,count),(0,1,9))
+        sizes=set()
+        for index in range(count):
+            width,height,_,_,_,_,length,offset=struct.unpack_from('<BBBBHHII',ico,6+16*index)
+            size=(width or 256,height or 256)
+            self.assertEqual(size[0],size[1])
+            self.assertGreater(length,8)
+            self.assertLessEqual(offset+length,len(ico))
+            image=ico[offset:offset+length]
+            self.assertTrue(image.startswith(b'\x89PNG\r\n\x1a\n') or image.startswith(b'\x28\x00\x00\x00'))
+            sizes.add(size[0])
+        self.assertEqual(sizes,{16,20,24,32,40,48,64,128,256})
+
+    def test_packaged_icon_uses_bundle_resource_directory(self):
+        with patch.object(sys,'_MEIPASS',str(Path('packaged-runtime')),create=True):
+            self.assertEqual(icon_path(),Path('packaged-runtime')/'assets'/'Clearings.ico')
 
 
 class TrayCommands(unittest.TestCase):

@@ -61,6 +61,8 @@ FILES = {
     'examples/generic/weekend_workshop.json': 'examples/generic/weekend_workshop.json',
     'examples/proposals/add-feedback-step.json': 'examples/proposals/add-feedback-step.json',
     'docs/preview.png': 'docs/preview.png',
+    'assets/Clearings.png': 'assets/Clearings.png',
+    'assets/Clearings.ico': 'assets/Clearings.ico',
     'tools/contract.cjs': 'tools/contract.cjs',
     'tools/validate_checklist.cjs': 'tools/validate_checklist.cjs',
     'tools/merge.cjs': 'tools/merge.cjs',
@@ -115,7 +117,7 @@ FILES.update({
 })
 
 # Notices for JSON/image files travel with the exact allowlisted assets.
-for notice in ['schema/checklist-studio.schema.json.license', 'docs/preview.png.license', 'examples/generic/weekend_workshop.json.license', 'examples/generic/program_overview.json.license', 'examples/generic/checklist_index.json.license', 'examples/proposals/add-feedback-step.json.license', 'templates/clearings_github_release.json.license', 'templates/clearings_github_patch.json.license']:
+for notice in ['schema/checklist-studio.schema.json.license', 'docs/preview.png.license', 'assets/Clearings.png.license', 'assets/Clearings.ico.license', 'examples/generic/weekend_workshop.json.license', 'examples/generic/program_overview.json.license', 'examples/generic/checklist_index.json.license', 'examples/proposals/add-feedback-step.json.license', 'templates/clearings_github_release.json.license', 'templates/clearings_github_patch.json.license']:
     FILES[notice] = notice
 
 def verify_directory(directory: Path) -> None:
@@ -178,8 +180,9 @@ def main() -> None:
         if output==src.resolve(): raise ValueError('Output must not replace a source file.')
         data=src.read_bytes()
         # Keep packaged text stable across Windows and other checkout line endings.
-        # The preview image is the only binary input in this explicit allowlist.
-        if destination != 'docs/preview.png': data=data.replace(b'\r\n',b'\n')
+        # Binary artwork must keep its exact bytes for the public manifest.
+        if destination not in {'docs/preview.png','assets/Clearings.png','assets/Clearings.ico'}:
+            data=data.replace(b'\r\n',b'\n')
         payload[destination]=data
     payload['.gitignore']=b'# SPDX-License-Identifier: MIT\n# Keep personal libraries under data/ and review before sharing.\n/data/\n/checklist_index.json\n/checklist-*.json\n/program_overview.json\n/build-output/\n/artifacts/\n*.zip\n*.dmg\n*.run\n__pycache__/\n'
     payload['.nojekyll']=b''

@@ -154,6 +154,7 @@ try {
   });
   test('JSON and image files have adjacent non-invasive notices', () => {
     for(const file of ['schema/checklist-studio.schema.json','docs/preview.png',
+      'assets/Clearings.png','assets/Clearings.ico',
       'examples/generic/checklist_index.json','examples/generic/program_overview.json',
       'examples/generic/weekend_workshop.json','examples/proposals/add-feedback-step.json',
       'templates/clearings_github_release.json','templates/clearings_github_patch.json']) {
@@ -191,6 +192,8 @@ try {
       'Start_Clearings.cmd','tools/clearings_local.py','tools/clearings_commit.py','tools/merge.cjs','docs/LOCAL_HANDOFF.md',
       'packaging/build_native.py','packaging/build_linux_run.py',
       'packaging/build_mac_dmg.py','packaging/windows/Clearings.nsi',
+      'assets/Clearings.png','assets/Clearings.ico',
+      'assets/Clearings.png.license','assets/Clearings.ico.license',
       '.github/workflows/build-installers.yml'])
       assert.ok(names.includes(name),name);
     for(const name of ['checklist_index.json','program_overview.json','private_review.json','.git/config'])
@@ -209,6 +212,13 @@ with zipfile.ZipFile(sys.argv[1]) as z:
  assert b'No license has been selected' not in z.read('RELEASE_NOTE.txt')
  assert json.loads(z.read('templates/clearings_github_release.json'))['state']=={}
 print('OK')`, zip]);
+  });
+  test('packager preserves icon and owner PNG bytes exactly', () => {
+    runPython(['-c', `import sys,zipfile,pathlib
+with zipfile.ZipFile(sys.argv[1]) as archive:
+ for name in ('assets/Clearings.png','assets/Clearings.ico'):
+  assert archive.read(name)==(pathlib.Path(sys.argv[2])/name).read_bytes(),name
+print('OK')`, zip, root]);
   });
   test('materialized release rejects changed line endings', () => {
     const extracted=path.join(temp,'verify-dir');

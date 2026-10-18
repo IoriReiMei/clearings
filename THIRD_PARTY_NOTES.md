@@ -30,12 +30,17 @@ every generated line has been proven unique.
 
 ## Runtime and assets
 
-An unreleased working change embeds the owner's supplied 512 × 512 PNG as the
+This source snapshot embeds the owner's supplied 512 × 512 PNG as the
 top-left Clearings mark, without altering its bytes (SHA-256
 `721d33078041e4a1852525dd0c336fbe6f7d2d0c50968fc27072e24d12d68824`).
-Its source was supplied for this change; no independent rights review or public
-release of the new mark is claimed here. Earlier release snapshots remain as
-they were.
+That exact source is also `assets/Clearings.png`. The Windows source and build recipes use `assets/Clearings.ico`, generated from it at 16, 20, 24,
+32, 40, 48, 64, 128 and 256 pixels with Pillow 12.3.0 (ICO SHA-256
+`8bd079357d2ab2e1755db46baa5739e2fbfb8f584d05b18ffbddca706f159cd7`).
+Pillow was a local asset-conversion tool; the shipped tray uses Windows APIs
+through Python's standard library. The source artwork was supplied for this
+change; no independent rights review is claimed. These assets are included in
+this public source update. Existing 0.4.6 installer downloads were not rebuilt;
+earlier release snapshots remain as they were.
 
 The release app contains inline HTML, CSS and JavaScript. It does not import an
 external script/stylesheet, runtime UI package, icon library or downloadable font.

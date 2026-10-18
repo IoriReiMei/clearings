@@ -41,7 +41,9 @@ rights in the contributed material can be licensed:
   `schema/`.
 - The supplied fictional examples in `examples/` and the release-plan templates in
   `templates/` (not a user's personal records made with them).
-- The supplied application documentation, release notes and `docs/preview.png`.
+- The supplied application documentation, release notes, `docs/preview.png`,
+  and the owner's `assets/Clearings.png` with its Windows `assets/Clearings.ico`
+  size variants.
   Historic verification reports describe their own dated runs, not current certification.
 
 Source files carry MIT copyright and permission notices. Non-commentable JSON
