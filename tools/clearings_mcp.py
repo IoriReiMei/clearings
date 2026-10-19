@@ -133,7 +133,7 @@ def build_server(bridge: Bridge, actor: str, *, allow_write: bool = False) -> MC
     @server.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=False))
     def clearings_search_items(query: str, include_archived: bool = False,
                                limit: int = 20) -> dict:
-        """Find up to 50 effective items by text, detail, label or tag."""
+        """Find up to 50 effective items by text, detail, response, label or tag."""
         if not isinstance(query, str) or not 1 <= len(query.strip()) <= 120:
             raise ToolError("query must contain 1 to 120 nonblank characters")
         if type(limit) is not int or not 1 <= limit <= 50:
@@ -156,7 +156,7 @@ def build_server(bridge: Bridge, actor: str, *, allow_write: bool = False) -> MC
                 continue
             paths, shared = item_paths(doc)
             for item in doc["model"]["items"]:
-                fields = (item["text"], item["detail"], item["label"], *item["tags"])
+                fields = (item["text"], item["detail"], item.get("response", ""), item["label"], *item["tags"])
                 if not any(needle in field.casefold() for field in fields):
                     continue
                 if len(result["results"]) == limit:
@@ -168,6 +168,7 @@ def build_server(bridge: Bridge, actor: str, *, allow_write: bool = False) -> MC
                                           "itemId": item["id"],
                                           "text": item["text"][:160],
                                           "detail": item["detail"][:160],
+                                          "response": item.get("response", "")[:160],
                                           "completed": doc["state"].get(item["id"]) is True,
                                           "pathIds": paths[item["id"]],
                                           "sharedParentPaths": item["id"] in shared})

@@ -121,6 +121,25 @@ class BridgeChecks(unittest.TestCase):
         self.assertTrue(refreshed["readOnly"])
         self.assertEqual(self.bridge.handoff_path().read_bytes(), before)
 
+    def test_pending_detail_proposal_survives_human_response(self):
+        self.bridge.sync(self.workspace, 1)
+        incoming = json.loads(json.dumps(self.document))
+        target = next(i for i in incoming['model']['items'] if i['id'] == 'purpose')
+        target['detail'] = 'AI added a done condition'
+        proposal_id = self.bridge.propose(self.document, incoming, 'Morrow')['proposalId']
+        browser = json.loads(json.dumps(self.document))
+        next(i for i in browser['model']['items'] if i['id'] == 'purpose')['response'] = 'Hermit is thinking'
+        self.bridge.sync({**self.workspace, 'documents': [browser]}, 2)
+        read = self.bridge.read_checklist(self.document['documentId'])
+        saved = next(i for i in read['savedDocument']['model']['items'] if i['id'] == 'purpose')
+        self.assertEqual(saved['response'], 'Hermit is thinking')
+        proposal = next(p for p in read['pendingUnapplied'] if p['id'] == proposal_id)
+        merged = local.merge_documents(proposal['base'], read['savedDocument'], proposal['incoming'])
+        self.assertEqual(merged['conflicts'], [])
+        result = next(i for i in merged['merged']['model']['items'] if i['id'] == 'purpose')
+        self.assertEqual(result['response'], 'Hermit is thinking')
+        self.assertEqual(result['detail'], 'AI added a done condition')
+
     def test_committed_completion_is_visible_to_ai_before_browser_refresh(self):
         self.bridge.sync(self.workspace, 1)
         item_id = self.document["model"]["items"][0]["id"]

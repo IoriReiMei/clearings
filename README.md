@@ -150,3 +150,14 @@ See [local handoff](docs/LOCAL_HANDOFF.md), [installer build notes](packaging/RE
 Only reviewed, allowlisted source and fictional examples enter release packages.
 The app and designated files use the MIT License; see [license](LICENSE),
 [scope](LICENSE_SCOPE.md), and [third-party notes](THIRD_PARTY_NOTES.md).
+
+## Item responses
+
+The current source adds an optional **Response** section beneath item details.
+Use **Edit response** to write your thoughts, then Apply to share the saved
+response through the local helper. Unapplied editor drafts stay private to the
+browser until applied. Responses travel with checklist and workspace backups
+and are included in assistant reads and search. Concurrent edits to the same
+response are reviewed as conflicts. Existing installer downloads predate this
+source update; they have not been rebuilt. Reload an updated source page and
+restart its helper/MCP sessions normally to use the new field.

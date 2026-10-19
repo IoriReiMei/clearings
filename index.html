@@ -153,6 +153,7 @@ html[data-theme=dark] .rows>li:has(>.task-row.change-highlight.ai){--change-ink:
 .scope-tag{white-space:nowrap}
 .tracked-change{display:block;margin-top:3px}
 .tree-row .change-tag{font-size:8px;line-height:1.2;white-space:normal;text-align:center;max-width:56px}
+.item-response{margin:1.25rem 0;padding:1rem 1.2rem;border:1px solid var(--line,#ddd);border-radius:12px}.response-heading{display:flex;align-items:center;justify-content:space-between;gap:1rem}.response-heading h2{margin:0;font-size:1rem}.response-body{white-space:pre-wrap;overflow-wrap:anywhere;margin-top:.7rem}.inline-response{margin-top:.65rem;white-space:pre-wrap}
 </style>
 </head>
 <body class="booting">
@@ -254,7 +255,7 @@ function validateDocument(input){
  const m=d.model;allowedKeys(m,['branches','roots','items'],'Model');arr(m.items,'Items');arr(m.branches,'Branches');distinctStrings(m.roots,'Roots');
  if(m.items.length>MAX_ITEMS||m.branches.length>2000)fail('Checklist exceeds this editor’s current size limits.');
  const branches=new Set();for(const b of m.branches){allowedKeys(b,['id','title'],'Branch');if(!validId(b.id)||branches.has(b.id))fail('Invalid/duplicate branch ID.');text(b.title,'Branch title');branches.add(b.id)}
- const ids=new Set();for(const i of m.items){allowedKeys(i,['id','order','parents','label','tags','text','detail','requires'],'Step');if(!validId(i.id)||ids.has(i.id))fail('Invalid/duplicate step ID.');ids.add(i.id);for(const k of ['text','label','detail'])text(i[k],`Step ${k}`);if(!i.text.trim())fail('A step needs a title.');if(typeof i.order!=='number'||!Number.isFinite(i.order))fail('Invalid order.');for(const k of ['parents','tags','requires'])distinctStrings(i[k],`Step ${k}`);if(i.parents.some(p=>!branches.has(p)))fail('A step points to a missing category.');}
+ const ids=new Set();for(const i of m.items){allowedKeys(i,['id','order','parents','label','tags','text','detail','response','requires'],'Step');if(!validId(i.id)||ids.has(i.id))fail('Invalid/duplicate step ID.');ids.add(i.id);for(const k of ['text','label','detail'])text(i[k],`Step ${k}`);if(i.response!==undefined)text(i.response,'Step response');if(!i.text.trim())fail('A step needs a title.');if(typeof i.order!=='number'||!Number.isFinite(i.order))fail('Invalid order.');for(const k of ['parents','tags','requires'])distinctStrings(i[k],`Step ${k}`);if(i.parents.some(p=>!branches.has(p)))fail('A step points to a missing category.');}
  const lookup=new Map(m.items.map(i=>[i.id,i]));for(const i of m.items)if(i.requires.some(r=>!ids.has(r)))fail(`Missing supporting item in “${i.text}”.`);
  if(m.roots.some(r=>!ids.has(r)))fail('A root points to a missing item.');
  // Iterative DFS detects cycles and depth without recursive call-stack risk.
@@ -353,8 +354,8 @@ Make the next human action easy to see: use a short, checkable title first, with
 Every leaf item (an item with no supporting sub-tasks) should name one direct action with a verb and object, such as "Open the release in Firefox" or "Record the result link". Avoid project-manager leaves like "Handle browser readiness" or "Coordinate validation". Parent headings may name broader scopes. Put context and evidence criteria in detail.
 Return only one JSON change packet: {"format":"checklist-studio-changes","schemaVersion":1,"documentId":"copy document.documentId","baseSha256":"copy baseSha256 exactly","operations":[...]}.
 Supported operations:
-- {"op":"add-item","parentId":null,"item":{"id":"unique-stable-id","text":"Title","detail":"Done when...","label":"","tags":[],"parents":[],"requires":[],"order":1}}. parentId=null adds a root; an existing or previously added ID adds a supporting sub-task. Add parents before their sub-tasks. New items start unchecked.
-- {"op":"update-item","id":"existing-id","changes":{"text":"Revised title","detail":"Revised detail","label":"","tags":[],"parents":[]}}. Include only fields to change. parents are category IDs, NOT tree parents. This operation does not change hierarchy.
+- {"op":"add-item","parentId":null,"item":{"id":"unique-stable-id","text":"Title","detail":"Done when...","response":"","label":"","tags":[],"parents":[],"requires":[],"order":1}}. parentId=null adds a root; an existing or previously added ID adds a supporting sub-task. Add parents before their sub-tasks. New items start unchecked.
+- {"op":"update-item","id":"existing-id","changes":{"text":"Revised title","detail":"Revised detail","response":"A reply","label":"","tags":[],"parents":[]}}. Include only fields to change. response records thoughts separately from done criteria; a response-only edit may update a completed item. parents are category IDs, NOT tree parents. This operation does not change hierarchy.
 - {"op":"reorder","parentId":null,"itemIds":["all-current-root-ids-in-new-order"]}. For a child list, use its parent's ID. Supply an exact permutation of that list.
 - {"op":"move-items","itemIds":["existing-id"],"fromParentId":"old-heading-id-or-null","toParentId":"new-heading-id-or-null","beforeId":"existing-destination-sibling-or-null"}. Move only the named source links, in the supplied order. A shared item keeps its other parent links; IDs, text, tags and checkmarks stay attached to the same item. Use beforeId:null to append. Cycles, missing IDs and completed-ancestor locks are refused.
 - {"op":"set-done","id":"existing-id","done":false}. Use ONLY when explicitly requested by the user. Completion changes require an extra confirmation in the app. Never infer completion from an encouraging description.
@@ -412,15 +413,16 @@ async function planAIChanges(document,input){
   if(!isObj(op))fail('Every operation must be an object.');
   if(op.op==='add-item'){
    allowedKeys(op,['op','parentId','item'],'Add item');if(op.parentId!==null&&!validId(op.parentId))fail('Invalid add parentId.');editableParent(op.parentId);
-   const i=clone(op.item);allowedKeys(i,['id','order','parents','label','tags','text','detail','requires'],'New item');
+   const i=clone(op.item);allowedKeys(i,['id','order','parents','label','tags','text','detail','response','requires'],'New item');
    if(!validId(i.id)||d.model.items.some(x=>x.id===i.id))fail('New item ID must be valid and unique.');
    if(!Array.isArray(i.requires)||i.requires.length)fail('New items start with requires: []. Add sub-tasks in following operations.');
    d.model.items.push(i);if(op.parentId===null)d.model.roots.push(i.id);else get(op.parentId).requires.push(i.id);
    summary.push({kind:'Add item',target:i.text,before:null,after:clone(i),parent:op.parentId===null?'Overview':get(op.parentId).text});
   }else if(op.op==='update-item'){
-   allowedKeys(op,['op','id','changes'],'Update item');const i=get(op.id);unlocked(op.id);
-   allowedKeys(op.changes,['text','detail','label','tags','parents'],'Item changes');if(!Object.keys(op.changes).length)fail('An update needs at least one field.');
-   const was={};for(const k of Object.keys(op.changes)){was[k]=clone(i[k]);i[k]=clone(op.changes[k])}
+   allowedKeys(op,['op','id','changes'],'Update item');const i=get(op.id);
+   allowedKeys(op.changes,['text','detail','response','label','tags','parents'],'Item changes');if(!Object.keys(op.changes).length)fail('An update needs at least one field.');
+   if(Object.keys(op.changes).some(k=>k!=='response'))unlocked(op.id);
+   const was={};for(const k of Object.keys(op.changes)){was[k]=i[k]===undefined?undefined:clone(i[k]);i[k]=clone(op.changes[k])}
    summary.push({kind:'Edit item',target:i.text,before:was,after:op.changes});
   }else if(op.op==='reorder'){
    allowedKeys(op,['op','parentId','itemIds'],'Reorder');if(op.parentId!==null&&!validId(op.parentId))fail('Invalid reorder parentId.');editableParent(op.parentId);
@@ -523,12 +525,12 @@ function mergeChecklistDocuments(base,current,incoming,choices={}){
   const incomingState=(incoming.state[item.id]===true),baseState=(base.state[item.id]===true),browserState=(current.state[item.id]===true);
   const browserMeaningChanged=['text','detail','label','tags','parents','requires'].some(k=>!same(browser[k],old[k]));
   const incomingMeaningChanged=['text','detail','label','tags','parents','requires'].some(k=>!same(item[k],old[k]));
-  for(const field of ['text','detail','label','tags','parents','requires','order']){
+  for(const field of ['text','detail','response','label','tags','parents','requires','order']){
    const key='item:'+item.id+':'+field;
    if(incomingMeaningChanged&&browserState!==baseState&&['text','detail','label','tags','parents','requires'].includes(field)&&!same(item[field],old[field])&&!same(item[field],browser[field])){
     conflicts.push({key,label:old.text+' — '+field,base:old[field],browser:browser[field],json:item[field],choice:choices[key]||null});
     if(choices[key]==='json'){target[field]=copy(item[field]);applied++;}
-   }else compare(key,old.text+' — '+(field==='text'?'title':field),old[field],browser[field],item[field],v=>target[field]=v);
+   }else compare(key,old.text+' — '+(field==='text'?'title':field),field==='response'?(old.response??''):old[field],field==='response'?(browser.response??''):browser[field],field==='response'?(item.response??''):item[field],v=>target[field]=v);
   }
   if(incomingState!==baseState&&browserMeaningChanged&&['text','detail','label','tags','parents','requires'].some(k=>!same(item[k],browser[k]))){
    const key='state:'+item.id;
@@ -821,7 +823,7 @@ function checkedRecord(raw){
  const draft=raw.draft==null?null:validateDraft(raw.draft,w);
  return {...raw,workspace:w,draft};
 }
-function draftable(ctx){return !!ctx&&['new-checklist','rename','categories','edit-step','new-step'].includes(ctx.mode);}
+function draftable(ctx){return !!ctx&&['new-checklist','rename','categories','edit-step','new-step','response'].includes(ctx.mode);}
 function sameDraftContext(a,b){return !!a&&!!b&&['mode','docId','id','parent'].every(k=>(a[k]||null)===(b[k]||null));}
 function validateDraft(d,w){
  if(!isObj(d)||!draftable(d.context)||!Array.isArray(d.fields)||d.fields.length>MAX_ITEMS*3+50||typeof d.baseKey!=='string')throw new Error('Unsupported saved editor draft.');
@@ -838,10 +840,11 @@ function captureDraft(){
 function updateDraftNotice(){if($('draftNotice'))$('draftNotice').hidden=!pendingDraft||$('editorDialog').open;}
 function resumeDraft(){
  if(!pendingDraft)return;const draft=clone(pendingDraft),ctx=draft.context;
- if(ctx.docId&&(!getDoc(ctx.docId)||aiDocumentKey(getDoc(ctx.docId))!==draft.baseKey)){toast('The checklist changed since this draft. Export the draft to compare it; it has not been applied.',null,12000);return;}
+ if(ctx.docId&&(!getDoc(ctx.docId)||(ctx.mode==='response'?((node(ctx.docId,ctx.id)?.response??'')!==ctx.baseResponse):aiDocumentKey(getDoc(ctx.docId))!==draft.baseKey))){toast('The checklist changed since this draft. Export the draft to compare it; it has not been applied.',null,12000);return;}
  if(ctx.mode==='new-checklist')dispatch('new-checklist');
  else if(ctx.mode==='rename')openRename(ctx.docId);
  else if(ctx.mode==='categories')openCategories(ctx.docId);
+ else if(ctx.mode==='response')openResponseEditor(ctx.docId,ctx.id);
  else openStepEditor(ctx.docId,ctx.id||null,ctx.parent||null);
  if(!$('editorDialog').open||!sameDraftContext(dialogContext,ctx))return;
  for(const el of $('editorForm').elements){if(!el.name)continue;const values=draft.fields.filter(([k])=>k===el.name).map(([,v])=>v);if(el.type==='checkbox'||el.type==='radio')el.checked=values.includes(el.value);else if(values.length)el.value=values[0];}
@@ -1101,7 +1104,7 @@ function rowHTML(d,id,parent,budget){
  const i=node(d.documentId,id),done=d.state[id]===true,locked=isLocked(d.documentId,id),has=i.requires.length>0,closed=centerIsCollapsed(d.documentId,id);const detailKey=d.documentId+':'+id;
  const action=has?'toggle-center-fold':'details';
   const own=highlightedActivity(d.documentId,id),inside=has?changesInside(d.documentId,id):null,change=own||inside?.latest,last=done?latestActivity(d.documentId,id,'completed'):latestActivity(d.documentId,id),createdBy=latestActivity(d.documentId,id,'new');
-  return `<li data-step-row="${esc(id)}" data-owner="${esc(parent||'')}" data-doc="${esc(d.documentId)}"><div class="task-row ${done?'done':''} ${locked?'locked':''} ${change?'change-highlight '+activityTone(change):''}" data-reorder-id="${esc(id)}" data-parent="${esc(parent||'')}">${gripHTML('step',id,d.documentId,parent,locked||contextLocked(d.documentId,parent))}<input class="check ${own?.action==='completed'?'check-highlight '+activityTone(own):''}" type="checkbox" data-check="${esc(id)}" data-doc="${esc(d.documentId)}" aria-label="Mark ${previewText(i.text)} done" ${done?'checked':''} ${locked?'disabled':''}>${last?actorTag(last,done):''}<button class="row-title ${has?'has-children':''}" type="button" data-action="${action}" data-id="${esc(id)}" data-doc="${esc(d.documentId)}" data-parent="${esc(parent||'')}" ${has?`aria-expanded="${!closed}"`:''}>${previewText(i.text)}</button>${rowTags(i)}${own?activityTag(own):''}${insideTag(inside)}${has?progressHTML(d.documentId,id,'compact'):''}${menuButton('step',d.documentId,id,parent,`Options for ${i.text.slice(0,120)}`)}</div>${detailsOpen.has(detailKey)?`<div class="inline-details">${inlineTags(i)}${createdBy?`<small>Created by ${esc(createdBy.actor)}${createdBy.approvedBy?' · approved by '+esc(createdBy.approvedBy):''}</small><br>`:''}${previewText(i.detail||'No detail added yet.',800)}</div>`:''}${has&&!closed?`<ol class="rows" data-order-parent="${esc(id)}">${renderRows(d,i.requires,id,budget)}</ol>`:''}</li>`
+  return `<li data-step-row="${esc(id)}" data-owner="${esc(parent||'')}" data-doc="${esc(d.documentId)}"><div class="task-row ${done?'done':''} ${locked?'locked':''} ${change?'change-highlight '+activityTone(change):''}" data-reorder-id="${esc(id)}" data-parent="${esc(parent||'')}">${gripHTML('step',id,d.documentId,parent,locked||contextLocked(d.documentId,parent))}<input class="check ${own?.action==='completed'?'check-highlight '+activityTone(own):''}" type="checkbox" data-check="${esc(id)}" data-doc="${esc(d.documentId)}" aria-label="Mark ${previewText(i.text)} done" ${done?'checked':''} ${locked?'disabled':''}>${last?actorTag(last,done):''}<button class="row-title ${has?'has-children':''}" type="button" data-action="${action}" data-id="${esc(id)}" data-doc="${esc(d.documentId)}" data-parent="${esc(parent||'')}" ${has?`aria-expanded="${!closed}"`:''}>${previewText(i.text)}</button>${rowTags(i)}${own?activityTag(own):''}${insideTag(inside)}${has?progressHTML(d.documentId,id,'compact'):''}${menuButton('step',d.documentId,id,parent,`Options for ${i.text.slice(0,120)}`)}</div>${detailsOpen.has(detailKey)?`<div class="inline-details">${inlineTags(i)}${createdBy?`<small>Created by ${esc(createdBy.actor)}${createdBy.approvedBy?' · approved by '+esc(createdBy.approvedBy):''}</small><br>`:''}${previewText(i.detail||'No detail added yet.',800)}${i.response?`<div class="inline-response"><strong>Response</strong> ${previewText(i.response,800)}</div>`:''}</div>`:''}${has&&!closed?`<ol class="rows" data-order-parent="${esc(id)}">${renderRows(d,i.requires,id,budget)}</ol>`:''}</li>`
 }
 function renderCenter(){
  renderBreadcrumbs();
@@ -1124,8 +1127,10 @@ function renderCenter(){
  let content='';if(locked)content+=`<p class="lock-note">Read-only while ${ancestors.map(a=>`<button data-action="open-item" data-doc="${esc(d.documentId)}" data-id="${esc(a)}">${esc(node(d.documentId,a).text)}</button>`).join(' or ')} is marked done. Your saved sub-task checks have not changed.</p>`;
  if(id&&d.state[id]&&i.requires.length)content+='<p class="lock-note">This scope is closed. Supporting items remain visible and read-only. Uncheck this heading to edit them.</p>';
  if(id){
+  const responseSection=`<section class="item-response" aria-label="Response"><div class="response-heading"><h2>Response</h2><button type="button" class="button" data-action="edit-response" data-doc="${esc(d.documentId)}" data-id="${esc(id)}">${i.response?'Edit response':'Write response'}</button></div><div class="response-body">${i.response?esc(i.response):'<span class="muted">No response yet.</span>'}</div></section>`;
+  if(i.requires.length)content+=responseSection;
   if(i.requires.length)content+=`<ol class="rows" data-order-parent="${esc(id)}">${renderRows(d,i.requires,id,centerBudget)}</ol>`;
-  else content+=`<div class="inline-tags">${[i.label,...i.tags].filter(Boolean).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div><div class="leaf-content">${esc(i.detail||'No additional detail. This item can stay beautifully simple.')}</div>`;
+  else content+=`<div class="inline-tags">${[i.label,...i.tags].filter(Boolean).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div><div class="leaf-content">${esc(i.detail||'No additional detail. This item can stay beautifully simple.')}</div>${responseSection}`;
  }else{
   const roots=d.model.roots,rootKey=d.documentId+':root-level';
   const rootStart=Math.min(centerRootPages.get(d.documentId)||0,Math.max(0,roots.length-1));
@@ -1261,6 +1266,10 @@ function closeDialog(){
  $('editorDialog').close();dialogContext=null;dialogDirty=false;updateDraftNotice();if(!started)setTimeout(()=>{if(!started)showWelcome();},0);return true;
 }
 function mayLeaveEditor(){return closeDialog()}
+function openResponseEditor(docId,id){
+ const i=node(docId,id);if(!i)return;
+ beginDialog({mode:'response',docId,id,baseResponse:i.response??''},'Response · '+i.text,field('response','Response',i.response??'',true)+'<p class="field-hint">Your response belongs to this item, even after it is checked off. It saves when you select Apply.</p>','Apply response');
+}
 function openStepEditor(docId,id=null,parent=null){
  if((id&&isLocked(docId,id))||(!id&&contextLocked(docId,parent))){toast('Uncheck the completed parent before editing this item.');return}
  const d=getDoc(docId),i=id?node(docId,id):{text:'',detail:'',tags:[],parents:[],label:'',requires:[]};
@@ -1527,6 +1536,7 @@ function dispatch(command,ctx={}){
   case 'template-add':openTemplatePlacement(ctx.templateId);break;
   case 'rename':openRename(docId);break;
   case 'edit-step':openStepEditor(docId,id,parent);break;
+  case 'edit-response':openResponseEditor(docId,id);break;
   case 'new-subitem':openStepEditor(docId,null,id);break;
   case 'details':showDetails(docId,id);break;
   case 'focus-item':goItem(docId,id);break;
@@ -1574,6 +1584,13 @@ $('editorDialog').addEventListener('cancel',e=>{e.preventDefault();closeDialog()
 $('editorForm').addEventListener('submit',async e=>{
   e.preventDefault();const ctx=dialogContext;if(!ctx||['help','preferences','recent-actions'].includes(ctx.mode))return;const fd=new FormData(e.currentTarget);$('dialogError').textContent='';
  try{
+  if(ctx.mode==='response'){
+   const d=getDoc(ctx.docId),i=d?.model.items.find(item=>item.id===ctx.id);if(!i)fail('This item is no longer available.');
+   const response=String(fd.get('response')??'');if(response.length>200000)fail('Response must be at most 200,000 characters.');
+   if((i.response??'')!==ctx.baseResponse)fail('This response changed while you were writing. Keep your draft and compare before applying.');
+   if(response!==(i.response??'')){i.response=response;validateDocument(d);recordActivity('updated',ctx.docId,ctx.id);touch(ctx.docId)}
+   dialogDirty=false;closeDialog();render();return;
+  }
   if(ctx.mode==='move-item'){
    const d=getDoc(ctx.docId);if(!d||aiDocumentKey(d)!==ctx.baseKey)fail('The checklist changed. Close and reopen Move to.');
    const operation={op:'move-items',itemIds:[ctx.id],fromParentId:ctx.parent,toParentId:String(fd.get('destination')||'')||null,beforeId:null};
@@ -1611,7 +1628,7 @@ $('editorForm').addEventListener('submit',async e=>{
   else if(ctx.mode==='categories'){for(const b of d.model.branches)b.title=String(fd.get('category-'+b.id)||'').trim()||b.title;const newTitle=String(fd.get('newCategory')||'').trim();if(newTitle)d.model.branches.push({id:uid(),title:newTitle});}
   else{
    if((ctx.id&&isLocked(ctx.docId,ctx.id))||(!ctx.id&&!foreign&&contextLocked(ctx.docId,ctx.parent)))fail('A completed parent now locks this item.');
-   const i=ctx.id?d.model.items.find(i=>i.id===ctx.id):{id:uid(),order:d.model.items.length+1,parents:[],label:'',tags:[],text:'',detail:'',requires:[]};
+   const i=ctx.id?d.model.items.find(i=>i.id===ctx.id):{id:uid(),order:d.model.items.length+1,parents:[],label:'',tags:[],text:'',detail:'',response:'',requires:[]};
    i.text=String(fd.get('title')||'').trim();i.detail=String(fd.get('detail')||'').trim();i.label=String(fd.get('label')||'').trim();i.tags=[...new Set(String(fd.get('tags')||'').split(',').map(x=>x.trim()).filter(Boolean))];
    i.parents=foreign?[]:fd.getAll('parents').map(String);if(!(ctx.id&&d.state[ctx.id])){const selected=foreign?[]:fd.getAll('requires').map(String);i.requires=[...i.requires.filter(x=>selected.includes(x)),...selected.filter(x=>!i.requires.includes(x))]}
    changedItemId=i.id;if(!ctx.id){d.model.items.push(i);if(ctx.parent&&!foreign)d.model.items.find(x=>x.id===ctx.parent).requires.push(i.id);else d.model.roots.push(i.id)}

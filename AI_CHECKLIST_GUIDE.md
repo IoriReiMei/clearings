@@ -300,9 +300,16 @@ An item is:
   "tags": ["review"],
   "text": "Review the plan",
   "detail": "Done when the open questions are recorded.",
+  "response": "",
   "requires": []
 }
 ```
+
+`response` is optional on older items and defaults to blank in the app. It holds
+a reply or reflection beneath Details, separately from the task instructions and
+completion criteria. A response-only edit is allowed after an item is completed;
+structural edits remain locked as before. Concurrent edits to Detail and Response
+merge independently, while two different Response edits require review.
 
 `id` is stable. `model.items` holds each item exactly once. `model.roots` is the
 ordered top-level list. `requires` is the ordered supporting-item list; it is NOT
@@ -377,7 +384,7 @@ Supported operations (1–100 per proposal):
 - `add-item`: `{op, parentId, item}`. `parentId: null` adds a root; otherwise it
   names a parent. Include the complete item shape above, with `requires: []`.
   Add parents before adding children. Added items are unchecked.
-- `update-item`: `{op, id, changes}`. Only `text`, `detail`, `label`, `tags`, and
+- `update-item`: `{op, id, changes}`. Only `text`, `detail`, `response`, `label`, `tags`, and
   category `parents` may change. Omit unchanged fields. Hierarchy/ID replacement
   is not an update operation.
 - `reorder`: `{op, parentId, itemIds}`. Supply exactly all current siblings once

@@ -54,6 +54,34 @@ test('different edits to one field conflict and can be chosen',()=>{
  assert.equal(chosen.unresolved.length,0);
  assert.equal(item(chosen.merged,'purpose').text,'JSON title');
 });
+test('response and detail merge independently on an older document',()=>{
+ const base=copy(original),browser=copy(base),incoming=copy(base);
+ item(browser,'purpose').response='Hermit is considering this';item(incoming,'purpose').detail='Agent added evidence';
+ const result=mergeChecklistDocuments(base,browser,incoming);
+ assert.equal(result.unresolved.length,0);
+ assert.equal(item(result.merged,'purpose').response,'Hermit is considering this');
+ assert.equal(item(result.merged,'purpose').detail,'Agent added evidence');
+ validateDocument(result.merged);
+});
+test('two response edits conflict on one item',()=>{
+ const base=copy(original),browser=copy(base),incoming=copy(base);
+ item(browser,'purpose').response='Human answer';item(incoming,'purpose').response='Agent answer';
+ const result=mergeChecklistDocuments(base,browser,incoming);
+ assert.deepEqual(Array.from(result.unresolved,x=>x.key),['item:purpose:response']);
+ const chosen=mergeChecklistDocuments(base,browser,incoming,{'item:purpose:response':'browser'});
+ assert.equal(chosen.unresolved.length,0);
+ assert.equal(item(chosen.merged,'purpose').response,'Human answer');
+});
+test('response remains writable after an ancestor is completed',()=>{
+ const base=copy(original),browser=copy(base),incoming=copy(base);
+ base.state.shape=browser.state.shape=incoming.state.shape=true;
+ item(incoming,'purpose').response='Later observation';
+ const result=mergeChecklistDocuments(base,browser,incoming);
+ assert.equal(result.unresolved.length,0);
+ assert.equal(item(result.merged,'purpose').response,'Later observation');
+ validateDocument(result.merged);
+});
+
 test('completion does not erase a newer failure note',()=>{
  const base=copy(original),browser=copy(base),incoming=copy(base);
  item(browser,'purpose').detail='Firefox check failed';incoming.state.purpose=true;

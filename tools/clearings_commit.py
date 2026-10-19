@@ -36,7 +36,8 @@ import re
 ID = re.compile(r"[A-Za-z0-9._-]{1,200}\Z")
 FORBIDDEN = {"__proto__", "prototype", "constructor"}
 DOC_FIELDS = ("title", "subtitle", "description", "footer", "archived", "references")
-ITEM_FIELDS = ("text", "detail", "label", "tags", "parents", "requires", "order")
+ITEM_FIELDS = ("text", "detail", "response", "label", "tags", "parents", "requires", "order")
+ITEM_REQUIRED_FIELDS = tuple(field for field in ITEM_FIELDS if field != "response")
 MEANING_FIELDS = ("text", "detail", "label", "tags", "parents", "requires")
 
 
@@ -99,11 +100,11 @@ def validate_document(document):
         branches.add(branch["id"])
     items = {}
     for item in model["items"]:
-        _keys(item, ("id", *ITEM_FIELDS), "item")
+        _keys(item, ("id", *(ITEM_FIELDS if "response" in item else ITEM_REQUIRED_FIELDS)), "item")
         key = item.get("id")
         if not valid_id(key) or key in items:
             raise ValueError("Invalid or duplicate item ID")
-        for name in ("text", "detail", "label"):
+        for name in ("text", "detail", "label", *(("response",) if "response" in item else ())):
             if not isinstance(item.get(name), str) or len(item[name]) > 200000:
                 raise ValueError(f"Invalid item {name}")
         if (not item["text"].strip() or type(item.get("order")) not in (int, float)
@@ -290,7 +291,7 @@ def merge_documents(base, current, incoming):
                 conflicts.append("item:" + key + ":missing")
             continue
         target = merged_items[key]
-        changed = any(item[f] != old[f] and item[f] != present[f] for f in ITEM_FIELDS) or (
+        changed = any(item[f] != old[f] and item[f] != present[f] for f in ITEM_REQUIRED_FIELDS) or (
             incoming["state"].get(key, False) != base["state"].get(key, False) and
             incoming["state"].get(key, False) != current["state"].get(key, False))
         if changed and (key in locked or current["state"].get(key) is True and item["requires"] != old["requires"] and item["requires"] != present["requires"]):
@@ -302,11 +303,14 @@ def merge_documents(base, current, incoming):
         present_meaning = any(present[field] != old[field] for field in MEANING_FIELDS)
         incoming_meaning = any(item[field] != old[field] for field in MEANING_FIELDS)
         for field in ITEM_FIELDS:
+            old_value = old.get(field, "") if field == "response" else old[field]
+            present_value = present.get(field, "") if field == "response" else present[field]
+            item_value = item.get(field, "") if field == "response" else item[field]
             if (incoming_meaning and present_done != base_done and field in MEANING_FIELDS and
                     item[field] != old[field] and item[field] != present[field]):
                 conflicts.append("item:" + key + ":" + field)
             else:
-                compare("item:" + key + ":" + field, old[field], present[field], item[field],
+                compare("item:" + key + ":" + field, old_value, present_value, item_value,
                         lambda value, field=field: target.__setitem__(field, value))
         if incoming_done != base_done and present_meaning and any(item[f] != present[f] for f in MEANING_FIELDS):
             conflicts.append("state:" + key)

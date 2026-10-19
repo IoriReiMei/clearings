@@ -95,6 +95,7 @@ class ClearingsMcpStdioTests(unittest.IsolatedAsyncioTestCase):
     async def test_effective_only_and_bounded_search_on_synthetic_checklists(self):
         active = copy.deepcopy(self.document)
         active["state"]["purpose"] = True
+        next(item for item in active["model"]["items"] if item["id"] == "purpose")["response"] = "One special response"
         active["model"]["items"][1]["detail"] = "A " + "specific " * 100
         next(item for item in active["model"]["items"] if item["id"] == "make")["requires"].append("purpose")
         next(item for item in active["model"]["items"] if item["id"] == "purpose")["requires"].append("grandchild")
@@ -137,6 +138,12 @@ class ClearingsMcpStdioTests(unittest.IsolatedAsyncioTestCase):
             self.assertTrue(found["results"][0]["sharedParentPaths"])
             self.assertTrue(found["results"][0]["completed"])
             self.assertLessEqual(len(found["results"][0]["detail"]), 160)
+            self.assertEqual(found["results"][0]["response"], "One special response")
+            by_response = payload(await client.call_tool("clearings_search_items", {"query": "special response"}))
+            self.assertEqual(by_response["results"][0]["itemId"], "purpose")
+            self.assertEqual(next(i for i in full["effectiveDocument"]["model"]["items"] if i["id"] == "purpose")["response"], "One special response")
+            branch = payload(await client.call_tool("clearings_read_checklist", {"checklist_id": active["documentId"], "branch_id": "purpose"}))
+            self.assertEqual(next(i for i in branch["branch"]["items"] if i["id"] == "purpose")["response"], "One special response")
             descendant = payload(await client.call_tool("clearings_search_items",
                                                         {"query": "Descendant target"}))
             self.assertEqual(descendant["results"][0]["pathIds"],

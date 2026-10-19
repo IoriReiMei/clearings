@@ -168,6 +168,42 @@ class CommitMergeChecks(unittest.TestCase):
         self.compare_browser(self.base,current,incoming)
         self.assertIn('item:purpose:missing',merge_documents(self.base,current,incoming)['conflicts'])
 
+    def test_response_is_optional_and_validated(self):
+        validate_document(self.base)
+        current = copy.deepcopy(self.base)
+        self.item(current, 'purpose')['response'] = 'A thought'
+        validate_document(current)
+        self.item(current, 'purpose')['response'] = {'bad': 'type'}
+        with self.assertRaisesRegex(ValueError, 'Invalid item response'):
+            validate_document(current)
+
+    def test_response_and_detail_merge_independently(self):
+        current = copy.deepcopy(self.base)
+        incoming = copy.deepcopy(self.base)
+        self.item(current, 'purpose')['response'] = 'Hermit response'
+        self.item(incoming, 'purpose')['detail'] = 'Agent detail'
+        self.compare_browser(self.base, current, incoming)
+        merged = merge_documents(self.base, current, incoming)['merged']
+        self.assertEqual(self.item(merged, 'purpose')['response'], 'Hermit response')
+        self.assertEqual(self.item(merged, 'purpose')['detail'], 'Agent detail')
+
+    def test_two_response_edits_conflict(self):
+        current = copy.deepcopy(self.base)
+        incoming = copy.deepcopy(self.base)
+        self.item(current, 'purpose')['response'] = 'Human answer'
+        self.item(incoming, 'purpose')['response'] = 'Agent answer'
+        self.compare_browser(self.base, current, incoming)
+        self.assertIn('item:purpose:response', merge_documents(self.base, current, incoming)['conflicts'])
+
+    def test_response_only_merge_after_ancestor_completion(self):
+        base = copy.deepcopy(self.base)
+        base['state']['shape'] = True
+        current = copy.deepcopy(base)
+        incoming = copy.deepcopy(base)
+        self.item(incoming, 'purpose')['response'] = 'Later observation'
+        self.compare_browser(base, current, incoming)
+        self.assertFalse(merge_documents(base, current, incoming)['conflicts'])
+
     def test_invalid_cycle_is_rejected_before_commit(self):
         bad = copy.deepcopy(self.base)
         self.item(bad, "purpose")["requires"].append("shape")

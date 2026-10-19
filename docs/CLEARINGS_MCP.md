@@ -87,3 +87,18 @@ In ordinary source or installer builds without the optional MCP SDK, the MCP
 test module explicitly skips its focused cases. Install
 `tools/requirements-mcp.txt` to run them; a present but broken SDK still fails
 the import. Release installers remain at 0.4.6 and do not bundle this adapter.
+
+## Optional item responses
+
+Current source accepts an optional plain-text `response` on each checklist item.
+Full, effective-only and branch reads retain saved responses; item search also
+matches responses and returns a bounded preview. Search results and partial
+branches remain unsuitable as proposal bases. Read the full effective document
+before drafting and preserve its responses unless an edit is intended.
+
+Browser editor drafts become shared data only after Apply and normal successful
+saving/synchronization. Responses are included in checklist/context exports;
+review them before sharing those files. After updating source, reload the page
+and normally restart older helper/MCP processes before using responses. Older
+source versions do not support this new optional field. No new MCP tools or
+permissions are added. Existing installer binaries are unchanged.

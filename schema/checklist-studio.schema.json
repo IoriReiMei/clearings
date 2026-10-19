@@ -64,6 +64,10 @@
           "type": "string",
           "maxLength": 200000
         },
+        "response": {
+          "type": "string",
+          "maxLength": 200000
+        },
         "requires": {
           "type": "array",
           "items": {
@@ -839,6 +843,10 @@
                         "minLength": 1
                       },
                       "detail": {
+                        "type": "string",
+                        "maxLength": 200000
+                      },
+                      "response": {
                         "type": "string",
                         "maxLength": 200000
                       },
