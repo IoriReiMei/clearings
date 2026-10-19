@@ -59,12 +59,12 @@ class DeliveryChecks(unittest.TestCase):
         self.assertEqual(result['effectiveDocument']['attribution'][key]['completed']['actor'], 'Linden')
         self.assertEqual(result['effectiveDocument']['attribution'][key]['completed']['at'], commit['at'])
 
-    def test_retention_never_drops_pending(self):
+    def test_retention_never_drops_unarchived_history(self):
         pending = {'id':'keep','status':'pending'}
         proposals = [pending] + [{'id':str(n),'status':'applied'} for n in range(180)]
         kept = local.retain_proposals(proposals)
         self.assertEqual(kept[0], pending)
-        self.assertEqual(len(kept),151)
+        self.assertEqual(kept, proposals)
 
     def test_withdraw_is_attributed_and_preserves_proposal(self):
         self.bridge.sync(self.workspace,1)

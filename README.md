@@ -108,6 +108,17 @@ the helper. If saving needs attention, it keeps Clearings open with an explanati
 
 ## Keep your work
 
+**Current source patch — October 19, 2026:** completed proposal history now
+rolls into verified local archives automatically when an edit would otherwise
+exceed the active handoff limit. The active file remains bounded at 64 MiB;
+pending work is never discarded to make room. See
+[handoff history rollover](docs/HANDOFF_CAPACITY_ROLLOVER.md).
+The existing versioned 0.4.6 installer downloads have not been rebuilt with this
+source patch. Already running source helpers and MCP processes need a normal
+restart to load changed Python code; the workspace home and browser address stay
+the same.
+
+
 Local-helper sessions are protected for your account. The public loopback page
 does not expose a reusable helper credential. The helper preserves recovery
 metadata when replacing a stale session, and larger aggregate handoffs have a

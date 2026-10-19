@@ -92,10 +92,8 @@ def now() -> str:
 
 
 def retain_proposals(proposals):
-    """Never evict pending work to make room for resolved history."""
-    resolved = {p["id"] for p in proposals if p["status"] != "pending"}
-    recent = {p["id"] for p in [p for p in proposals if p["id"] in resolved][-150:]}
-    return [p for p in proposals if p["status"] == "pending" or p["id"] in recent]
+    """Keep all history until an exact preimage has been archived."""
+    return proposals
 
 
 def stop_legacy_windows_process(pid, executable):
@@ -739,11 +737,92 @@ class Bridge:
     def change(self, edit):
         with file_lock(self.lock_path):
             packet = self.read()
+            before = copy.deepcopy(packet)
             result = edit(packet)
             if result is not None:
-                atomic_json(self.handoff_path(), packet,
-                            max_bytes=MAX_HANDOFF_BYTES, compact=True)
+                size = len((json.dumps(packet, ensure_ascii=False,
+                                       separators=(",", ":")) + "\n").encode("utf-8"))
+                if size <= MAX_HANDOFF_BYTES:
+                    atomic_json(self.handoff_path(), packet,
+                                max_bytes=MAX_HANDOFF_BYTES, compact=True)
+                else:
+                    self._change_with_resolved_rollover(before, packet)
             return result
+
+    def _change_with_resolved_rollover(self, before, packet):
+        """Archive unchanged terminal history before publishing an oversize edit.
+
+        The archive is the exact on-disk preimage. A proposal that this edit
+        changed (including a newly resolved one) stays active until a later
+        rollover can preserve that version in an exact preimage.
+        """
+        path = self.handoff_path()
+        if not path.exists():
+            raise ValueError(f"Handoff exceeds {_size_label(MAX_HANDOFF_BYTES)}; nothing was written")
+        prior = read_bounded_bytes(path, MAX_HANDOFF_BYTES)
+        if json.loads(prior) != before:
+            raise ValueError("Handoff changed while reading; nothing was archived")
+        old_proposals, new_proposals = before.get("proposals"), packet.get("proposals")
+        archives = packet.get("resolvedProposalArchives", [])
+        if not isinstance(old_proposals, list) or not isinstance(new_proposals, list) or not isinstance(archives, list):
+            raise ValueError("Unrecognized handoff history; nothing was written")
+        old_by_id = {p.get("id"): p for p in old_proposals if isinstance(p, dict)}
+        new_by_id = {p.get("id"): p for p in new_proposals if isinstance(p, dict)}
+        if (len(old_by_id) != len(old_proposals) or len(new_by_id) != len(new_proposals)
+                or None in old_by_id or None in new_by_id):
+            raise ValueError("Ambiguous proposal history; nothing was written")
+        if (not old_by_id.keys() <= new_by_id.keys() or
+                archives != before.get("resolvedProposalArchives", [])):
+            raise ValueError("Handoff history changed unexpectedly; nothing was written")
+        terminal = {"applied", "already-current", "dismissed"}
+        archived = [p["id"] for p in old_proposals if p.get("status") in terminal
+                    and new_by_id.get(p["id"]) == p]
+        if not archived:
+            raise ValueError(f"Handoff exceeds {_size_label(MAX_HANDOFF_BYTES)}; nothing was written")
+        digest = hashlib.sha256(prior).hexdigest()
+        descriptor = {"file": "archives/clearings-resolved-" + digest + ".json",
+                      "sha256": digest, "bytes": len(prior),
+                      "libraryId": before["libraryId"], "generation": before["generation"],
+                      "resolvedProposalIds": archived}
+        compact = copy.deepcopy(packet)
+        archived_ids = set(archived)
+        compact["proposals"] = [p for p in new_proposals if p["id"] not in archived_ids]
+        compact["resolvedProposalArchives"] = [*archives, descriptor]
+        after_bytes = len((json.dumps(compact, ensure_ascii=False,
+                                      separators=(",", ":")) + "\n").encode("utf-8"))
+        if after_bytes > MAX_HANDOFF_BYTES:
+            raise ValueError(f"Handoff exceeds {_size_label(MAX_HANDOFF_BYTES)} after archiving resolved history; nothing was written")
+        self._publish_archive_preimage(prior, descriptor)
+        atomic_json(path, compact, max_bytes=MAX_HANDOFF_BYTES, compact=True)
+
+    def _publish_archive_preimage(self, prior, descriptor):
+        """Publish and verify an exact preimage under the configured home."""
+        home = self.home().resolve()
+        archive = home / descriptor["file"]
+        archive.parent.mkdir(exist_ok=True)
+        if archive.parent.resolve() != home / "archives":
+            raise ValueError("Archive directory leaves Clearings home; active handoff unchanged")
+        digest = descriptor["sha256"]
+        if not archive.exists():
+            # Use ordinary inherited permissions, not mkstemp's restrictive
+            # temporary-file ACL. A crash leaves at most an orphan .part.
+            staging = archive.parent / (".clearings-resolved-" + digest +
+                                        "." + uuid.uuid4().hex + ".part")
+            with staging.open("xb") as stream:
+                stream.write(prior)
+                stream.flush()
+                os.fsync(stream.fileno())
+            if (staging.stat().st_size != len(prior) or
+                    hashlib.sha256(staging.read_bytes()).hexdigest() != digest or
+                    not os.access(staging, os.R_OK)):
+                raise ValueError("Staged archive verification failed; active handoff unchanged")
+            if archive.exists():
+                raise ValueError("Archive appeared during staging; active handoff unchanged")
+            os.replace(staging, archive)
+        if (not archive.is_file() or archive.stat().st_size != len(prior) or
+                hashlib.sha256(archive.read_bytes()).hexdigest() != digest or
+                not os.access(archive, os.R_OK)):
+            raise ValueError("Archive verification failed; active handoff unchanged")
 
     def archive_resolved(self, dry_run: bool = False):
         """Explicitly archive terminal proposals; never touch pending work.
@@ -785,32 +864,7 @@ class Bridge:
                                               for p in compact["proposals"])}
             if dry_run:
                 return result
-            home = self.home().resolve()
-            archive = home / relative
-            archive.parent.mkdir(exist_ok=True)
-            if archive.parent.resolve() != home / "archives":
-                raise ValueError("Archive directory leaves Clearings home; active handoff unchanged")
-            if not archive.exists():
-                # Use ordinary inherited permissions, not mkstemp's restrictive
-                # temporary-file ACL. A crash leaves at most an orphan .part;
-                # the final archive name appears only after full verification.
-                staging = archive.parent / (".clearings-resolved-" + digest +
-                                            "." + uuid.uuid4().hex + ".part")
-                with staging.open("xb") as stream:
-                    stream.write(prior)
-                    stream.flush()
-                    os.fsync(stream.fileno())
-                if (staging.stat().st_size != len(prior) or
-                        hashlib.sha256(staging.read_bytes()).hexdigest() != digest or
-                        not os.access(staging, os.R_OK)):
-                    raise ValueError("Staged archive verification failed; active handoff unchanged")
-                if archive.exists():
-                    raise ValueError("Archive appeared during staging; active handoff unchanged")
-                os.replace(staging, archive)
-            if (not archive.is_file() or archive.stat().st_size != len(prior) or
-                    hashlib.sha256(archive.read_bytes()).hexdigest() != digest or
-                    not os.access(archive, os.R_OK)):
-                raise ValueError("Archive verification failed; active handoff unchanged")
+            self._publish_archive_preimage(prior, descriptor)
             atomic_json(self.handoff_path(), compact,
                         max_bytes=MAX_HANDOFF_BYTES, compact=True)
             return result

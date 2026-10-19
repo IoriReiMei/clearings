@@ -109,11 +109,13 @@ FILES.update({
     'tests/test_clearings_security.py':'tests/test_clearings_security.py',
     'tests/test_clearings_startup.py':'tests/test_clearings_startup.py',
     'tests/test_clearings_capacity.py':'tests/test_clearings_capacity.py',
+    'tests/test_clearings_auto_rollover.py':'tests/test_clearings_auto_rollover.py',
     'tests/test_clearings_resolved_archive.py':'tests/test_clearings_resolved_archive.py',
     'tests/test_clearings_handoff_size_repair.py':'tests/test_clearings_handoff_size_repair.py',
     'tests/handoff_refresh_repair.test.cjs':'tests/handoff_refresh_repair.test.cjs',
     'tests/center_mixed_root_paging_browser.test.cjs':'tests/center_mixed_root_paging_browser.test.cjs',
     'tests/deep_activity_browser.test.cjs':'tests/deep_activity_browser.test.cjs',
+    'docs/HANDOFF_CAPACITY_ROLLOVER.md':'docs/HANDOFF_CAPACITY_ROLLOVER.md',
 })
 
 # Notices for JSON/image files travel with the exact allowlisted assets.
@@ -186,7 +188,7 @@ def main() -> None:
         payload[destination]=data
     payload['.gitignore']=b'# SPDX-License-Identifier: MIT\n# Keep personal libraries under data/ and review before sharing.\n/data/\n/checklist_index.json\n/checklist-*.json\n/program_overview.json\n/build-output/\n/artifacts/\n*.zip\n*.dmg\n*.run\n__pycache__/\n'
     payload['.nojekyll']=b''
-    payload['RELEASE_NOTE.txt']=b'SPDX-License-Identifier: MIT\nClearings 0.4.6 - nested change indicators, protected local sessions and MIT licensing.\nCollapsed groups, tracked shortcuts and the outline show changes inside.\nAssistants can create and edit signed shared work before browser Refresh.\nMove to and explicit same-list deletion use shared task rules.\nWindows includes a console CLI and an installer that stops its own helper before upgrade or uninstall.\nThe local helper protects session credentials and supports a bounded 64 MiB aggregate handoff with explicit resolved-history archival.\nThe app contains no model, account, telemetry or external runtime download.\nNative binaries bundle Python; this source ZIP is also usable as a standalone browser app.\nOlder exports remain readable; attribution-enriched exports need 0.4.3 or newer.\nSigning and platform verification limits are documented in CLEARINGS_VERIFICATION.md.\nOnly allowlisted source, docs, tests and fictional examples are included.\nSee LICENSE, LICENSE_SCOPE.md and THIRD_PARTY_NOTES.md.\n'
+    payload['RELEASE_NOTE.txt']=b'SPDX-License-Identifier: MIT\nClearings 0.4.6 - nested change indicators, protected local sessions and MIT licensing.\nCollapsed groups, tracked shortcuts and the outline show changes inside.\nAssistants can create and edit signed shared work before browser Refresh.\nMove to and explicit same-list deletion use shared task rules.\nWindows includes a console CLI and an installer that stops its own helper before upgrade or uninstall.\nThe local helper protects session credentials and supports a bounded 64 MiB aggregate handoff with automatic pressure rollover of unchanged resolved history and explicit archival.\nThe app contains no model, account, telemetry or external runtime download.\nNative binaries bundle Python; this source ZIP is also usable as a standalone browser app.\nOlder exports remain readable; attribution-enriched exports need 0.4.3 or newer.\nSigning and platform verification limits are documented in CLEARINGS_VERIFICATION.md.\nOnly allowlisted source, docs, tests and fictional examples are included.\nSee LICENSE, LICENSE_SCOPE.md and THIRD_PARTY_NOTES.md.\n'
     manifest={name:hashlib.sha256(data).hexdigest() for name,data in payload.items()}
     payload['MANIFEST.json']=(json.dumps(manifest,indent=2)+'\n').encode()
     output.parent.mkdir(parents=True,exist_ok=True)
