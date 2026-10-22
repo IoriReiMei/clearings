@@ -63,7 +63,7 @@ try {
     assert.ok(html.includes("STORE='checklist-studio:recovery:v1'"));
     assert.ok(html.includes("LEGACY_STORE='lc:checklist-studio:recovery:v1'"));
     assert.ok(html.includes("const AI_FORMAT='checklist-studio-changes'"));
-    assert.ok(html.includes("appVersion:'0.4.6'"));
+    assert.ok(html.includes("appVersion:'0.4.7'"));
     assert.ok(!html.includes("format:'clearings-document'"));
   });
   test('overview folding and drag-to-focus interaction ships in the app', () => {
@@ -167,29 +167,33 @@ try {
     fs.mkdirSync(path.join(fixture,'tools'),{recursive:true});
     for(const name of ['make_share_package.py','sync_templates.py'])
       fs.copyFileSync(path.join(root,'tools',name),path.join(fixture,'tools',name));
-    fs.writeFileSync(path.join(fixture,'LC_CHECKLIST.html'),"appVersion:'0.4.6-dev'");
+    fs.writeFileSync(path.join(fixture,'LC_CHECKLIST.html'),"appVersion:'0.4.7-dev'");
     const p=spawnSync(python,[path.join(fixture,'tools/make_share_package.py'),'--output',zip],{encoding:'utf8'});
     assert.notEqual(p.status,0);
-    assert.match(p.stderr+p.stdout,/0\.4\.6 only/);
+    assert.match(p.stderr+p.stdout,/0\.4\.7 only/);
     assert.equal(fs.existsSync(zip),false);
   });
   // Artifact checks apply only to the explicitly selected release version.
-  if(html.includes("appVersion:'0.4.6'")) {
-  test('release source and builder agree on 0.4.6',()=>{
-    assert.match(html,/appVersion:'0\.4\.6'/);
-    assert.match(fs.readFileSync(packager,'utf8'),/Clearings 0\.4\.6 - nested change indicators, protected local sessions and MIT licensing/);
+  if(html.includes("appVersion:'0.4.7'")) {
+  test('release source and builder agree on 0.4.7',()=>{
+    assert.match(html,/appVersion:'0\.4\.7'/);
+    assert.match(fs.readFileSync(packager,'utf8'),/Clearings 0\.4\.7 - public release/);
     const publicLauncher=fs.existsSync(path.join(root,'docs/GITHUB_START_CLEARINGS.cmd'))
       ?path.join(root,'docs/GITHUB_START_CLEARINGS.cmd'):path.join(root,'Start_Clearings.cmd');
-    assert.match(fs.readFileSync(publicLauncher,'utf8'),/py\.exe -3 -c/);
+    assert.match(fs.readFileSync(publicLauncher,'utf8'),/py\.exe -3 -B .*clearings\.py/);
     assert.doesNotMatch(fs.readFileSync(publicLauncher,'utf8'),/C:\\Users\\/);
   });
   test('packager creates a local release with license, helper and template', () => {
     runPython([packager,'--output',zip]);
     const names=JSON.parse(runPython(['-c','import json,sys,zipfile; print(json.dumps(zipfile.ZipFile(sys.argv[1]).namelist()))',zip]));
     for(const name of ['index.html','LICENSE','LICENSE_SCOPE.md','THIRD_PARTY_NOTES.md',
+      'tools/clearings_agent.py','tests/test_clearings_agent.py','AI_START_HERE.md','AGENTS.md',
       'templates/clearings_github_release.json','templates/clearings_github_release.json.license',
       'templates/clearings_github_patch.json','templates/clearings_github_patch.json.license',
-      'Start_Clearings.cmd','tools/clearings_local.py','tools/clearings_commit.py','tools/merge.cjs','docs/LOCAL_HANDOFF.md',
+      'Start_Clearings.cmd','Start_Clearings.sh','clearings.py','clearings.json','clearings.json.license',
+      'docs/QUICKSTART.md','CONTRIBUTING.md','.github/workflows/source-checks.yml',
+      'AGENTS.md','AI_START_HERE.md','AI_CHECKLIST_GUIDE.md','docs/CLEARINGS_MCP.md',
+      'tools/clearings_local.py','tools/clearings_commit.py','tools/merge.cjs','docs/LOCAL_HANDOFF.md',
       'packaging/build_native.py','packaging/build_linux_run.py',
       'packaging/build_mac_dmg.py','packaging/windows/Clearings.nsi',
       'assets/Clearings.png','assets/Clearings.ico',

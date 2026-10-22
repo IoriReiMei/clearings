@@ -22,7 +22,8 @@
 # SOFTWARE.
 """Windows notification-area presence for the running local helper.
 
-Uses Windows APIs only. No startup registration, polling, network or user files.
+Uses Windows APIs only. Startup registration requires an explicit user choice.
+No polling, network access or checklist-file writes.
 The HTTP server owns this object's lifetime; stopping the server removes its icon.
 """
 from __future__ import annotations
@@ -42,16 +43,109 @@ def icon_path():
     return root/'assets'/'Clearings.ico'
 
 
+class WindowsStartup:
+    """Own one exact command in this user's Run key; never change other entries.
+
+    Registration is opt-in. Windows Startup Apps can independently disable it;
+    this class never changes StartupApproved or any machine-wide setting.
+    """
+    RUN_KEY = r'Software\Microsoft\Windows\CurrentVersion\Run'
+
+    def __init__(self, *, name, command, required_files=(), registry=None):
+        self.name = name
+        self.command = command
+        self.required_files = tuple(Path(path) for path in required_files)
+        self._registry_override = registry
+        if not name or len(name) > 100 or any(char in name for char in '\0\r\n'):
+            raise ValueError('Invalid Clearings startup name')
+        if not command or any(char in command for char in '\0\r\n'):
+            raise ValueError('Invalid Clearings startup command')
+
+    def _registry(self):
+        if self._registry_override is not None:
+            return self._registry_override
+        if os.name != 'nt':
+            return None
+        import winreg
+        return winreg
+
+    def _problem(self):
+        if len(self.command.encode('utf-16-le')) // 2 > 260:
+            return 'This source/configuration path is too long for Windows startup. Use a shorter source path or the installed edition.'
+        if any(not path.is_file() for path in self.required_files):
+            return 'A required launcher or settings file is missing. Open a complete Clearings copy before enabling startup.'
+        return None
+
+    def _value(self, registry, key):
+        try:
+            return registry.QueryValueEx(key, self.name)
+        except FileNotFoundError:
+            return None
+
+    def status(self):
+        registry = self._registry()
+        if registry is None:
+            return {'supported': False, 'enabled': False, 'conflict': False,
+                    'name': self.name, 'reason': 'Start with Windows is available on Windows only.'}
+        try:
+            with registry.OpenKey(registry.HKEY_CURRENT_USER, self.RUN_KEY,
+                                  0, registry.KEY_QUERY_VALUE) as key:
+                current = self._value(registry, key)
+        except FileNotFoundError:
+            current = None
+        owned = current == (self.command, registry.REG_SZ)
+        conflict = current is not None and not owned
+        return {'supported': True, 'enabled': owned, 'conflict': conflict,
+                'name': self.name, 'command': self.command,
+                'reason': ('Startup is configured for a different Clearings copy. Turn it off from that copy first.'
+                           if conflict else self._problem()),
+                'note': 'Windows Startup Apps may independently disable a registered entry.'}
+
+    def set_enabled(self, enabled):
+        if type(enabled) is not bool:
+            raise ValueError('Choose whether Windows startup is enabled')
+        registry = self._registry()
+        if registry is None:
+            raise ValueError('Start with Windows is available on Windows only.')
+        if enabled and self._problem():
+            raise ValueError(self._problem())
+        access = registry.KEY_QUERY_VALUE | registry.KEY_SET_VALUE
+        try:
+            key = (registry.CreateKeyEx(registry.HKEY_CURRENT_USER, self.RUN_KEY, 0, access)
+                   if enabled else registry.OpenKey(registry.HKEY_CURRENT_USER, self.RUN_KEY, 0, access))
+        except FileNotFoundError:
+            return self.status()
+        with key:
+            current = self._value(registry, key)
+            if current is not None and current != (self.command, registry.REG_SZ):
+                raise ValueError('Startup is configured for a different Clearings copy. No startup entry was changed.')
+            if enabled:
+                registry.SetValueEx(key, self.name, 0, registry.REG_SZ, self.command)
+            elif current is not None:
+                registry.DeleteValue(key, self.name)
+        result = self.status()
+        if result['enabled'] != enabled or result['conflict']:
+            raise OSError('Windows startup changed before it could be verified. Check the tray setting again.')
+        return result
+
+    def remove_if_owned(self):
+        """Uninstall cleanup preserves an entry belonging to a different copy."""
+        result = self.status()
+        return self.set_enabled(False) if result['enabled'] else result
+
+
 class WindowsTray:
     """One icon and message-pump thread, with explicit startup/cleanup checks."""
     CALLBACK=0x8001
     OPEN=1001
     STOP=1002
+    STARTUP=1003
 
-    def __init__(self, *, title, address, identity, open_app, stop_helper):
+    def __init__(self, *, title, address, identity, open_app, stop_helper, startup=None):
         if os.name!='nt':raise OSError('The notification-area helper is Windows-only')
         self.title=title;self.address=address;self.identity=identity
         self.open_app=open_app;self.stop_helper=stop_helper
+        self.startup=startup
         self.ready=threading.Event();self.error=None;self.hwnd=None
         self.registered=False;self.thread=None;self._stopping=False
         self.closing=threading.Event()
@@ -112,6 +206,15 @@ class WindowsTray:
             self.user.AppendMenuW(menu,0x2,0,'Running locally · '+self.address)
             self.user.AppendMenuW(menu,0x800,0,None)
             self.user.AppendMenuW(menu,0,self.OPEN,'Open Clearings')
+            if self.startup is not None:
+                try:
+                    state=self.startup.status()
+                    available=state['supported'] and not state['conflict'] and (state['enabled'] or not state['reason'])
+                    flags=(0x8 if state['enabled'] else 0) | (0 if available else 0x2)
+                    label='Start helper with Windows' if available else 'Start helper with Windows (unavailable)'
+                except (OSError,ValueError):
+                    flags=0x2;label='Windows startup setting unavailable'
+                self.user.AppendMenuW(menu,flags,self.STARTUP,label)
             self.user.AppendMenuW(menu,0,self.STOP,'Stop helper…')
             self.user.SetMenuDefaultItem(menu,self.OPEN,False)
             point=w.POINT();self.user.GetCursorPos(ctypes.byref(point))
@@ -125,11 +228,25 @@ class WindowsTray:
     def _command(self,choice):
         if choice==self.OPEN:
             threading.Thread(target=self.open_app,daemon=True).start()
+        elif choice==self.STARTUP and self.startup is not None:
+            try:
+                self.startup.set_enabled(not self.startup.status()['enabled'])
+            except (OSError,ValueError) as exc:
+                self.user.MessageBoxW(self.hwnd,str(exc),'Clearings startup setting',0x30)
         elif choice==self.STOP and not self._stopping:
-            answer=self.user.MessageBoxW(self.hwnd,'Save any edits in your open Clearings tabs first.\n\nThis stops the background helper. Your tabs stay open, and saved workspace data is kept.\n\nStop the helper now?','Stop Clearings helper?',0x1|0x30|0x100)
+            answer=self.user.MessageBoxW(self.hwnd,'Save any edits in your open Clearings tabs first.\n\nClearings will back up its last saved workspace and editor draft before stopping. Use Save and quit in the page to include your latest edits. Your tabs stay open.\n\nStop the helper now?','Stop Clearings helper?',0x1|0x30|0x100)
             if answer==1:
                 self._stopping=True
-                threading.Thread(target=self.stop_helper,daemon=True).start()
+                threading.Thread(target=self._stop_with_feedback,daemon=True).start()
+
+    def _stop_with_feedback(self):
+        try:
+            if self.stop_helper() is not False:
+                return
+        except Exception as exc:
+            self.error=exc
+        self._stopping=False
+        self.user.MessageBoxW(self.hwnd,'The helper stayed open because its backup could not finish.\n\nOpen Clearings to save or export your work, then try again.','Clearings is still running',0x30)
 
     def _window_proc(self,hwnd,message,wp,lp):
         try:
@@ -137,7 +254,11 @@ class WindowsTray:
                 self._add();return 0
             if message==self.CALLBACK:
                 event=lp&0xffff
-                if event in (0x7b,0x400,0x401):self._menu()
+                # NIN_SELECT from the first click must not open a blocking menu
+                # before Windows can deliver the double-click. Keyboard activation
+                # opens the app too; WM_CONTEXTMENU keeps the right-click menu.
+                if event in (0x203,0x401):self._command(self.OPEN)
+                elif event==0x7b:self._menu()
                 return 0
             if message==0x10: # WM_CLOSE from the server's finally block.
                 self.user.DestroyWindow(hwnd);return 0

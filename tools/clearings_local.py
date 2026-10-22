@@ -28,6 +28,7 @@ user-selected handoff JSON; agents use the CLI rather than editing it in place.
 from __future__ import annotations
 
 import argparse
+import ast
 import base64
 import binascii
 import copy
@@ -57,7 +58,7 @@ import uuid
 import webbrowser
 
 from clearings_commit import merge_documents, validate_document, stamp_attribution
-from clearings_tray import WindowsTray
+from clearings_tray import WindowsTray, WindowsStartup
 
 MAX_BYTES = 16 * 1024 * 1024
 MAX_HANDOFF_BYTES = 64 * 1024 * 1024
@@ -65,7 +66,7 @@ REQUEST_DEADLINE = 10.0
 MAX_HANDLERS = 8
 BOOTSTRAP_SECONDS = 30.0
 FILE_NAME = "clearings_handoff.json"
-VERSION = "0.4.6"
+VERSION = "0.4.7"
 WINDOWS_TRAY = os.name == "nt"
 # The working helper already owns 8765 and its existing browser workspace.
 # Keep it there; installed/public Clearings has a separate, stable origin.
@@ -170,6 +171,37 @@ def config_dir(override: str | None = None) -> Path:
     base = Path(os.environ.get("LOCALAPPDATA", Path.home() / ".local"))
     name = "Clearings-Release" if CHANNEL == "release" else "Clearings"
     return Path(override or os.environ.get("CLEARINGS_CONFIG_DIR") or base / name).resolve()
+
+
+def windows_startup(root: Path, port: int):
+    """Describe this exact copy's quiet sign-in command; do not register it here."""
+    if not 1 <= port <= 65535:
+        raise ValueError("Choose a valid Clearings port for Windows startup")
+    root = root.resolve()
+    default_base = Path(os.environ.get("LOCALAPPDATA", Path.home() / ".local"))
+    default_root = (default_base / ("Clearings-Release" if CHANNEL == "release" else "Clearings")).resolve()
+    if getattr(sys, "frozen", False):
+        executable = PROGRAM
+        command = [str(executable)]
+        required = [executable]
+    else:
+        executable = Path(sys.executable).resolve().with_name("pythonw.exe")
+        script = Path(__file__).resolve()
+        command = [str(executable), "-B", str(script)]
+        required = [executable, script]
+    # An inherited development override may not exist at the next sign-in.
+    # Carry it explicitly rather than silently opening a different workspace.
+    if root != default_root:
+        command += ["--config-dir", str(root)]
+    command += ["serve", "--no-browser"]
+    if port != PORT:
+        command += ["--port", str(port)]
+    name = "Clearings" if CHANNEL == "release" else "Clearings working"
+    if root != default_root or port != PORT:
+        identity = os.path.normcase(str(root)) + ":" + str(port)
+        name += " " + hashlib.sha256(identity.encode("utf-8")).hexdigest()[:12]
+    return WindowsStartup(name=name, command=subprocess.list2cmdline(command),
+                          required_files=[*required, root / "settings.json"])
 
 
 def program_identity(bridge: "Bridge") -> dict:
@@ -515,12 +547,23 @@ def file_lock(path: Path):
                 fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
 
 
+class HelperUpdating(ValueError):
+    code = "CLEARINGS_UPDATING"
+    retry_after_ms = 1000
+
+    def __init__(self):
+        super().__init__("Clearings is restarting for an update, please hold. Retry in one second with the same request ID.")
+
+
 class Bridge:
     def __init__(self, root: Path):
         self.root = root
         self.root.mkdir(parents=True, exist_ok=True, mode=0o700)
         self.config_path = root / "settings.json"
         self.lock_path = root / "handoff.lock"
+        self.maintenance_path = root / "helper-maintenance.json"
+        self.maintenance_id = None
+        self.runtime_hash = HELPER_SHA256
         if not self.config_path.exists():
             if root != config_dir():
                 home = root / "home"
@@ -734,8 +777,42 @@ class Bridge:
         }
         return result
 
-    def change(self, edit):
+    def check_maintenance(self):
+        state = load_json(self.maintenance_path, {})
+        if state.get("until", 0) > time.time():
+            raise HelperUpdating()
+        approved = load_json(self.root / "approved-source.json", {})
+        if approved.get("helperSha256", self.runtime_hash) != self.runtime_hash:
+            raise HelperUpdating()
+
+    def begin_maintenance(self):
+        """Drain the one-writer lock, then make new writers return a retry error."""
+        self.check_maintenance()
         with file_lock(self.lock_path):
+            self.check_maintenance()
+            self.maintenance_id = uuid.uuid4().hex
+            atomic_json(self.maintenance_path, {"id": self.maintenance_id,
+                                               "until": time.time() + 300})
+
+    def end_maintenance(self):
+        with file_lock(self.lock_path):
+            state = load_json(self.maintenance_path, {})
+            if self.maintenance_id and state.get("id") == self.maintenance_id:
+                self.maintenance_path.unlink(missing_ok=True)
+            self.maintenance_id = None
+
+    def prepare_shutdown(self):
+        self.begin_maintenance()
+        try:
+            return self.backup_workspace()
+        except BaseException:
+            self.end_maintenance()
+            raise
+
+    def change(self, edit):
+        self.check_maintenance()
+        with file_lock(self.lock_path):
+            self.check_maintenance()
             packet = self.read()
             before = copy.deepcopy(packet)
             result = edit(packet)
@@ -831,7 +908,9 @@ class Bridge:
         and verifying it *before* replacing the active file makes interruption
         recoverable. This is deliberately not an automatic size rollover.
         """
+        self.check_maintenance()
         with file_lock(self.lock_path):
+            self.check_maintenance()
             packet = self.read()
             resolved = [p for p in packet["proposals"]
                         if p.get("status") in ("applied", "already-current", "dismissed")]
@@ -873,7 +952,9 @@ class Bridge:
         candidate = Path(text).expanduser().resolve()
         if not candidate.is_dir():
             raise ValueError("Choose an existing folder for Clearings home")
+        self.check_maintenance()
         with file_lock(self.lock_path):
+            self.check_maintenance()
             old = self.read()
             if any(p.get("status") == "pending" for p in old["proposals"]):
                 raise ValueError("Resolve or export pending changes before changing home folders")
@@ -888,12 +969,26 @@ class Bridge:
             atomic_json(self.config_path, {"home": str(candidate)})
         return str(candidate)
 
-    def sync(self, workspace: dict, generation: int, expected_generation: int | None = None):
+    def sync(self, workspace: dict, generation: int, expected_generation: int | None = None,
+             browser_record: dict | None = None):
         if workspace.get("format") not in ("checklist-studio-workspace", "local-companion-checklist-workspace"):
             raise ValueError("Expected a Clearings workspace snapshot")
         library_id = workspace.get("index", {}).get("libraryId")
         if not isinstance(library_id, str) or not isinstance(generation, int) or generation < 1:
             raise ValueError("Invalid workspace identity or generation")
+        if browser_record is not None:
+            if isinstance(browser_record, dict) and "workspace" not in browser_record:
+                browser_record = {**browser_record, "workspace": workspace}
+            if (not isinstance(browser_record, dict)
+                    or browser_record.get("format") != "clearings-browser-record"
+                    or browser_record.get("version") != 1
+                    or browser_record.get("generation") != generation
+                    or browser_record.get("workspace") != workspace
+                    or not isinstance(browser_record.get("savedAt"), str)
+                    or not isinstance(browser_record.get("draft"), (dict, type(None)))):
+                raise ValueError("Browser recovery record does not match this save")
+            if len(json.dumps(browser_record, ensure_ascii=False, separators=(",", ":")).encode("utf-8")) > MAX_BYTES:
+                raise ValueError("Browser recovery record exceeds 16 MB")
 
         def edit(packet):
             if expected_generation is not None and packet["generation"] != expected_generation:
@@ -909,10 +1004,150 @@ class Bridge:
             packet["snapshot"] = workspace
             packet["snapshotAt"] = now()
             packet["generation"] = generation
+            if browser_record is not None:
+                packet["browserDraft"] = {"generation": generation, "appVersion": VERSION,
+                                          "savedAt": browser_record["savedAt"],
+                                          "draft": browser_record.get("draft")}
+            elif packet.get("browserDraft", {}).get("generation") != generation:
+                packet.pop("browserDraft", None)
             return {"generation": generation, "snapshotAt": packet["snapshotAt"]}
         return self.change(edit)
 
-    def propose(self, base: dict, incoming: dict, actor: str, note: str = ""):
+    def recovery_directory(self):
+        home = self.home().resolve()
+        path = home / "recovery"
+        if path.resolve().parent != home:
+            raise ValueError("Recovery folder must stay inside the Clearings home")
+        return path
+
+    @staticmethod
+    def recovery_archives(packet):
+        for entry in packet.get("resolvedProposalArchives", []):
+            name, digest = entry.get("file", ""), entry.get("sha256", "")
+            if (not re.fullmatch(r"[a-f0-9]{64}", digest)
+                    or name != f"archives/clearings-resolved-{digest}.json"):
+                raise ValueError("Invalid recovery archive reference")
+            yield name, digest
+
+    @staticmethod
+    def copy_recovery_archive(source, target, digest):
+        raw = read_bounded_bytes(source, MAX_HANDOFF_BYTES)
+        if len(raw) > MAX_HANDOFF_BYTES or hashlib.sha256(raw).hexdigest() != digest:
+            raise ValueError("Recovery archive failed its size or checksum check")
+        if target.exists():
+            if hashlib.sha256(read_bounded_bytes(target, MAX_HANDOFF_BYTES)).hexdigest() != digest:
+                raise ValueError("Existing recovery archive has different contents")
+            return
+        target.parent.mkdir(parents=True, exist_ok=True)
+        fd, name = tempfile.mkstemp(prefix=".clearings-recovery-", dir=target.parent)
+        temporary = Path(name)
+        try:
+            with os.fdopen(fd, "wb") as output:
+                output.write(raw)
+                output.flush()
+                os.fsync(output.fileno())
+            os.replace(temporary, target)
+        finally:
+            temporary.unlink(missing_ok=True)
+
+    def _backup_locked(self):
+        packet = self.read()
+        if packet["snapshot"] is None:
+            return {"saved": False, "reason": "No saved workspace yet"}
+        directory = self.recovery_directory()
+        directory.mkdir(exist_ok=True)
+        if (directory / "archives").resolve().parent != directory.resolve():
+            raise ValueError("Recovery archives must stay inside the recovery folder")
+        if (self.home() / "archives").resolve().parent != self.home().resolve():
+            raise ValueError("Archives must stay inside the saved home")
+        for name, digest in self.recovery_archives(packet):
+            source = self.home() / name
+            if source.resolve().parent != (self.home() / "archives").resolve():
+                raise ValueError("Archive path is outside the saved home")
+            self.copy_recovery_archive(source, directory / name, digest)
+        bundle = {"format": "clearings-recovery", "version": 1, "appVersion": VERSION,
+                  "savedAt": now(), "handoff": packet}
+        current = directory / "latest.json"
+        if current.exists():
+            # Never rotate a damaged latest copy over the previous good copy.
+            try:
+                prior = self._read_recovery_bundle(current)
+            except (ValueError, OSError, TypeError, KeyError):
+                prior = None
+            if prior is not None:
+                atomic_json(directory / "previous.json", prior,
+                            max_bytes=MAX_HANDOFF_BYTES + MAX_BYTES, compact=True)
+        atomic_json(current, bundle, max_bytes=MAX_HANDOFF_BYTES + MAX_BYTES, compact=True)
+        return {"saved": True, "savedAt": bundle["savedAt"], "appVersion": VERSION}
+
+    def backup_workspace(self):
+        with file_lock(self.lock_path):
+            return self._backup_locked()
+
+    def _read_recovery_bundle(self, path):
+        bundle = load_json(path, max_bytes=MAX_HANDOFF_BYTES + MAX_BYTES)
+        if not isinstance(bundle, dict) or bundle.get("format") != "clearings-recovery" or bundle.get("version") != 1:
+            raise ValueError("Unrecognized Clearings recovery backup")
+        packet = bundle.get("handoff")
+        if (not isinstance(packet, dict) or packet.get("format") != "clearings-local-handoff"
+                or packet.get("schemaVersion") != 1 or not isinstance(packet.get("snapshot"), dict)
+                or packet.get("libraryId") != packet["snapshot"].get("index", {}).get("libraryId")
+                or type(packet.get("generation")) is not int or packet["generation"] < 1
+                or not isinstance(packet.get("proposals"), list) or not isinstance(packet.get("receipts"), list)):
+            raise ValueError("Invalid saved handoff in recovery backup")
+        for document in packet["snapshot"].get("documents", []):
+            validate_document(document)
+        for name, digest in self.recovery_archives(packet):
+            source = self.recovery_directory() / name
+            if (self.recovery_directory() / "archives").resolve().parent != self.recovery_directory().resolve():
+                raise ValueError("Recovery archives must stay inside the recovery folder")
+            if source.resolve().parent != (self.recovery_directory() / "archives").resolve():
+                raise ValueError("Invalid recovery archive path")
+            if not source.is_file() or hashlib.sha256(read_bounded_bytes(source, MAX_HANDOFF_BYTES)).hexdigest() != digest:
+                raise ValueError("Recovery backup has a missing or damaged archive")
+        return bundle
+
+    def restore_missing_handoff(self):
+        """Startup recovery only fills an absent handoff; existing files always win."""
+        with file_lock(self.lock_path):
+            if self.handoff_path().exists():
+                return False
+            directory = self.recovery_directory()
+            bundle = None
+            for name in ("latest.json", "previous.json"):
+                path = directory / name
+                if not path.exists():
+                    continue
+                try:
+                    bundle = self._read_recovery_bundle(path)
+                    break
+                except (ValueError, OSError, TypeError, KeyError):
+                    continue
+            if bundle is None:
+                return False
+            packet = bundle["handoff"]
+            if (self.home() / "archives").resolve().parent != self.home().resolve():
+                raise ValueError("Archives must stay inside the saved home")
+            for name, digest in self.recovery_archives(packet):
+                target = self.home() / name
+                if target.resolve().parent != (self.home() / "archives").resolve():
+                    raise ValueError("Archive destination is outside the saved home")
+                self.copy_recovery_archive(directory / name, target, digest)
+            atomic_json(self.handoff_path(), packet, max_bytes=MAX_HANDOFF_BYTES, compact=True)
+            return True
+
+    def recovery_record(self):
+        packet = self.read()
+        draft = packet.get("browserDraft", {})
+        if packet["snapshot"] is None or draft.get("generation") != packet["generation"]:
+            return {"record": None}
+        return {"record": {"format": "clearings-browser-record", "version": 1,
+                           "generation": packet["generation"], "savedAt": draft["savedAt"],
+                           "workspace": packet["snapshot"], "draft": draft.get("draft")},
+                "appVersion": draft.get("appVersion")}
+
+    def propose(self, base: dict, incoming: dict, actor: str, note: str = "", request_id: str | None = None,
+                expected_library_id: str | None = None):
         if not isinstance(base, dict) or not isinstance(incoming, dict) or not isinstance(actor, str):
             raise ValueError("A proposed change needs its base, new document, and display name")
         actor = actor.strip()[:80]
@@ -925,21 +1160,134 @@ class Bridge:
         validate_document(incoming)
 
         def edit(packet):
-            snapshot, _, conflicts = self.effective_workspace(packet)
-            if snapshot is None or not any(d.get("documentId") == doc_id for d in snapshot["documents"]):
-                raise ValueError("This checklist is not in the latest shared workspace")
-            if any(c["documentId"] == doc_id for c in conflicts):
-                raise ValueError("This checklist needs committed conflict review before editing")
-            if len([p for p in packet["proposals"] if p["status"] == "pending"]) >= 100:
-                raise ValueError("Too many pending proposals")
-            proposal = {"id": uuid.uuid4().hex, "documentId": doc_id,
-                        "actor": actor, "note": str(note)[:500], "createdAt": now(),
-                        "base": base, "incoming": incoming, "status": "pending",
-                        "suggestedChoices": {}, "requiresCommit": True}
-            packet["proposals"].append(proposal)
-            packet["proposals"] = retain_proposals(packet["proposals"])
-            return {"proposalId": proposal["id"], "documentId": doc_id}
+            if expected_library_id is not None and packet["libraryId"] != expected_library_id:
+                raise ValueError("STALE_ITEM: The prepared context belongs to a different library")
+            retry_payload = ["edit", base, incoming, str(note)[:500]]
+            if expected_library_id is not None:
+                retry_payload.append(expected_library_id)
+            retry_key, retry_digest, prior = self.retry_request(packet, request_id, actor,
+                                                               retry_payload)
+            if prior is not None:
+                return {"proposalId": prior["proposalId"], "documentId": doc_id, "alreadyProposed": True}
+            return self._stage_existing(packet, base, incoming, actor, note, retry_key, retry_digest)
         return self.change(edit)
+
+    def _stage_existing(self, packet, base, incoming, actor, note, retry_key, retry_digest):
+        """Shared staging checks; caller holds the packet transaction."""
+        doc_id = base["documentId"]
+        snapshot, _, conflicts = self.effective_workspace(packet)
+        if snapshot is None or not any(d.get("documentId") == doc_id for d in snapshot["documents"]):
+            raise ValueError("This checklist is not in the latest shared workspace")
+        if any(c["documentId"] == doc_id for c in conflicts):
+            raise ValueError("This checklist needs committed conflict review before editing")
+        if len([p for p in packet["proposals"] if p["status"] == "pending"]) >= 100:
+            raise ValueError("Too many pending proposals")
+        proposal = {"id": uuid.uuid4().hex, "documentId": doc_id,
+                    "actor": actor, "note": str(note)[:500], "createdAt": now(),
+                    "base": base, "incoming": incoming, "status": "pending",
+                    "suggestedChoices": {}, "requiresCommit": True}
+        packet["proposals"].append(proposal)
+        if retry_key:
+            packet.setdefault("retryRequests", {})[retry_key] = {
+                "digest": retry_digest, "proposalId": proposal["id"]}
+        packet["proposals"] = retain_proposals(packet["proposals"])
+        return {"proposalId": proposal["id"], "documentId": doc_id}
+
+    @staticmethod
+    def item_revision(document, item_id, library_id):
+        """Opaque optimistic revision, including completion and ancestor scope."""
+        items = {item["id"]: item for item in document["model"]["items"]}
+        if item_id not in items:
+            raise ValueError("ITEM_NOT_FOUND: Read the checklist to locate the current item")
+        parents = {key: [] for key in items}
+        for item in items.values():
+            for child in item["requires"]:
+                parents[child].append(item["id"])
+        ancestors, queue = set(), list(parents[item_id])
+        while queue:
+            key = queue.pop()
+            if key not in ancestors:
+                ancestors.add(key)
+                queue.extend(parents[key])
+        payload = [library_id, document["documentId"], document["archived"],
+                   items[item_id], document["state"].get(item_id, False),
+                   document.get("attribution", {}).get(item_id, {}),
+                   [[key, document["state"].get(key, False)] for key in sorted(ancestors)]]
+        return hashlib.sha256(json.dumps(payload, sort_keys=True, ensure_ascii=False,
+                                         separators=(",", ":")).encode("utf-8")).hexdigest()
+
+    def propose_item_edits(self, checklist_id, edits, actor, note, request_id):
+        """Stage only explicit fields after checking revisions inside the write lock."""
+        if not isinstance(actor, str) or not 1 <= len(actor.strip()) <= 80:
+            raise ValueError("A proposed change needs a display name")
+        actor = actor.strip()
+        if not request_id:
+            raise ValueError("A focused edit requires a fresh request_id; reuse it only for an identical retry")
+        if not isinstance(edits, list) or not 1 <= len(edits) <= 25:
+            raise ValueError("Supply between 1 and 25 item edits")
+        allowed = {"text", "detail", "response", "review", "mcpAcknowledgement",
+                   "needsReview", "assignment", "label", "tags", "completed"}
+        seen = set()
+        for edit in edits:
+            if not isinstance(edit, dict) or set(edit) != {"item_id", "expected_revision", "changes"}:
+                raise ValueError("Each edit needs item_id, expected_revision and changes")
+            key = edit["item_id"]
+            if not isinstance(key, str) or key in seen:
+                raise ValueError("Item IDs must be distinct strings")
+            seen.add(key)
+            if not isinstance(edit["expected_revision"], str) or not re.fullmatch(r"[a-f0-9]{64}", edit["expected_revision"]):
+                raise ValueError("Use the revision from clearings_read_item")
+            changes = edit["changes"]
+            if not isinstance(changes, dict) or not changes or set(changes) - allowed:
+                raise ValueError("Focused edits accept explicit item fields, not IDs, attribution or structure")
+            if "completed" in changes and type(changes["completed"]) is not bool:
+                raise ValueError("completed must be true or false")
+        if len(json.dumps(edits, ensure_ascii=False).encode("utf-8")) > 262144:
+            raise ValueError("Focused edit exceeds 256 KiB; split it into smaller changes")
+
+        def edit_packet(packet):
+            retry_key, retry_digest, prior = self.retry_request(
+                packet, request_id, actor, ["items", checklist_id, edits, str(note)[:500]])
+            if prior is not None:
+                return {"proposalId": prior["proposalId"], "documentId": checklist_id, "alreadyProposed": True}
+            workspace, _, _ = self.effective_workspace(packet)
+            base = next((d for d in (workspace or {}).get("documents", [])
+                         if d["documentId"] == checklist_id), None)
+            if base is None:
+                raise ValueError("CHECKLIST_NOT_FOUND: Read the current checklist list")
+            incoming = copy.deepcopy(base)
+            items = {item["id"]: item for item in incoming["model"]["items"]}
+            for edit in edits:
+                key = edit["item_id"]
+                if self.item_revision(base, key, packet["libraryId"]) != edit["expected_revision"]:
+                    raise ValueError("STALE_ITEM: Re-read the item and reconcile before making a fresh request")
+                for field, value in edit["changes"].items():
+                    if field == "completed":
+                        incoming["state"][key] = value
+                    else:
+                        items[key][field] = copy.deepcopy(value)
+            validate_document(incoming)
+            result = merge_documents(base, base, incoming)
+            if result["conflicts"]:
+                raise ValueError("ITEM_CONFLICT: " + ", ".join(result["conflicts"]))
+            if not result["applied"]:
+                raise ValueError("NO_CHANGE: The requested fields already have those values")
+            return self._stage_existing(packet, base, incoming, actor, note, retry_key, retry_digest)
+        return self.change(edit_packet)
+
+    @staticmethod
+    def retry_request(packet, request_id, actor, payload):
+        if request_id is None:
+            return None, None, None
+        if not isinstance(request_id, str) or not re.fullmatch(r"[A-Za-z0-9._:-]{1,128}", request_id):
+            raise ValueError("Request ID must be 1-128 letters, digits, dots, colons, underscores or hyphens")
+        key = hashlib.sha256(json.dumps([actor, request_id], ensure_ascii=False).encode("utf-8")).hexdigest()
+        digest = hashlib.sha256(json.dumps(payload, sort_keys=True, ensure_ascii=False,
+                                           separators=(",", ":")).encode("utf-8")).hexdigest()
+        prior = packet.get("retryRequests", {}).get(key)
+        if prior is not None and prior["digest"] != digest:
+            raise ValueError("This request ID was already used for different content; nothing was changed")
+        return key, digest, prior
 
     def commit_completions(self, proposal_id: str, actor: str):
         """Completion-only convenience uses the same atomic commit validation."""
@@ -960,13 +1308,19 @@ class Bridge:
             position = next((i for i, p in enumerate(packet["proposals"])
                              if p["id"] == proposal_id), None)
             proposal = packet["proposals"][position] if position is not None else None
-            if proposal is None or proposal["status"] != "pending":
+            if proposal is None:
+                prior = next((value for value in packet.get("retryRequests", {}).values()
+                              if value["proposalId"] == proposal_id and value.get("commit")), None)
+                if prior and prior["commit"]["author"] == author:
+                    return {"proposalId": proposal_id, "commit": prior["commit"], "alreadyCommitted": True}
                 raise ValueError("Pending proposal not found")
             if proposal.get("commit"):
                 if proposal["commit"]["author"] != author:
                     raise ValueError("This commit already has another author")
                 return {"proposalId": proposal_id, "commit": proposal["commit"],
                         "alreadyCommitted": True}
+            if proposal["status"] != "pending":
+                raise ValueError("Pending proposal not found")
             if proposal.get("committedAt"):
                 raise ValueError("This legacy completion was already committed")
             if packet["snapshot"] is None:
@@ -1009,11 +1363,14 @@ class Bridge:
             commit = {"id": uuid.uuid4().hex, "author": author, "at": now(),
                       "baseGeneration": packet["generation"], "changeCount": change_count}
             proposal["commit"] = commit
+            for value in packet.get("retryRequests", {}).values():
+                if value["proposalId"] == proposal_id:
+                    value["commit"] = copy.deepcopy(commit)
             return {"proposalId": proposal_id, "commit": commit,
                     "alreadyCommitted": False}
         return self.change(edit)
 
-    def propose_new(self, incoming: dict, actor: str, note: str = ""):
+    def propose_new(self, incoming: dict, actor: str, note: str = "", request_id: str | None = None):
         """Queue an unchecked new list; the browser validates its full schema."""
         if not isinstance(incoming, dict) or not isinstance(actor, str) or not actor.strip():
             raise ValueError("A new checklist needs a document and display name")
@@ -1029,6 +1386,10 @@ class Bridge:
             raise ValueError("A proposed new checklist must start with every item unchecked")
 
         def edit(packet):
+            retry_key, retry_digest, prior = self.retry_request(packet, request_id, actor.strip()[:80],
+                                                               ["create", incoming, str(note)[:500]])
+            if prior is not None:
+                return {"proposalId": prior["proposalId"], "documentId": doc_id, "alreadyProposed": True}
             snapshot = packet["snapshot"]
             if snapshot is None or packet["libraryId"] is None:
                 raise ValueError("Start and save a Clearings workspace before proposing a new list")
@@ -1044,6 +1405,9 @@ class Bridge:
                         "base": None, "incoming": incoming, "status": "pending",
                         "suggestedChoices": {}, "requiresCommit": True}
             packet["proposals"].append(proposal)
+            if retry_key:
+                packet.setdefault("retryRequests", {})[retry_key] = {
+                    "digest": retry_digest, "proposalId": proposal["id"]}
             packet["proposals"] = retain_proposals(packet["proposals"])
             return {"proposalId": proposal["id"], "documentId": doc_id,
                     "status": "pending browser validation and preview"}
@@ -1102,9 +1466,284 @@ class Bridge:
         return self.change(edit)
 
 
+class NoUpdateRedirects(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        raise ValueError("Update redirects are not accepted")
+
+
+def read_release_config(root=None):
+    """A distribution may choose one public GitHub repo, or disable release checks.
+
+    This does not configure a data home, listener, executable or arbitrary URL.
+    Missing/invalid configuration must never fall back to another project's feed.
+    """
+    path = (ROOT if root is None else root) / "clearings.json"
+    try:
+        with path.open("rb") as stream:
+            raw = stream.read(8193)
+        if len(raw) > 8192:
+            raise ValueError("file is too large")
+        config = json.loads(raw)
+        if (not isinstance(config, dict) or set(config) != {"schemaVersion", "updateRepository"}
+                or type(config["schemaVersion"]) is not int or config["schemaVersion"] != 1):
+            raise ValueError("expected schemaVersion 1 and updateRepository")
+        repository = config["updateRepository"]
+        if repository is not None:
+            if not isinstance(repository, str) or not re.fullmatch(
+                    r"[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?/[A-Za-z0-9_.-]{1,100}", repository):
+                raise ValueError("updateRepository must be owner/repository or null")
+            if repository.split("/")[1] in {".", ".."}:
+                raise ValueError("invalid repository name")
+        return config
+    except (OSError, ValueError, TypeError, RecursionError) as exc:
+        raise ValueError(f"Check clearings.json: {exc}. Release checks are disabled until fixed.") from exc
+
+
+def embed_release_config(html, config):
+    """Use the same small, inert configuration in served and packaged pages."""
+    begin, end = "/* CLEARINGS_RELEASE_CONFIG_BEGIN */", "/* CLEARINGS_RELEASE_CONFIG_END */"
+    if html.count(begin) != 1 or html.count(end) != 1:
+        raise ValueError("Release configuration markers are missing or ambiguous")
+    payload = json.dumps(config, ensure_ascii=True, separators=(",", ":")).replace("<", r"\u003c")
+    return (html[:html.index(begin)] + begin + "\nconst RELEASE_CONFIG = " + payload + ";\n"
+            + html[html.index(end):])
+
+
+class AppUpdateCheck:
+    """Public release metadata only; no workspace reads, downloads or installs."""
+    URL = "https://api.github.com/repos/IoriReiMei/clearings/releases/latest"
+    PAGE = "https://github.com/IoriReiMei/clearings/releases"
+    LIMIT = 256 * 1024
+
+    def __init__(self):
+        self.lock = threading.Lock()
+        self.cached = None
+        self.checked = 0.0
+        self.repository = None
+
+    @staticmethod
+    def version(value):
+        if not isinstance(value, str) or not re.fullmatch(r"v?(0|[1-9][0-9]{0,5})\.(0|[1-9][0-9]{0,5})\.(0|[1-9][0-9]{0,5})", value):
+            raise ValueError("Unsupported release version")
+        return tuple(int(part) for part in value.removeprefix("v").split("."))
+
+    def check(self):
+        if not self.lock.acquire(blocking=False):
+            return {"currentVersion": VERSION, "channel": CHANNEL, "status": "checking"}
+        try:
+            try:
+                repository = read_release_config()["updateRepository"]
+            except ValueError:
+                return {"status": "configuration-error", "currentVersion": VERSION, "repository": None}
+            if repository is None:
+                return {"status": "disabled", "currentVersion": VERSION, "repository": None}
+            if repository != self.repository:
+                self.repository = repository
+                self.cached = None
+            self.URL = f"https://api.github.com/repos/{repository}/releases/latest"
+            self.PAGE = f"https://github.com/{repository}/releases"
+            base = {"currentVersion": VERSION, "channel": CHANNEL, "pageUrl": self.PAGE,
+                    "repository": repository}
+            if self.cached is not None and time.monotonic() - self.checked < 900:
+                return dict(self.cached)
+            result = {**base, "checkedAt": now()}
+            try:
+                request = urllib.request.Request(self.URL, headers={
+                    "Accept": "application/vnd.github+json", "User-Agent": "Clearings-update-check",
+                    "X-GitHub-Api-Version": "2026-03-10"})
+                deadline = time.monotonic() + 3.0
+                with urllib.request.build_opener(NoUpdateRedirects()).open(request, timeout=2) as response:
+                    if response.geturl() != self.URL or response.status != 200:
+                        raise ValueError("Unexpected update response")
+                    raw = bytearray()
+                    while True:
+                        if time.monotonic() > deadline:
+                            raise TimeoutError("Update check took too long")
+                        chunk = response.read1(min(16384, self.LIMIT + 1 - len(raw)))
+                        if not chunk:
+                            break
+                        raw.extend(chunk)
+                        if len(raw) > self.LIMIT:
+                            raise ValueError("Update metadata too large")
+                release = json.loads(raw)
+                if not isinstance(release, dict) or release.get("draft") is not False or release.get("prerelease") is not False:
+                    raise ValueError("Expected a published stable release")
+                latest = self.version(release.get("tag_name"))
+                current = self.version(VERSION)
+                tag = release["tag_name"]
+                result.update(status="available" if latest > current else "current",
+                              latestVersion=".".join(map(str, latest)),
+                              pageUrl=self.PAGE + "/tag/" + tag,
+                              requiresRestart=latest > current)
+            except urllib.error.HTTPError as error:
+                result["status"] = "no-release" if error.code == 404 else "unavailable"
+            except (OSError, ValueError, TypeError, AttributeError, RecursionError):
+                result["status"] = "unavailable"
+            self.checked = time.monotonic()
+            self.cached = result
+            return dict(result)
+        finally:
+            self.lock.release()
+
+
+def source_parts():
+    if getattr(sys, "frozen", False):
+        raise ValueError("Installed helper updates require a normal restart")
+    return {name: read_bounded_bytes(ROOT / "tools" / name, 2 * MAX_BYTES)
+            for name in ("clearings_local.py", "clearings_commit.py", "clearings_tray.py")}
+
+
+def source_host_key(raw):
+    """Only Bridge implementation and merge code may change without a restart.
+
+    HTTP/authentication, startup, tray, locking and the update mechanism itself
+    must remain the exact same syntax tree. New imports also require a restart.
+    """
+    tree = ast.parse(raw)
+    protected = {"__init__", "home", "handoff_path", "check_maintenance",
+                 "begin_maintenance", "end_maintenance", "prepare_shutdown"}
+    for entry in tree.body:
+        if isinstance(entry, ast.ClassDef) and entry.name == "Bridge":
+            if any(not isinstance(part, (ast.FunctionDef, ast.Expr)) for part in entry.body):
+                raise ValueError("Bridge class changes require a normal restart")
+            entry.body = [part for part in entry.body if isinstance(part, ast.FunctionDef)
+                          and part.name in protected]
+    return hashlib.sha256(ast.dump(tree, include_attributes=False).encode()).hexdigest()
+
+
+class RuntimeBridge:
+    """Stable host with a replaceable data engine; no listener or token restart."""
+    WRITES = {"sync", "propose", "propose_new", "propose_item_edits", "commit_proposal", "commit_completions",
+              "decide", "mark", "withdraw", "set_home", "archive_resolved"}
+
+    def __init__(self, bridge):
+        self.current = bridge
+        self.lock = threading.RLock()
+        self.busy = threading.Event()
+        self.host_key = None
+        self.tray_key = None
+        self.on_identity = None
+        if not getattr(sys, "frozen", False):
+            parts = source_parts()
+            self.host_key = source_host_key(parts["clearings_local.py"])
+            self.tray_key = hashlib.sha256(parts["clearings_tray.py"]).hexdigest()
+
+    @staticmethod
+    def part_hash(parts):
+        return hashlib.sha256(b"".join(parts.values())).hexdigest()
+
+    def source_status(self):
+        if self.host_key is None:
+            return {"status": "installed", "requiresRestart": True}
+        try:
+            parts = source_parts()
+            if (self.part_hash(parts) == self.current.runtime_hash
+                    and hashlib.sha256(APP.read_bytes()).hexdigest() == APP_SHA256):
+                return {"status": "current", "requiresRestart": False}
+            eligible = (source_host_key(parts["clearings_local.py"]) == self.host_key
+                        and hashlib.sha256(parts["clearings_tray.py"]).hexdigest() == self.tray_key)
+            return {"status": "ready" if eligible else "restart-required", "requiresRestart": not eligible}
+        except (ValueError, SyntaxError, OSError):
+            return {"status": "invalid", "requiresRestart": True}
+
+    def load_candidate(self, parts):
+        if (source_host_key(parts["clearings_local.py"]) != self.host_key
+                or hashlib.sha256(parts["clearings_tray.py"]).hexdigest() != self.tray_key):
+            raise ValueError("This update changes the helper host; save and restart normally")
+        namespace = dict(globals())
+        commit = {"__name__": "clearings_hot_commit", "__file__": str(ROOT / "tools/clearings_commit.py")}
+        exec(compile(parts["clearings_commit.py"], commit["__file__"], "exec"), commit)
+        for name in ("merge_documents", "validate_document", "stamp_attribution"):
+            namespace[name] = commit[name]
+        namespace["HELPER_SHA256"] = self.part_hash(parts)
+        parsed = ast.parse(parts["clearings_local.py"])
+        bridge_class = next(part for part in parsed.body if isinstance(part, ast.ClassDef) and part.name == "Bridge")
+        exec(compile(ast.Module(body=[bridge_class], type_ignores=[]), str(ROOT / "tools/clearings_local.py"), "exec"), namespace)
+        candidate = namespace["Bridge"](self.current.root)
+        if candidate.home() != self.current.home():
+            raise ValueError("A source update cannot change the saved-data home")
+        packet = candidate.read()
+        if packet["snapshot"]:
+            for document in packet["snapshot"]["documents"]:
+                commit["validate_document"](document)
+            for proposal in packet["proposals"]:
+                if proposal.get("status") == "pending":
+                    for name in ("base", "incoming"):
+                        if proposal.get(name) is not None:
+                            commit["validate_document"](proposal[name])
+            candidate.effective_workspace(packet)
+        return candidate
+
+    def follow_approved_source(self):
+        approved = load_json(self.current.root / "approved-source.json", {})
+        if approved.get("helperSha256", self.current.runtime_hash) == self.current.runtime_hash:
+            return
+        parts = source_parts()
+        if approved["helperSha256"] != self.part_hash(parts):
+            raise HelperUpdating()
+        try:
+            self.current = self.load_candidate(parts)
+        except (ValueError, OSError, SyntaxError) as exc:
+            raise ValueError("Reconnect this MCP client to load the updated helper host") from exc
+
+    def __getattr__(self, name):
+        value = getattr(self.current, name)
+        if not callable(value):
+            return value
+        def call(*args, **kwargs):
+            if name in self.WRITES and self.busy.is_set():
+                raise HelperUpdating()
+            with self.lock:
+                self.follow_approved_source()
+                if name in self.WRITES and self.busy.is_set():
+                    raise HelperUpdating()
+                return getattr(self.current, name)(*args, **kwargs)
+        return call
+
+    def apply_source_update(self):
+        if self.on_identity is None:
+            raise ValueError("Apply source updates from the human page")
+        if self.busy.is_set():
+            raise HelperUpdating()
+        self.busy.set()
+        try:
+            with self.lock:
+                if self.source_status()["status"] != "ready":
+                    raise ValueError("There is no compatible source update ready; restart if the host changed")
+                old = self.current
+                old.begin_maintenance()
+                old_identity = program_identity(old)
+                identity_changed = False
+                try:
+                    old.backup_workspace()
+                    parts = source_parts()
+                    candidate = self.load_candidate(parts)
+                    if parts != source_parts():
+                        raise ValueError("Source files changed during validation; retry after editing finishes")
+                    identity = {**old_identity, "helperSha256": candidate.runtime_hash,
+                                "appSha256": hashlib.sha256(APP.read_bytes()).hexdigest()}
+                    self.on_identity(identity)
+                    identity_changed = True
+                    atomic_json(old.root / "approved-source.json", {"helperSha256": candidate.runtime_hash, "appliedAt": now()})
+                    self.current = candidate
+                    globals()["HELPER_SHA256"] = candidate.runtime_hash
+                    globals()["APP_SHA256"] = identity["appSha256"]
+                    return {"applied": True, "requiresRestart": False}
+                except BaseException:
+                    if identity_changed:
+                        self.on_identity(old_identity)
+                    raise
+                finally:
+                    old.end_maintenance()
+        finally:
+            self.busy.clear()
+
+
 def handler_for(bridge: Bridge, token: str, port: int, launches=None):
     launches = launches or LaunchState()
-    identity = program_identity(bridge)
+    def identity():
+        return program_identity(bridge)
+    app_updates = AppUpdateCheck()
     class Handler(BaseHTTPRequestHandler):
         def setup(self):
             super().setup()
@@ -1169,6 +1808,11 @@ def handler_for(bridge: Bridge, token: str, port: int, launches=None):
                 # may speak to its own loopback origin for the handoff API.
                 html = html.replace("connect-src 'none'", "connect-src 'self'")
                 html = html.replace(marker, "")
+                try:
+                    release_config = read_release_config()
+                except ValueError:
+                    release_config = {"schemaVersion": 1, "updateRepository": None, "error": True}
+                html = embed_release_config(html, release_config)
                 self.send(200, html.encode("utf-8"), "text/html; charset=utf-8")
                 return
             if path == "/favicon.ico":
@@ -1181,7 +1825,7 @@ def handler_for(bridge: Bridge, token: str, port: int, launches=None):
                     self.send(400, {"error": "Invalid challenge"})
                     return
                 self.send(200, {"proof": control_mac(token, "identity", challenges[0],
-                                                       identity, port or self.server.server_port)})
+                                                       identity(), port or self.server.server_port)})
                 return
             if not self.authorized():
                 self.send(403, {"error": "Local bridge token required"})
@@ -1194,8 +1838,15 @@ def handler_for(bridge: Bridge, token: str, port: int, launches=None):
                                     "pending": sum(p["status"] == "pending" for p in packet["proposals"])})
                 elif path == "/api/identity":
                     self.send(200, program_identity(bridge))
+                elif path == "/api/app-updates":
+                    self.send(200, app_updates.check())
+                elif path == "/api/source-update":
+                    self.send(200, bridge.source_status() if isinstance(bridge, RuntimeBridge)
+                              else {"status": "restart-required", "requiresRestart": True})
                 elif path == "/api/handoff":
                     self.send(200, bridge.browser_handoff())
+                elif path == "/api/recovery":
+                    self.send(200, bridge.recovery_record())
                 else:
                     self.send(404, {"error": "Not found"})
             except (ValueError, OSError, KeyError) as exc:
@@ -1235,16 +1886,18 @@ def handler_for(bridge: Bridge, token: str, port: int, launches=None):
                             or not re.fullmatch(r"[A-Za-z0-9_-]{32,80}", challenge)
                             or type(stamp) is not int
                             or not isinstance(proof, str) or not hmac.compare_digest(proof,
-                                control_mac(token, "request-" + op, challenge, identity,
+                                control_mac(token, "request-" + op, challenge, identity(),
                                             port or self.server.server_port, str(stamp)))
                             or not launches.claim(challenge, stamp)):
                         self.send(403, {"error": "Invalid Clearings control"})
                         return
                     nonce = launches.issue() if op == "launch" else ""
                     answer = {"proof": control_mac(token, "response-" + op, challenge,
-                                                    identity, port or self.server.server_port, nonce)}
+                                                    identity(), port or self.server.server_port, nonce)}
                     if op == "launch":
                         answer["nonce"] = nonce
+                    else:
+                        bridge.prepare_shutdown()
                     self.send(200, answer)
                     if op == "shutdown":
                         self.wfile.flush()
@@ -1252,12 +1905,16 @@ def handler_for(bridge: Bridge, token: str, port: int, launches=None):
                     return
                 if path == "/api/settings":
                     answer = {"home": bridge.set_home(data["home"])}
+                elif path == "/api/apply-source-update":
+                    if not isinstance(bridge, RuntimeBridge):
+                        raise ValueError("Restart the helper once to enable source updates")
+                    answer = bridge.apply_source_update()
                 elif path == "/api/sync":
-                    answer = bridge.sync(data["workspace"], data["generation"], data.get("expectedGeneration"))
+                    answer = bridge.sync(data["workspace"], data["generation"], data.get("expectedGeneration"), data.get("browserRecord"))
                 elif path == "/api/propose":
-                    answer = bridge.propose(data["base"], data["incoming"], data["actor"], data.get("note", ""))
+                    answer = bridge.propose(data["base"], data["incoming"], data["actor"], data.get("note", ""), data.get("requestId"))
                 elif path == "/api/propose-new":
-                    answer = bridge.propose_new(data["incoming"], data["actor"], data.get("note", ""))
+                    answer = bridge.propose_new(data["incoming"], data["actor"], data.get("note", ""), data.get("requestId"))
                 elif path == "/api/commit":
                     answer = bridge.commit_proposal(data["proposalId"], data["author"])
                 elif path == "/api/decide":
@@ -1267,7 +1924,8 @@ def handler_for(bridge: Bridge, token: str, port: int, launches=None):
                 elif path == "/api/shutdown":
                     # Serve the acknowledgement before stopping the loop; this
                     # endpoint is protected by the same local session token.
-                    self.send(200, {"stopping": True})
+                    backup = bridge.prepare_shutdown()
+                    self.send(200, {"stopping": True, "backup": backup})
                     self.wfile.flush()
                     threading.Thread(target=self.server.shutdown, daemon=True).start()
                     return
@@ -1275,7 +1933,10 @@ def handler_for(bridge: Bridge, token: str, port: int, launches=None):
                     self.send(404, {"error": "Not found"})
                     return
                 self.send(200, answer)
-            except (ValueError, OSError, KeyError, TypeError, AttributeError, json.JSONDecodeError) as exc:
+            except HelperUpdating as exc:
+                self.send(503, {"error": str(exc), "code": exc.code,
+                                "retryable": True, "retryAfterMs": exc.retry_after_ms})
+            except (ValueError, OSError, KeyError, TypeError, AttributeError, SyntaxError, RuntimeError, json.JSONDecodeError) as exc:
                 self.send(409, {"error": str(exc)})
     return Handler
 
@@ -1333,6 +1994,7 @@ class LocalServer(ThreadingHTTPServer):
 
 
 def run_server(bridge: Bridge, port: int, open_browser: bool, show_tray: bool = True):
+    bridge = RuntimeBridge(bridge)
     session_path = bridge.root / "session.json"
     previous = None
     previous_bytes = None
@@ -1368,7 +2030,24 @@ def run_server(bridge: Bridge, port: int, open_browser: bool, show_tray: bool = 
         nonce = launches.issue()
         webbrowser.open(f"http://127.0.0.1:{port}/?launch-view={secrets.token_urlsafe(8)}#clearings-launch={nonce}")
     serving = False
+    approved_path = bridge.root / "approved-source.json"
+    prior_approval = load_json(approved_path)
+    approval_written = False
+    def stop_with_backup():
+        try:
+            bridge.prepare_shutdown()
+            server.shutdown()
+        except (ValueError, OSError) as exc:
+            if sys.stderr is not None:
+                print(f"Clearings stays open: {exc}", file=sys.stderr)
+            return False
     try:
+        # The exclusive bind proves the former listener on this origin is gone.
+        # Release its crash-left pause before admitting this replacement host.
+        if previous is None or previous.get("port") == port:
+            with file_lock(bridge.current.lock_path):
+                bridge.current.maintenance_path.unlink(missing_ok=True)
+        bridge.current.restore_missing_handoff()
         # The listener remains exclusively bound throughout replacement.
         # Never let an old session be overwritten on a mere connect timeout.
         if previous_bytes is not None:
@@ -1378,11 +2057,20 @@ def run_server(bridge: Bridge, port: int, open_browser: bool, show_tray: bool = 
         write_private_session(session_path, {"port": port, "token": token,
                               "identity": program_identity(bridge), "pid": os.getpid(),
                               "startedAt": now()})
+        def update_identity(identity):
+            session = load_private_session(session_path)
+            if not session or not hmac.compare_digest(session["token"], token):
+                raise ValueError("Helper session changed; source update was refused")
+            write_private_session(session_path, {**session, "identity": identity})
+        bridge.on_identity = update_identity
+        atomic_json(approved_path, {"helperSha256": bridge.current.runtime_hash, "appliedAt": now()})
+        approval_written = True
         if WINDOWS_TRAY and show_tray:
             tray = WindowsTray(title=f"Clearings {VERSION}" + (" · working" if CHANNEL == "working" else ""),
                                address=f"127.0.0.1:{port}", identity=str(bridge.root),
                                open_app=open_new_window,
-                               stop_helper=server.shutdown).start()
+                               stop_helper=stop_with_backup,
+                               startup=windows_startup(bridge.root, port)).start()
         if open_browser:
             open_new_window()
         if sys.stdout is not None:
@@ -1391,6 +2079,11 @@ def run_server(bridge: Bridge, port: int, open_browser: bool, show_tray: bool = 
         server.serve_forever()
     except BaseException:
         if not serving:
+            if approval_written:
+                if prior_approval is None:
+                    approved_path.unlink(missing_ok=True)
+                else:
+                    atomic_json(approved_path, prior_approval)
             # Only our own newly written token may be replaced. Restore the
             # former exact bytes when present; its private backup also stays.
             try:
@@ -1407,6 +2100,12 @@ def run_server(bridge: Bridge, port: int, open_browser: bool, show_tray: bool = 
         server.server_close()
         if tray is not None:
             tray.close()
+        if serving:
+            try:
+                if bridge.maintenance_id is None:
+                    bridge.backup_workspace()
+            finally:
+                bridge.end_maintenance()
 
 
 def main():
@@ -1424,6 +2123,9 @@ def main():
     serve.add_argument("--port", type=int, default=PORT)
     serve.add_argument("--no-browser", action="store_true")
     serve.add_argument("--no-tray", action="store_true", help="Run without Windows tray UI for detached tests or headless use")
+    startup = sub.add_parser("startup", help="Inspect or change this copy's Windows sign-in registration; do not start the helper")
+    startup.add_argument("action", choices=("status", "enable", "disable", "remove-owned"))
+    startup.add_argument("--port", type=int, default=PORT)
     stop = sub.add_parser("stop", help="Stop this installation's local helper without changing workspace data")
     stop.add_argument("--installation", help="Exact installed executable path when called by an installer")
     sub.add_parser("status", help="Show handoff state without checklist contents")
@@ -1458,6 +2160,17 @@ def main():
     withdraw.add_argument("--author", required=True)
     withdraw.add_argument("--reason", required=True)
     args = parser.parse_args()
+    if args.command == "startup":
+        registration = windows_startup(config_dir(args.config_dir), args.port)
+        if args.action == "status":
+            result = registration.status()
+        elif args.action == "remove-owned":
+            result = registration.remove_if_owned()
+        else:
+            result = registration.set_enabled(args.action == "enable")
+        if sys.stdout is not None:
+            print(json.dumps(result, indent=2))
+        return
     if args.command == "stop" and not config_dir(args.config_dir).exists():
         return
     bridge = Bridge(config_dir(args.config_dir))

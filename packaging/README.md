@@ -35,9 +35,9 @@ stop for review. See [toolchain versions](../docs/TOOLCHAIN.md).
 
 | System | Review artifact | What installing does |
 | --- | --- | --- |
-| Windows x64 | `Clearings-Setup-0.4.6-Windows-x64.exe` | Installs under the current user's local Programs folder. Desktop and Start Menu shortcuts are separate installer choices, both unchecked by default. No administrator rights or separate Python install is intended. |
+| Windows x64 | `Clearings-Setup-0.4.7-Windows-x64.exe` | Installs under the current user's local Programs folder. Desktop and Start Menu shortcuts are separate installer choices, both unchecked by default. No administrator rights or separate Python install is intended. |
 | macOS Apple silicon / Intel | Architecture-specific `.dmg` | Open the image and drag `Clearings.app` into Applications. This is a review image with ad-hoc signing only, not Developer ID signed or notarized. |
-| Linux x64 | `Clearings-Install-0.4.6-Linux-x64.run` | Installs under the current user's local data folder and creates an application-menu entry and, where possible, a Desktop shortcut. Some desktops require “Allow launching” for downloaded files or shortcuts. `sh Clearings-Install-0.4.6-Linux-x64.run` is the fallback. |
+| Linux x64 | `Clearings-Install-0.4.7-Linux-x64.run` | Installs under the current user's local data folder and creates an application-menu entry and, where possible, a Desktop shortcut. Some desktops require “Allow launching” for downloaded files or shortcuts. `sh Clearings-Install-0.4.7-Linux-x64.run` is the fallback. |
 
 The installed helper opens Clearings in the user's ordinary browser at
 `http://127.0.0.1:18765/`. That address must remain the same across updates
@@ -83,12 +83,17 @@ Build from the allowlisted source directory, never the personal working folder:
 missing, extra or changed release files; the native builder checks listed bytes. The CI workflow is manual and uploads
 artifacts; release publication is a separate operation.
 
-## 0.4.6 upgrade checks
+## 0.4.7 upgrade checks
 
-Windows tray support uses standard Windows APIs through ctypes, with no new runtime dependency. The source native tray fixture can be opted into with `CLEARINGS_NATIVE_TRAY_TEST=1`; ordinary headless checks pass `--no-tray`. Windows CI downloads the exact checksummed 0.4.5 installer and tests an actual 0.4.5-to-0.4.6 upgrade, same-version reinstall and uninstall while preserving fixture handoff bytes. The installer still copies the complete bundle; it is not a delta updater or version/downgrade manager. This release removes no previous bundle paths.
+These recipes run in the manual four-platform build workflow. The published
+release notes link the run used for its actual downloads; a recipe alone is not
+evidence that a particular build passed.
 
-The icon integration below applies to this source and future reviewed builds.
-Existing public 0.4.6 installer downloads remain unchanged by this source update.
+The upgrade fixture uses the fixed checksummed upstream 0.4.6 Windows installer,
+so a new fork does not need to have published its own previous version. If a
+maintainer changes that baseline, review its source and checksum together.
+
+Windows tray support uses standard Windows APIs through ctypes, with no new runtime dependency. The source native tray fixture can be opted into with `CLEARINGS_NATIVE_TRAY_TEST=1`; ordinary headless checks pass `--no-tray`. Windows CI downloads the exact checksummed 0.4.6 installer and tests an actual 0.4.6-to-0.4.7 upgrade, same-version reinstall and uninstall while preserving fixture handoff bytes. The installer still copies the complete bundle; it is not a delta updater or version/downgrade manager. This release removes no previous bundle paths.
 
 The Windows icon now comes from the owner's exact `assets/Clearings.png` (SHA-256
 `721d33078041e4a1852525dd0c336fbe6f7d2d0c50968fc27072e24d12d68824`).

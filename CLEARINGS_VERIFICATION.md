@@ -1,75 +1,71 @@
-<!--
-SPDX-License-Identifier: MIT
-MIT License
+<!-- SPDX-License-Identifier: MIT -->
+<!-- Copyright (c) 2026 The Hermit. See ../LICENSE. -->
+# Clearings 0.4.7 verification
 
-Copyright (c) 2026 The Hermit
+The owner approved publication of Clearings 0.4.7 on October 22, 2026 after
+trying the working interface. Local checks are recorded below. The
+[0.4.7 release notes](https://github.com/IoriReiMei/clearings/releases/tag/v0.4.7)
+record the exact build commit, native workflow results and downloadable checksums.
+This file does not carry forward 0.4.6 installer results as evidence for 0.4.7.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+The release adds focused revision-checked MCP edits, paged actor briefings,
+readiness diagnostics, readable proposal previews/receipts and explicit context
+handoffs. Context remains ordinary checklist data; no new saved document schema
+or model memory system was introduced. Source contains the quiet editors,
+review/assignment workflow, recovery improvements, source setup and animation
+changes prepared since the published 0.4.6 release.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+The Windows helper also supports explicit per-user sign-in startup and opening
+the page by double-clicking its tray icon. Startup begins disabled, launches
+quietly, preserves other startup entries, and is removable from the tray menu.
+The source CLI provides status/enable/disable operations without starting a
+helper. The uninstaller recipe removes only its exact owned startup command.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
--->
-# Clearings 0.4.6 verification boundary
+## Local checks
 
-Clearings 0.4.6 brings the current working app into the MIT release: protected
-local-helper sessions, bind-first startup, explicit resolved-history archiving,
-larger aggregate handoffs, bounded group navigation, nested change indicators
-and the supplied Clearings mark. Existing document, workspace and proposal
-identifiers remain compatible. The release page records the exact source commit,
-build results and download checksums.
+Verified on Windows with a staged source copy and disposable fictional workspaces:
 
-## Local helper and saved work
+- Python regression suite: all 174 cases passed, including 25 tray/startup cases,
+  17 agent workflow cases and eight actual MCP SDK stdio cases. Two native Windows
+  tray cases used temporary icons to check registration/restoration/cleanup and
+  double-click message handling. Startup registration tests use a fake registry.
+  Earlier version-specific fixtures were corrected for 0.4.7.
+- 54 JavaScript contract checks, 11 merge checks and the coordination/parity
+  scenario across four saved transitions passed.
+- 25 release checks passed, including allowlisted packaging, exact byte manifests,
+  existing-output refusal, import-shadow rejection and standalone repackaging.
+- Chromium context integration passed at 1440px and 390px: an agent-created
+  context child imports into the page, starts folded, preserves the source task,
+  safely renders supplied markup as text and exports the updated AI instructions.
+  This uses simulated in-memory storage and blocked requests, not a real profile.
 
-The public loopback page contains no reusable session credential. A launch uses
-a short-lived, one-use ticket, and helper control checks the responding process
-before sending an authenticated command. Windows protects session metadata with
-the current account's DPAPI context; POSIX requires owner-private metadata.
-Startup retains an exclusive listener before replacing stale session metadata
-and preserves a protected recovery copy. Unit and browser checks use disposable
-settings, fictional work and separate ports.
+The owner workspace and running helpers were excluded. MCP and loopback tests
+used isolated test subprocesses. This does not establish native installer,
+cross-platform, real-home adoption, large-workspace latency or owner acceptance.
+The final source ZIP has an exact per-file manifest; its adjacent checksum and
+release record identify the published bytes.
 
-Aggregate handoffs allow up to 64 MiB, while ordinary imported/proposed JSON and
-HTTP request bodies retain their 16 MiB limits. Explicit resolved-history
-archiving preserves an exact preimage and retains pending work. This does not
-increase browser workspace capacity or remove other resource limits.
+## Native qualification and remaining limits
 
-## App and installer checks
+The release workflow builds Windows x64, macOS Apple silicon/Intel and Linux
+x64 from one exact allowlisted source commit. Windows qualification includes
+upgrade from the checksummed 0.4.6 installer, reinstall, startup registration
+preservation and removal during uninstall, and unchanged fictional handoff
+bytes. Source checks exercise the optional MCP SDK separately. Consult the
+release notes for completed results; these recipes alone do not establish them.
 
-Source checks cover contracts, merge and delivery behavior, preferences, MIT
-notices, allowlisted packaging and exact-file manifests. Browser checks cover
-local handoff, save and reopen, folding, change indicators and long-group paging.
-The native build checks the source manifest and exercises the bundled helper
-against a disposable configuration on each target platform.
+Real Windows sign-in and physical tray mouse interaction, interactive Mac/Linux
+installation, Safari/Firefox, and adoption in every existing MCP client remain
+hands-on acceptance work. Temporary tray icons and posted messages do not prove
+those journeys. Reconnect clients at a safe stopping point to discover new tools.
+No owner workspace or running collaborator is part of installer qualification.
 
-Windows upgrade checks use the exact checksummed 0.4.5 installer, close its own
-running helper through the installed CLI, and check upgrade, reinstall and
-uninstall with byte-identical fictional handoff retention. Linux closes the
-existing installed helper before switching its managed version link. Close
-Clearings with Save and quit before replacing the macOS app.
+The working origin remains 127.0.0.1:8765; public source and installed origin
+remain 127.0.0.1:18765. Existing MCP clients need a safe reconnect to discover
+new tools. Earlier stable-host changes and the versioned host update require
+normal adoption at a convenient stopping point. This preparation does not
+restart a helper or client. Compatible data-engine updates remain supported.
 
-## Beta limits
-
-Windows binaries are unsigned. macOS builds use ad-hoc signing and are not
-notarized. Interactive Mac/Linux installation, Safari/Firefox persistence,
-assistive technologies and every display scale need broader hands-on coverage.
-Automated checks do not certify those journeys. Export a workspace backup before
-upgrading or changing browser origins, and verify the reopened copy before
-discarding an older backup.
-
-Clearings coordinates authorized assistants; it does not launch them. Actor
-names and receipts record declared local attribution. Automatic updates,
-downgrade prevention and arbitrary obsolete-file cleanup remain future work.
-Earlier release artifacts retain their original notices and verification scope.
+Network hosting, LAN access, remote-access configuration and cross-device sync
+are deferred. Installers are not made seamless by an MCP reconnect. Existing
+platform signing/notarization limitations remain until separately qualified.

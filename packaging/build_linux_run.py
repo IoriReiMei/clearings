@@ -30,7 +30,7 @@ import os
 import tarfile
 
 ROOT = Path(__file__).resolve().parent
-VERSION = "0.4.6"
+VERSION = "0.4.7"
 
 
 def main():

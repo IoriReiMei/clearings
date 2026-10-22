@@ -22,33 +22,72 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 -->
-# Clearings 0.4.6
-
-The current main source includes the reviewed custom Windows icon assets and optional local MCP read/write adapter. The existing 0.4.6 installer downloads have not been rebuilt for this source update; their historical verification limits and contents remain unchanged. See [MCP setup](docs/CLEARINGS_MCP.md) for the separate optional adapter.
+# Clearings 0.4.7
 
 Clearings is a local checklist and outline for people and their AI collaborators.
+This release brings quieter editing, task context for assistants, and easier setup.
 Your workspace stays on your device. There is no account, telemetry, bundled AI,
-API key, subscription or runtime download.
+API key, subscription or runtime download. Each item can also hold a Response beneath
+Details, so you can leave a thought for yourself or an AI collaborator without
+changing its completion criteria.
+
+New here with an assistant? Point it at this folder, or start with the short
+[welcome guide](AI_START_HERE.md). It explains how people and AIs can use Clearings
+together and links to setup only when you need it.
 
 ![Clearings](docs/preview.png)
 
+## New in 0.4.7
+
+Descriptions start folded. Single-click an end-item title to reveal its description;
+a parent title expands its children. Double-click a description to edit it, then
+use **Add Response** in that editor if needed. The compact **Edit Item** editor
+keeps Description prominent, with Response and Review folded. Enter saves, Shift+Enter
+adds a line, and Esc cancels/closes. Ctrl+Z / Ctrl+Y undo typing in text fields
+and recent human actions elsewhere. AI work is excluded from session Undo, and
+newer conflicting edits are preserved. Reloading clears the saved-action history.
+
+The launched source has **Settings → App updates**: automatic daily checks are
+on by default, with an off switch and **Check now**. Checks retrieve public GitHub
+release information only; they do not send checklist content or local identities.
+GitHub receives ordinary connection metadata including IP address. An unavailable
+network does not block work. Downloads and installation remain manual. The
+standalone HTML remains unable to make network requests and offers a release link.
+
+The optional MCP adapter adds focused revision-checked edits, paged briefings,
+connection status, proposal previews and deliberate context handoffs. Agents can
+keep working context beneath tasks for themselves or others. Read the
+[task context guide](AI_START_HERE.md#saving-context-under-tasks).
+Network hosting and cross-device sharing are deferred to a later version.
+
 ## Download and open
+
+For a fork or source ZIP, start with [Run Clearings from source](docs/QUICKSTART.md).
+One Python command opens the app; `--check` verifies setup without starting it.
+See [Contributing](CONTRIBUTING.md) for editing, tests and clean packaging.
+Forks choose their own GitHub release source in `clearings.json`, or disable it.
 
 Get the matching file from [Releases](https://github.com/IoriReiMei/clearings/releases).
 
 | Computer | Download | Install |
 | --- | --- | --- |
-| Windows x64 | `Clearings-Setup-0.4.6-Windows-x64.exe` | Open the installer, choose shortcuts, finish, then open Clearings. No administrator rights or separate Python installation. |
-| Mac Apple silicon | `Clearings-0.4.6-macOS-arm64.dmg` | Open the image and drag Clearings into Applications. |
-| Mac Intel | `Clearings-0.4.6-macOS-x86_64.dmg` | Open the image and drag Clearings into Applications. |
-| Linux x64 | `Clearings-Install-0.4.6-Linux-x64.run` | Run `sh Clearings-Install-0.4.6-Linux-x64.run`, then open Clearings from the app menu. |
+| Windows x64 | `Clearings-Setup-0.4.7-Windows-x64.exe` | Open the installer, choose shortcuts, finish, then open Clearings. No administrator rights or separate Python installation. |
+| Mac Apple silicon | `Clearings-0.4.7-macOS-arm64.dmg` | Open the image and drag Clearings into Applications. |
+| Mac Intel | `Clearings-0.4.7-macOS-x86_64.dmg` | Open the image and drag Clearings into Applications. |
+| Linux x64 | `Clearings-Install-0.4.7-Linux-x64.run` | Run `sh Clearings-Install-0.4.7-Linux-x64.run`, then open Clearings from the app menu. |
 
 The installed app opens your normal browser at `http://127.0.0.1:18765/`.
 Windows binaries are unsigned; macOS builds are ad-hoc signed, not notarized.
-Your operating system may require an extra launch approval. These are beta
-builds; signing and notarization remain future distribution work. Windows
+Your operating system may require an extra launch approval. Signing and
+notarization remain future distribution work. Windows
 installer upgrades are automated checks; interactive Mac/Linux installation and
 Safari still need hands-on testing. See [verification limits](CLEARINGS_VERIFICATION.md).
+
+For an update, save your work and run the new installer into the same program
+folder. Windows setup stops that installation's helper before replacing it.
+This version updates the host and tray, so allow a brief restart when ongoing
+work reaches a stopping point. The working edition and installed edition have
+separate browser workspaces; installing is not a workspace migration.
 
 The source ZIP also contains `index.html`, usable directly without installing a
 runtime. Direct-file and hosted use support JSON import/export; local assistant
@@ -56,10 +95,22 @@ handoff requires the installed helper (or Python for the source launcher).
 
 ## Windows tray icon
 
-While its helper runs, Clearings has an icon in the Windows notification area (possibly under the hidden-icons arrow). Click it for **Running locally**, **Open Clearings**, and **Stop helper…**. Save browser edits before stopping from the tray. Closing a browser tab leaves the helper and icon running; stopping the helper removes the icon. No launch-at-login task is added. Mac and Linux keep their existing launch behavior.
-Builds from the current Windows source use size variants of the page-header
-mark for the tray, app shortcuts, setup and uninstaller. Existing published
-0.4.6 installers remain as originally released.
+While its helper runs, Clearings has an icon in the Windows notification area
+(possibly under the hidden-icons arrow). **Double-click** it to open Clearings;
+**right-click** for local status, **Open Clearings**, **Start helper with Windows**,
+and **Stop helper…**. Keyboard activation also opens Clearings.
+
+Windows startup is optional and off until you enable it. It starts this copy's
+helper quietly at sign-in, without opening a browser or console. Uncheck the same
+tray option to turn it off. It applies to your Windows account; Windows Startup
+Apps can independently disable the entry. The working and installed editions keep
+their own addresses and settings. See [Windows startup details](docs/LOCAL_HANDOFF.md#windows-tray-and-sign-in-control--047).
+
+Save browser edits before stopping from the tray. Closing a browser tab leaves
+the helper and icon running; stopping the helper removes the icon. Mac and Linux
+keep their existing launch behavior.
+The Windows tray, app shortcuts, setup and uninstaller use size variants of the
+same owner-supplied mark shown in the page header.
 
 ## Work together
 
@@ -86,7 +137,11 @@ A checked item shows its completer. **Created / completed by…** shows names an
 timestamps; Shift reveals additional edit labels. Creator and completer records
 survive moves and exports. Missing older history is shown as unknown.
 
-Give your local assistant the [assistant guide](AI_CHECKLIST_GUIDE.md). It can
+Point your assistant at this source folder: [AGENTS.md](AGENTS.md) leads to a
+short [welcome guide](AI_START_HERE.md), with topics for collaboration, helping
+a human and handing work to another AI. Connected clients can ask for the same
+guidance through `clearings_get_guide`. The [assistant reference](AI_CHECKLIST_GUIDE.md)
+has the exact data and command contracts. Your assistant can
 read, propose and sign task changes; another assistant can read and continue
 those changes immediately, even on a newly created checklist. You do not have to
 relay them. **Refresh Clearings** brings signed work into your visible browser
@@ -98,7 +153,7 @@ not verified identities.
 An optional [local MCP source connector](docs/CLEARINGS_MCP.md) gives compatible
 assistants a checklist search and signed handoff through the same local Bridge.
 It needs a separately installed Python MCP SDK and explicit client setup. The
-0.4.6 installers do not bundle or enable this connector.
+native installers do not bundle the optional Python MCP SDK or enable this connector.
 
 The workspace menu contains **Settings**, **Preferences**, **Recent actions**,
 **Export workspace backup…**, and **Save and quit Clearings**. Templates provide
@@ -107,17 +162,6 @@ blank GitHub release and patch checklists; they never publish anything.
 the helper. If saving needs attention, it keeps Clearings open with an explanation.
 
 ## Keep your work
-
-**Current source patch — October 19, 2026:** completed proposal history now
-rolls into verified local archives automatically when an edit would otherwise
-exceed the active handoff limit. The active file remains bounded at 64 MiB;
-pending work is never discarded to make room. See
-[handoff history rollover](docs/HANDOFF_CAPACITY_ROLLOVER.md).
-The existing versioned 0.4.6 installer downloads have not been rebuilt with this
-source patch. Already running source helpers and MCP processes need a normal
-restart to load changed Python code; the workspace home and browser address stay
-the same.
-
 
 Local-helper sessions are protected for your account. The public loopback page
 does not expose a reusable helper credential. The helper preserves recovery
@@ -150,14 +194,3 @@ See [local handoff](docs/LOCAL_HANDOFF.md), [installer build notes](packaging/RE
 Only reviewed, allowlisted source and fictional examples enter release packages.
 The app and designated files use the MIT License; see [license](LICENSE),
 [scope](LICENSE_SCOPE.md), and [third-party notes](THIRD_PARTY_NOTES.md).
-
-## Item responses
-
-The current source adds an optional **Response** section beneath item details.
-Use **Edit response** to write your thoughts, then Apply to share the saved
-response through the local helper. Unapplied editor drafts stay private to the
-browser until applied. Responses travel with checklist and workspace backups
-and are included in assistant reads and search. Concurrent edits to the same
-response are reviewed as conflicts. Existing installer downloads predate this
-source update; they have not been rebuilt. Reload an updated source page and
-restart its helper/MCP sessions normally to use the new field.

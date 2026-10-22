@@ -74,6 +74,27 @@
             "$ref": "#/$defs/id"
           },
           "uniqueItems": true
+        },
+        "review": {
+          "type": "string",
+          "maxLength": 200000
+        },
+        "mcpAcknowledgement": {
+          "type": "string",
+          "maxLength": 200000
+        },
+        "needsReview": {
+          "type": "boolean"
+        },
+        "assignment": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/assignment"
+            }
+          ]
         }
       },
       "required": [
@@ -322,6 +343,233 @@
                     "minLength": 1,
                     "maxLength": 80
                   }
+                }
+              },
+              "text": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "actor",
+                  "role",
+                  "at"
+                ],
+                "properties": {
+                  "actor": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  "role": {
+                    "enum": [
+                      "human",
+                      "assistant"
+                    ]
+                  },
+                  "at": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "commitId": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/$defs/id"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "approvedBy": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "minLength": 1,
+                    "maxLength": 80
+                  }
+                }
+              },
+              "detail": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "actor",
+                  "role",
+                  "at"
+                ],
+                "properties": {
+                  "actor": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  "role": {
+                    "enum": [
+                      "human",
+                      "assistant"
+                    ]
+                  },
+                  "at": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "commitId": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/$defs/id"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "approvedBy": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "minLength": 1,
+                    "maxLength": 80
+                  }
+                }
+              },
+              "response": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "actor",
+                  "role",
+                  "at"
+                ],
+                "properties": {
+                  "actor": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  "role": {
+                    "enum": [
+                      "human",
+                      "assistant"
+                    ]
+                  },
+                  "at": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "commitId": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/$defs/id"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "approvedBy": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "minLength": 1,
+                    "maxLength": 80
+                  }
+                }
+              },
+              "review": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "actor",
+                  "role",
+                  "at"
+                ],
+                "properties": {
+                  "actor": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  "role": {
+                    "enum": [
+                      "human",
+                      "assistant"
+                    ]
+                  },
+                  "at": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "commitId": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/$defs/id"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "approvedBy": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "minLength": 1,
+                    "maxLength": 80
+                  }
+                }
+              },
+              "mcpAcknowledgement": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "actor",
+                  "role",
+                  "at"
+                ],
+                "properties": {
+                  "actor": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  "role": {
+                    "enum": [
+                      "human",
+                      "assistant"
+                    ]
+                  },
+                  "at": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "commitId": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/$defs/id"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "approvedBy": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "minLength": 1,
+                    "maxLength": 80
+                  }
+                }
+              },
+              "assignmentHistory": {
+                "type": "array",
+                "maxItems": 2000,
+                "items": {
+                  "$ref": "#/$defs/assignmentReceipt"
                 }
               }
             }
@@ -967,6 +1215,104 @@
         "documentId",
         "baseSha256",
         "operations"
+      ],
+      "additionalProperties": false
+    },
+    "assignment": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "assignee": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "role": {
+          "enum": [
+            "human",
+            "assistant"
+          ]
+        },
+        "status": {
+          "enum": [
+            "pending",
+            "accepted",
+            "declined",
+            "completed",
+            "cancelled"
+          ]
+        },
+        "note": {
+          "type": "string",
+          "maxLength": 20000
+        }
+      },
+      "required": [
+        "id",
+        "assignee",
+        "role",
+        "status",
+        "note"
+      ],
+      "additionalProperties": false
+    },
+    "assignmentReceipt": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "assignee": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "role": {
+          "enum": [
+            "human",
+            "assistant"
+          ]
+        },
+        "status": {
+          "enum": [
+            "pending",
+            "accepted",
+            "declined",
+            "completed",
+            "cancelled",
+            "superseded"
+          ]
+        },
+        "note": {
+          "type": "string",
+          "maxLength": 20000
+        },
+        "actor": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "actorRole": {
+          "enum": [
+            "human",
+            "assistant"
+          ]
+        },
+        "at": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "assignee",
+        "role",
+        "status",
+        "note",
+        "actor",
+        "actorRole",
+        "at"
       ],
       "additionalProperties": false
     }

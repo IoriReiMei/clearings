@@ -33,6 +33,7 @@ import sys
 import tempfile
 import time
 import urllib.request
+import winreg
 
 # Read only the disposable session created by this fixture. The source helper
 # supplies the same DPAPI decoder as the native helper; no owner config is used.
@@ -66,6 +67,18 @@ def main():
         def run(command):
             result=subprocess.run(command,env=env,timeout=120,**hidden)
             if result.returncode:raise RuntimeError(f'Installer command failed: {result.returncode}')
+        def startup(action):
+            result=subprocess.run([str(install/'ClearingsCLI.exe'),'startup',action],
+                                  env=env,check=True,capture_output=True,text=True,
+                                  timeout=30,**hidden)
+            return json.loads(result.stdout)
+        def startup_value(name):
+            try:
+                with winreg.OpenKey(winreg.HKEY_CURRENT_USER, local.WindowsStartup.RUN_KEY,
+                                    0, winreg.KEY_QUERY_VALUE) as key:
+                    return winreg.QueryValueEx(key, name)
+            except FileNotFoundError:
+                return None
         def start():
             with socket.socket() as probe:
                 probe.bind(('127.0.0.1',0));port=probe.getsockname()[1]
@@ -85,13 +98,13 @@ def main():
             identity=request('/api/identity')
             assert identity['program']==str((install/'Clearings.exe').resolve())
             return child,request
-        children=[]
+        children=[];registration=None
         try:
             first=args.previous_installer.resolve() if args.previous_installer else installer
             run([str(first),'/S',f'/D={install}'])
             assert (install/'Clearings.exe').is_file()
             first_version=subprocess.run([str(install/'ClearingsCLI.exe'),'--version'],env=env,check=True,capture_output=True,text=True,**hidden).stdout.strip()
-            assert first_version==('Clearings 0.4.5' if args.previous_installer else 'Clearings 0.4.6'),first_version
+            assert first_version==('Clearings 0.4.6' if args.previous_installer else 'Clearings 0.4.7'),first_version
             cli=subprocess.run([str(install/'ClearingsCLI.exe'),'status'],env=env,check=True,capture_output=True,text=True,**hidden)
             assert json.loads(cli.stdout)['home']==str(home.resolve())
             child,request=start()
@@ -105,21 +118,41 @@ def main():
             wait_for(lambda:child.poll() is not None,'Update left the earlier helper running')
             assert hashlib.sha256(handoff.read_bytes()).hexdigest()==before
             version=subprocess.run([str(install/'ClearingsCLI.exe'),'--version'],env=env,check=True,capture_output=True,text=True,**hidden).stdout.strip()
-            assert version=='Clearings 0.4.6',version
+            assert version=='Clearings 0.4.7',version
+            # The custom fixture config gives this entry its own identity. Refuse
+            # to touch any pre-existing entry, even on a reused test machine.
+            initial=startup('status')
+            assert initial['supported'] and not initial['enabled'] and not initial['conflict'],initial
+            assert startup_value(initial['name']) is None
+            registration=initial
+            enabled=startup('enable')
+            assert enabled['enabled'] and not enabled['conflict'],enabled
+            assert startup_value(enabled['name'])==(enabled['command'],winreg.REG_SZ)
+            assert str(install/'Clearings.exe') in enabled['command']
+            assert '--no-browser' in enabled['command'] and str(config) in enabled['command']
             child,request=start()
             run([str(installer),'/S',f'/D={install}'])
             wait_for(lambda:child.poll() is not None,'Reinstall left the earlier helper running')
             assert hashlib.sha256(handoff.read_bytes()).hexdigest()==before
+            assert startup('status')['enabled'],'Reinstall lost this copy\'s startup entry'
             child,request=start()
             run([str(install/'Uninstall.exe'),'/S'])
             wait_for(lambda:child.poll() is not None,'Uninstall left the helper running')
             wait_for(lambda:not (install/'Clearings.exe').exists() and not (install/'_internal').exists(),'Uninstall left program files behind')
+            assert startup_value(registration['name']) is None,'Uninstall left its startup entry behind'
             assert hashlib.sha256(handoff.read_bytes()).hexdigest()==before
-            print(f'PASS {first_version} install, running-helper upgrade to 0.4.6, reinstall, uninstall, and exact handoff preservation')
+            print(f'PASS {first_version} install, running-helper upgrade to 0.4.7, reinstall, startup registration/removal, uninstall, and exact handoff preservation')
         finally:
             for child in children:
                 if child.poll() is None:
                     child.terminate();child.wait(timeout=10)
+            # A failed qualification must not leave sign-in pointing at a
+            # temporary executable. Never remove a different command's entry.
+            if registration and startup_value(registration['name'])==(registration['command'],winreg.REG_SZ):
+                with winreg.OpenKey(winreg.HKEY_CURRENT_USER,local.WindowsStartup.RUN_KEY,
+                                    0,winreg.KEY_QUERY_VALUE|winreg.KEY_SET_VALUE) as key:
+                    if winreg.QueryValueEx(key,registration['name'])==(registration['command'],winreg.REG_SZ):
+                        winreg.DeleteValue(key,registration['name'])
 
 
 if __name__=='__main__':main()

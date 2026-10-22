@@ -75,6 +75,60 @@ The included tests use disposable home folders and browser profiles. They do
 not establish persistence in your own browser; follow `docs/NATIVE_SMOKE_TEST.md`
 there before relying on a new path.
 
-### Windows tray control — 0.4.4
+### Windows tray and sign-in control — 0.4.7
 
 The tray icon belongs to one running helper and shows its version, working/release label and loopback address. Stop helper asks the human to save browser edits first. The CLI stop and authenticated shutdown route also remove the icon. An already-running matching helper is reused without adding another icon. Windows can place the icon in its overflow area. Detached tests explicitly pass `--no-tray`; normal source and installed launchers display it.
+
+Double-click the icon to open the page. Right-click opens its menu; Enter/Space
+keyboard activation also opens Clearings. A single mouse click selects the icon
+without opening a menu that would interrupt the double-click.
+
+Choose **Start helper with Windows** in that menu to start this copy quietly
+when you sign in. It is opt-in, uses the current user's Windows Run entry, and
+does not open a browser or console. Choose it again to disable it. The stored
+command uses the installed windowless executable or source Python's `pythonw.exe`,
+with `serve --no-browser`. It preserves the configuration directory and port;
+no token or checklist content is stored in Windows startup. The normal matching
+helper reuse check still prevents a duplicate instance. Stopping the helper does
+not disable its next sign-in launch.
+
+Windows **Settings > Apps > Startup** can independently disable an entry. The
+tray checkmark reports Clearings' registration; it does not override Windows'
+decision. Startup may be delayed by Windows. Mac/Linux behavior is unchanged.
+
+For source maintenance, `python -B tools/clearings_local.py startup status`,
+`startup enable`, and `startup disable` inspect or change only this registration.
+They do not start/stop a helper or create a checklist home. Put a custom
+`--config-dir` before `startup`; a custom `--port` follows the startup action.
+For an installed copy use `ClearingsCLI.exe`. Open Clearings once before enabling
+startup so its normal settings exist. New installations leave startup off;
+updates at the same location preserve the choice. Uninstall removes only the
+exact startup entry owned by that installed copy. Disable custom configurations
+before removing their source folder or installed files.
+
+Disable startup before moving a source folder or Python installation, then
+enable it from the new location. A conflicting command is preserved, with an
+explanation. A command longer than Windows' 260-character Run limit is refused;
+use a shorter source/configuration path or the installed edition. This feature
+does not create a Windows service or require administrator access.
+
+Adopting this tray/host change requires one normal helper restart when work can
+pause. Reconnect Clearings MCP clients then if they report changed host source.
+No restart or reboot is needed merely to toggle startup afterward.
+
+## Optional app-version checks in current source
+
+The authenticated `GET /api/app-updates` endpoint retrieves only the fixed public
+GitHub latest-release URL for IoriReiMei/clearings. It rejects redirects, limits
+response size/time, accepts stable numeric versions, and caches results in memory
+for 15 minutes. It never reads a workspace to make this request, forwards a helper
+token or actor name, downloads a package, installs, or stops a process.
+
+The browser enables automatic checks by default and schedules at most one a day
+while open. Settings can disable them or request a manual check. The setting and
+last result stay in this browser, outside the shared checklist document. Failed
+checks leave the editing/handoff path available. The browser CSP remains self-only
+for launched pages and network-disabled for standalone HTML. Published installer
+updates still require the documented helper shutdown/reopen; live replacement is
+not implemented. Older running helpers return a readable restart notice for the
+new endpoint and can continue serving the workspace until the owner is ready.

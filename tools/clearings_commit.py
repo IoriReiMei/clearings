@@ -36,8 +36,11 @@ import re
 ID = re.compile(r"[A-Za-z0-9._-]{1,200}\Z")
 FORBIDDEN = {"__proto__", "prototype", "constructor"}
 DOC_FIELDS = ("title", "subtitle", "description", "footer", "archived", "references")
-ITEM_FIELDS = ("text", "detail", "response", "label", "tags", "parents", "requires", "order")
-ITEM_REQUIRED_FIELDS = tuple(field for field in ITEM_FIELDS if field != "response")
+DISCUSSION_FIELDS = ("response", "review", "mcpAcknowledgement")
+ITEM_TEXT_FIELDS = ("text", "detail", *DISCUSSION_FIELDS)
+ITEM_OPTIONAL_DEFAULTS = {**dict.fromkeys(DISCUSSION_FIELDS, ""), "needsReview": False, "assignment": None}
+ITEM_FIELDS = ("text", "detail", *ITEM_OPTIONAL_DEFAULTS, "label", "tags", "parents", "requires", "order")
+ITEM_REQUIRED_FIELDS = tuple(field for field in ITEM_FIELDS if field not in ITEM_OPTIONAL_DEFAULTS)
 MEANING_FIELDS = ("text", "detail", "label", "tags", "parents", "requires")
 
 
@@ -53,6 +56,33 @@ def _keys(value, allowed, label):
 def _distinct(value, label):
     if not isinstance(value, list) or any(not isinstance(x, str) for x in value) or len(value) != len(set(value)):
         raise ValueError(f"Invalid {label} IDs")
+
+
+def validate_assignment(value):
+    if value is None:
+        return
+    _keys(value, ("id", "assignee", "role", "status", "note"), "assignment")
+    if (not valid_id(value["id"]) or not isinstance(value["assignee"], str)
+            or not value["assignee"].strip() or len(value["assignee"]) > 80
+            or value["role"] not in ("human", "assistant")
+            or value["status"] not in ("pending", "accepted", "declined", "completed", "cancelled")
+            or not isinstance(value["note"], str) or len(value["note"]) > 20000):
+        raise ValueError("Invalid assignment")
+
+
+def validate_assignment_history(entries):
+    if not isinstance(entries, list) or len(entries) > 2000:
+        raise ValueError("Invalid assignment history size")
+    for e in entries:
+        _keys(e, ("id", "assignee", "role", "status", "note", "actor", "actorRole", "at"), "assignment receipt")
+        assignment = {key: e[key] for key in ("id", "assignee", "role", "status", "note")}
+        if assignment["status"] == "superseded":
+            assignment["status"] = "cancelled"
+        validate_assignment(assignment)
+        if (not isinstance(e["actor"], str) or not e["actor"].strip() or len(e["actor"]) > 80
+                or e["actorRole"] not in ("human", "assistant") or not isinstance(e["at"], str)):
+            raise ValueError("Invalid assignment receipt")
+        datetime.fromisoformat(e["at"].replace("Z", "+00:00"))
 
 
 def validate_document(document):
@@ -100,11 +130,15 @@ def validate_document(document):
         branches.add(branch["id"])
     items = {}
     for item in model["items"]:
-        _keys(item, ("id", *(ITEM_FIELDS if "response" in item else ITEM_REQUIRED_FIELDS)), "item")
+        _keys({k: v for k, v in item.items() if k not in ITEM_OPTIONAL_DEFAULTS}, ("id", *ITEM_REQUIRED_FIELDS), "item")
+        if "needsReview" in item and type(item["needsReview"]) is not bool:
+            raise ValueError("Invalid review flag")
+        if "assignment" in item:
+            validate_assignment(item["assignment"])
         key = item.get("id")
         if not valid_id(key) or key in items:
             raise ValueError("Invalid or duplicate item ID")
-        for name in ("text", "detail", "label", *(("response",) if "response" in item else ())):
+        for name in ("text", "detail", "label", *(field for field in DISCUSSION_FIELDS if field in item)):
             if not isinstance(item.get(name), str) or len(item[name]) > 200000:
                 raise ValueError(f"Invalid item {name}")
         if (not item["text"].strip() or type(item.get("order")) not in (int, float)
@@ -149,9 +183,11 @@ def validate_document(document):
     if not isinstance(attribution, dict) or any(key not in items for key in attribution):
         raise ValueError("Invalid item attribution")
     for record in attribution.values():
-        if not isinstance(record, dict) or set(record) - {"created", "completed"}:
+        if not isinstance(record, dict) or set(record) - {"created", "completed", *ITEM_TEXT_FIELDS, "assignmentHistory"}:
             raise ValueError("Invalid attribution record")
-        for stamp in record.values():
+        if "assignmentHistory" in record:
+            validate_assignment_history(record["assignmentHistory"])
+        for stamp in (value for key, value in record.items() if key != "assignmentHistory"):
             if (not isinstance(stamp, dict) or set(stamp) - {"actor", "role", "at", "commitId", "approvedBy"}
                     or not isinstance(stamp.get("actor"), str) or not stamp["actor"].strip()
                     or len(stamp["actor"]) > 80 or stamp.get("role") not in {"human", "assistant"}):
@@ -169,12 +205,13 @@ def validate_document(document):
 
 def stamp_attribution(document, before, stamp):
     """Derive durable labels from applied changes, never from proposed labels."""
-    old_ids = {x["id"] for x in before["model"]["items"]} if before else set()
+    old_items = {x["id"]: x for x in before["model"]["items"]} if before else {}
     records = copy.deepcopy(before.get("attribution", {})) if before else {}
     for item in document["model"]["items"]:
         key = item["id"]
         record = records.setdefault(key, {})
-        if key not in old_ids:
+        old = old_items.get(key, {})
+        if key not in old_items:
             record["created"] = copy.deepcopy(stamp)
         prior = bool(before and before["state"].get(key) is True)
         done = document["state"].get(key) is True
@@ -182,6 +219,23 @@ def stamp_attribution(document, before, stamp):
             record["completed"] = copy.deepcopy(stamp)
         elif not done:
             record.pop("completed", None)
+        for field in ITEM_TEXT_FIELDS:
+            if old.get(field, "") != item.get(field, ""):
+                record[field] = copy.deepcopy(stamp)
+        if old.get("response", "") != item.get("response", ""):
+            item["needsReview"] = bool(item.get("response", "").strip())
+        if old.get("review", "") != item.get("review", "") and item.get("review", "").strip():
+            item["needsReview"] = False
+        was, assignment = old.get("assignment"), item.get("assignment")
+        if was != assignment or assignment and prior != done:
+            receipts = record.setdefault("assignmentHistory", [])
+            def receipt(value, status):
+                receipts.append({**copy.deepcopy(value), "status": status, "actor": stamp["actor"],
+                                 "actorRole": stamp["role"], "at": stamp["at"]})
+            if was and (not assignment or was["id"] != assignment["id"]):
+                receipt(was, "superseded" if assignment else "cancelled")
+            if assignment:
+                receipt(assignment, "completed" if done else assignment["status"])
     kept = {x["id"] for x in document["model"]["items"]}
     document["attribution"] = {key: value for key, value in records.items() if key in kept and value}
 
@@ -302,10 +356,16 @@ def merge_documents(base, current, incoming):
         incoming_done = incoming["state"].get(key) is True
         present_meaning = any(present[field] != old[field] for field in MEANING_FIELDS)
         incoming_meaning = any(item[field] != old[field] for field in MEANING_FIELDS)
+        responding = (item.get("review", "") != old.get("review", "") or
+                      item.get("needsReview") is False and old.get("needsReview") is True)
+        if (responding and present.get("response", "") != old.get("response", "")
+                and present.get("response", "") != item.get("response", "")):
+            conflicts.append("item:" + key + ":review-response")
+            continue
         for field in ITEM_FIELDS:
-            old_value = old.get(field, "") if field == "response" else old[field]
-            present_value = present.get(field, "") if field == "response" else present[field]
-            item_value = item.get(field, "") if field == "response" else item[field]
+            old_value = old.get(field, ITEM_OPTIONAL_DEFAULTS.get(field)) if field in ITEM_OPTIONAL_DEFAULTS else old[field]
+            present_value = present.get(field, ITEM_OPTIONAL_DEFAULTS.get(field)) if field in ITEM_OPTIONAL_DEFAULTS else present[field]
+            item_value = item.get(field, ITEM_OPTIONAL_DEFAULTS.get(field)) if field in ITEM_OPTIONAL_DEFAULTS else item[field]
             if (incoming_meaning and present_done != base_done and field in MEANING_FIELDS and
                     item[field] != old[field] and item[field] != present[field]):
                 conflicts.append("item:" + key + ":" + field)

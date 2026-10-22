@@ -37,7 +37,8 @@ rights in the contributed material can be licensed:
   inline CSS and JavaScript. This is the source file edited during development;
   there is no separate bundled/minified runtime or hidden source build.
 - The Clearings scripts in `tools/`, `tests/`, and `packaging/`, the optional
-  Windows `Start_Clearings.cmd` launcher, the build workflow, and the schema in
+  source entry point `clearings.py`, `Start_Clearings.cmd` and `Start_Clearings.sh`
+  launchers, `clearings.json` with its adjacent notice, the workflows, and the schema in
   `schema/`.
 - The supplied fictional examples in `examples/` and the release-plan templates in
   `templates/` (not a user's personal records made with them).

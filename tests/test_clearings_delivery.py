@@ -99,7 +99,8 @@ class DeliveryChecks(unittest.TestCase):
         before=copy.deepcopy(d);d['state'][key]=True;stamp_attribution(d,before,completed)
         before=copy.deepcopy(d);d['model']['items'][-1]['detail']='More context';stamp_attribution(d,before,created)
         restored=validate_document(json.loads(json.dumps(d)))
-        self.assertEqual(restored['attribution'][key],{'created':created,'completed':completed})
+        self.assertEqual(restored['attribution'][key],{
+            'created':created,'text':created,'detail':created,'completed':completed})
         before=copy.deepcopy(d);d['state'][key]=False;stamp_attribution(d,before,created)
         self.assertNotIn('completed',d['attribution'][key])
 
@@ -214,7 +215,8 @@ class DeliveryChecks(unittest.TestCase):
             if not stopping.wait(1):server.shutdown()
             worker.join(3);server.server_close()
         self.assertEqual(errors,[])
-        self.assertEqual(result,[{'stopping':True}])
+        self.assertEqual(result,[{'stopping':True, 'backup':{
+            'saved':False, 'reason':'No saved workspace yet'}}])
         self.assertFalse(worker.is_alive())
 
 

@@ -6,6 +6,11 @@
 /program_overview.json
 /build-output/
 /artifacts/
+/.venv/
+/.clearings-test/
+/clearings_handoff.json
+/recovery/
+/session.json
 *.zip
 *.dmg
 *.run

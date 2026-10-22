@@ -23,32 +23,26 @@ rem OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN TH
 rem SOFTWARE.
 rem Optional Windows handoff. index.html works without Python.
 setlocal
-set "CLEARINGS_SCRIPT=%~dp0tools\clearings_local.py"
-if not exist "%CLEARINGS_SCRIPT%" (
-  echo Clearings local helper is missing.
-  pause
-  exit /b 1
+set "PYTHON_MANAGER_AUTOMATIC_INSTALL=false"
+set "PYLAUNCHER_ALLOW_INSTALL="
+if defined CLEARINGS_PYTHON (
+  "%CLEARINGS_PYTHON%" -B "%~dp0clearings.py" %*
+  goto finished
 )
 where py.exe >nul 2>&1
 if not errorlevel 1 (
-  py.exe -3 -c "import sys; sys.exit(sys.version_info < (3, 10))" >nul 2>&1
-  if not errorlevel 1 (
-    start "" pyw.exe -3 -B "%CLEARINGS_SCRIPT%" serve
-    exit /b 0
-  )
+  py.exe -3 -B "%~dp0clearings.py" %*
+  goto finished
 )
 where python.exe >nul 2>&1
 if not errorlevel 1 (
-  python.exe -c "import sys; sys.exit(sys.version_info < (3, 10))" >nul 2>&1
-  if not errorlevel 1 (
-    where pythonw.exe >nul 2>&1
-    if not errorlevel 1 (
-      start "" pythonw.exe -B "%CLEARINGS_SCRIPT%" serve
-      exit /b 0
-    )
-  )
+  python.exe -B "%~dp0clearings.py" %*
+  goto finished
 )
-echo The optional local handoff needs Python 3.10 or newer on Windows.
-echo Install Python or open index.html directly without the helper.
-pause
+echo Clearings needs Python 3.10 or newer. See docs\QUICKSTART.md.
+echo Install Python from https://www.python.org/downloads/ and reopen this launcher.
 exit /b 1
+:finished
+set "CLEARINGS_EXIT=%ERRORLEVEL%"
+if not "%CLEARINGS_EXIT%"=="0" if "%~1"=="" pause
+exit /b %CLEARINGS_EXIT%

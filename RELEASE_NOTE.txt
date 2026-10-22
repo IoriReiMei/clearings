@@ -1,13 +1,13 @@
 SPDX-License-Identifier: MIT
-Clearings 0.4.6 - nested change indicators, protected local sessions and MIT licensing.
-Collapsed groups, tracked shortcuts and the outline show changes inside.
-Assistants can create and edit signed shared work before browser Refresh.
-Move to and explicit same-list deletion use shared task rules.
-Windows includes a console CLI and an installer that stops its own helper before upgrade or uninstall.
-The local helper protects session credentials and supports a bounded 64 MiB aggregate handoff with automatic pressure rollover of unchanged resolved history and explicit archival.
-The app contains no model, account, telemetry or external runtime download.
-Native binaries bundle Python; this source ZIP is also usable as a standalone browser app.
-Older exports remain readable; attribution-enriched exports need 0.4.3 or newer.
-Signing and platform verification limits are documented in CLEARINGS_VERIFICATION.md.
-Only allowlisted source, docs, tests and fictional examples are included.
+Clearings 0.4.7 - public release, MIT licensed.
+Focused AI edits, paged briefings, honest connection status, readable proposal previews and context handoffs.
+Short context notes can stay in task descriptions; longer notes can be ordinary child items.
+Quiet editors, review and assignment fields, human-only undo, joined change brackets and smoother grabbers.
+Portable source setup and opt-out automatic GitHub update checks; installation remains manual.
+Compatible data-engine updates preserve the helper listener; host/tool changes still need a safe restart or reconnect.
+Normal stops preserve a local recovery backup of the last successful sync, with its app version.
+No network hosting or automatic cross-device or model-context synchronization in this version.
+Optional Windows sign-in startup and tray double-click opening.
+See CLEARINGS_VERIFICATION.md and the v0.4.7 release notes for exact build results and remaining limits.
+Only explicitly allowlisted source, docs, tests and fictional examples are included.
 See LICENSE, LICENSE_SCOPE.md and THIRD_PARTY_NOTES.md.

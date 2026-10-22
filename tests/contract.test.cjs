@@ -68,7 +68,7 @@ const blankItem=(id,text)=>({id,order:1,parents:[],label:'',tags:[],text,detail:
  await test('center rendering bounds a valid shared-task diamond without deleting links',()=>{
  const rendering=html.split('const CENTER_ROW_LIMIT=1200;')[1]?.split('function renderCenter(){')[0];
   assert.ok(rendering,'bounded center renderer is present');
-  const presentation=['tagPreview','rowTags','inlineTags','previewText'].map(name=>{
+  const presentation=html.match(/^const FIELD_NAMES=.*$/m)[0]+'\n'+['tagPreview','rowTags','inlineTags','previewText','fieldAuthor','reviewTags'].map(name=>{
    const line=html.match(new RegExp('^function '+name+'\\(.*$', 'm'))?.[0];
    assert.ok(line,`presentation helper ${name} is present`);return line;
   }).join('\n');
@@ -83,7 +83,8 @@ const blankItem=(id,text)=>({id,order:1,parents:[],label:'',tags:[],text,detail:
    // This graph fixture has no activity; notification behavior has its own browser checks.
    highlightedActivity:()=>null,latestActivity:()=>null,changesInside:()=>null,insideTag:()=>'',contextLocked:()=>false,
    gripHTML:()=>'',progressHTML:()=>'',menuButton:()=>'',
-   esc:String,detailsOpen:new Set()});
+   esc:String,detailsOpen:new Set(),detailsHidden:new Set(),inlineEdit:null,
+   route:{docId:'diamond'},focusId:()=>null,getDoc:()=>d});
   vm.runInContext(presentation+'\nconst CENTER_ROW_LIMIT=1200;'+rendering+'\nthis.renderRowsForTest=renderRows;this.setCenterPageForTest=(key,index)=>centerPages.set(key,index);',box);
   const d={documentId:'diamond',state:{},model:{items,roots:['a0']}};
   const rendered=box.renderRowsForTest(d,['a0'],null,{count:0,notice:false});
@@ -113,6 +114,11 @@ const blankItem=(id,text)=>({id,order:1,parents:[],label:'',tags:[],text,detail:
   assert.ok(!loaded.includes('T'.repeat(1000))&&!loaded.includes('L'.repeat(1000)),'long repeated text is previewed');
   assert.equal(shared.text.length,200_000,'stored title is unchanged');
   assert.equal(shared.tags.length,1000,'stored tags are unchanged');
+  box.inlineEdit={context:{mode:'detail',docId:'diamond',id:'last'},value:shared.detail,slot:0,seen:0};
+  const editing=box.renderRowsForTest(d,['a0'],null,{count:0,notice:false});
+  assert.equal((editing.match(/data-inline-editor/g)||[]).length,1,'one full editor for a repeatedly shared item');
+  assert.ok(editing.length<2_000_000,`shared editor allocated ${editing.length} characters`);
+  box.inlineEdit=null;
  });
  await test('AI hash ignores fold state and write timestamp',async()=>{const d=clone(original);d.view.collapsed=['shape'];d.updatedAt='2026-09-25T12:00:00Z';assert.equal(await api.aiHash(d),await api.aiHash(original))});
  await test('AI hash is stable under object key order',async()=>{const d=Object.fromEntries(Object.entries(original).reverse());assert.equal(await api.aiHash(d),await api.aiHash(original))});

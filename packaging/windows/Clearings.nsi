@@ -22,7 +22,7 @@
 ; SOFTWARE.
 ; Build with makensis /DSOURCE_DIR=<native dist> /DOUTPUT_DIR=<artifacts>.
 !include "MUI2.nsh"
-!define VERSION "0.4.6"
+!define VERSION "0.4.7"
 !define MUI_ICON "${SOURCE_DIR}\Clearings\_internal\assets\Clearings.ico"
 !define MUI_UNICON "${SOURCE_DIR}\Clearings\_internal\assets\Clearings.ico"
 
@@ -97,6 +97,17 @@ Section "Uninstall"
   SetErrorLevel 1
   Abort
   uninstall_ready:
+  ; Remove only the exact startup command owned by this installed copy.
+  ; Foreign entries, the working edition and user workspace data are preserved.
+  ClearErrors
+  ExecWait '"$INSTDIR\ClearingsCLI.exe" startup remove-owned' $0
+  IfErrors uninstall_startup_failed
+  StrCmp $0 0 uninstall_remove_files
+  uninstall_startup_failed:
+  MessageBox MB_OK|MB_ICONSTOP "Clearings could not remove its Windows startup setting. Turn off Start helper with Windows and retry. No program files were removed." /SD IDOK
+  SetErrorLevel 1
+  Abort
+  uninstall_remove_files:
   ClearErrors
   Delete "$SMPROGRAMS\Clearings\Clearings.lnk"
   RMDir "$SMPROGRAMS\Clearings"

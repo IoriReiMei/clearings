@@ -11,6 +11,7 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 MCP_AVAILABLE = importlib.util.find_spec("mcp") is not None
 if MCP_AVAILABLE:
@@ -20,7 +21,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 from clearings_local import Bridge  # noqa: E402
 if MCP_AVAILABLE:
-    from clearings_mcp import existing_bridge  # noqa: E402
+    from clearings_mcp import GUIDE_TOPICS, ToolError, existing_bridge, read_guide  # noqa: E402
 
 
 def payload(result):
@@ -81,7 +82,9 @@ class ClearingsMcpStdioTests(unittest.IsolatedAsyncioTestCase):
             tools = await client.list_tools()
             self.assertEqual({tool.name for tool in tools.tools},
                              {"clearings_list_checklists", "clearings_read_checklist",
-                              "clearings_search_items"})
+                              "clearings_search_items", "clearings_get_guide", "clearings_get_status",
+                              "clearings_read_item", "clearings_get_briefing", "clearings_preview_proposal",
+                              "clearings_prepare_handoff"})
             listed = payload(await client.call_tool("clearings_list_checklists"))
             self.assertEqual(listed["checklists"][0]["id"], self.document["documentId"])
             read = payload(await client.call_tool("clearings_read_checklist",
@@ -91,6 +94,48 @@ class ClearingsMcpStdioTests(unittest.IsolatedAsyncioTestCase):
             self.assertTrue(read["branch"]["notAProposalBase"])
             self.assertTrue(read["readOnly"])
         self.assertEqual(self.bridge.handoff_path().read_bytes(), before)
+
+    async def test_bundled_guide_topics_and_read_only_capabilities(self):
+        before = self.bridge.handoff_path().read_bytes()
+        async with self.client("Guide Reader") as client:
+            tools = {tool.name: tool for tool in (await client.list_tools()).tools}
+            guide_tool = tools["clearings_get_guide"]
+            self.assertTrue(guide_tool.annotations.read_only_hint)
+            self.assertFalse(guide_tool.annotations.open_world_hint)
+            self.assertEqual(set(guide_tool.input_schema["properties"]["topic"]["enum"]),
+                             set(GUIDE_TOPICS))
+            start = payload(await client.call_tool("clearings_get_guide"))
+            self.assertEqual(start["topic"], "start")
+            self.assertEqual(start["actor"], "Guide Reader")
+            self.assertFalse(start["writeEnabled"])
+            self.assertEqual({item["id"] for item in start["topics"]}, set(GUIDE_TOPICS))
+            self.assertNotIn("effectiveDocument", start)
+            self.assertNotIn("synthetic-mcp-library", json.dumps(start))
+            self.assertLess(len(start["text"]), 4000)
+            for topic, title in GUIDE_TOPICS.items():
+                result = payload(await client.call_tool("clearings_get_guide", {"topic": topic}))
+                source = (ROOT / result["source"]).read_text(encoding="utf-8")
+                self.assertIn(result["text"], source)
+                self.assertEqual(result["title"], title)
+                if topic != "reference":
+                    self.assertTrue(result["text"].startswith("## " + title + "\n"))
+                    self.assertEqual(result["text"].count("\n## "), 0)
+                self.assertLessEqual(len(result["text"].encode("utf-8")), 65536)
+            for invalid in ("../config/settings.json", "unknown", "", "START"):
+                self.assertTrue((await client.call_tool("clearings_get_guide", {"topic": invalid})).is_error)
+        self.assertEqual(self.bridge.handoff_path().read_bytes(), before)
+
+    def test_incomplete_bundled_guidance_fails_without_reading_other_files(self):
+        fixture = Path(self.temp.name) / "guide-only"
+        fixture.mkdir()
+        with patch("clearings_mcp.SOURCE_ROOT", fixture):
+            with self.assertRaisesRegex(ToolError, "Choose a guide topic"):
+                read_guide("../config/settings.json")
+            for malformed in (None, b"", b"# Wrong heading", b"\xff", b"x" * 65537):
+                if malformed is not None:
+                    (fixture / "AI_START_HERE.md").write_bytes(malformed)
+                with self.assertRaisesRegex(ToolError, "Bundled Clearings guide is unavailable"):
+                    read_guide("start")
 
     async def test_effective_only_and_bounded_search_on_synthetic_checklists(self):
         active = copy.deepcopy(self.document)
@@ -171,16 +216,83 @@ class ClearingsMcpStdioTests(unittest.IsolatedAsyncioTestCase):
         self.bridge.handoff_path().write_text(json.dumps(malformed), encoding="utf-8")
         before = self.bridge.handoff_path().read_bytes()
         async with self.client("Reader") as client:
+            guide = payload(await client.call_tool("clearings_get_guide", {"topic": "recovery"}))
+            self.assertIn("Do not delete or overwrite", guide["text"])
             rejected = await client.call_tool("clearings_list_checklists")
             self.assertTrue(rejected.is_error)
             self.assertIn("Unrecognized handoff file; it was not changed", repr(rejected.content))
             self.assertNotIn("No browser-saved workspace yet", repr(rejected.content))
         self.assertEqual(self.bridge.handoff_path().read_bytes(), before)
 
+    async def test_focused_tools_schema_receipts_and_context_over_stdio(self):
+        cid = self.document['documentId']
+        async with self.client('CA1', write=True) as client:
+            tools = {tool.name: tool for tool in (await client.list_tools()).tools}
+            schema = json.dumps(tools['clearings_propose_item_edits'].input_schema)
+            self.assertIn('expected_revision', schema)
+            self.assertIn('mcpAcknowledgement', schema)
+            self.assertIn('additionalProperties', schema)
+            status = payload(await client.call_tool('clearings_get_status'))
+            self.assertTrue(status['readReady'])
+            self.assertTrue(status['writeToolsExposed'])
+            read = payload(await client.call_tool('clearings_read_item', {'checklist_id': cid, 'item_id': 'purpose'}))
+            args = {'checklist_id': cid, 'request_id': 'focused-stdio', 'edits': [
+                {'item_id': 'purpose', 'expected_revision': read['revision'], 'changes': {'response': 'Please review.'}}]}
+            draft = payload(await client.call_tool('clearings_propose_item_edits', args))
+            self.assertTrue(draft['preview']['readyToCommitAtRead'])
+            self.assertIn('needsReview', [c['field'] for c in draft['preview']['changes']])
+            receipt = payload(await client.call_tool('clearings_commit_proposal', {'proposal_id': draft['proposalId']}))
+            self.assertEqual(receipt['delivery'], 'committed-awaiting-browser')
+            retry = payload(await client.call_tool('clearings_propose_item_edits', args))
+            self.assertEqual(retry['proposalId'], draft['proposalId'])
+            stale = copy.deepcopy(args)
+            stale['request_id'] = 'stale-stdio'
+            stale['edits'][0]['changes'] = {'detail': 'Stale rewrite'}
+            rejected = await client.call_tool('clearings_propose_item_edits', stale)
+            self.assertTrue(rejected.is_error)
+            self.assertIn('STALE_ITEM', repr(rejected.content))
+            for changes in ({'completed': 'yes'}, {'unknown': 'ignored?'}, {'text': None}):
+                invalid = copy.deepcopy(stale)
+                invalid['edits'][0]['changes'] = changes
+                self.assertTrue((await client.call_tool('clearings_propose_item_edits', invalid)).is_error)
+            prepared = payload(await client.call_tool('clearings_prepare_handoff', {
+                'checklist_id': cid, 'item_ids': ['purpose'], 'parent_item_id': 'purpose',
+                'goal': 'Continue fixture', 'progress': 'Read and asked a question', 'next_step': 'Wait for an answer',
+                'recipient': 'Next AI'}))
+            self.assertFalse(prepared['saved'])
+            handoff = payload(await client.call_tool('clearings_propose_handoff', {
+                'handoff_token': prepared['handoffToken'], 'request_id': 'handoff-stdio'}))
+            payload(await client.call_tool('clearings_commit_proposal', {'proposal_id': handoff['proposalId']}))
+        async with self.client('Next AI') as reader:
+            briefing = payload(await reader.call_tool('clearings_get_briefing'))
+            self.assertIn(prepared['contextItemId'], [i['itemId'] for i in briefing['items']])
+            context = payload(await reader.call_tool('clearings_read_item', {
+                'checklist_id': cid, 'item_id': prepared['contextItemId']}))
+            self.assertIn('Wait for an answer', context['item']['detail'])
+            self.assertEqual(context['item']['assignment']['status'], 'pending')
+            self.assertTrue((await reader.call_tool('clearings_propose_handoff', {
+                'handoff_token': prepared['handoffToken'], 'request_id': 'not-exposed'})).is_error)
+
+    async def test_status_works_during_workspace_read_failure(self):
+        malformed = self.bridge.read()
+        malformed['format'] = 'synthetic-invalid'
+        self.bridge.handoff_path().write_text(json.dumps(malformed), encoding='utf-8')
+        before = self.bridge.handoff_path().read_bytes()
+        async with self.client('Reader') as client:
+            status = payload(await client.call_tool('clearings_get_status'))
+            self.assertFalse(status['readReady'])
+            self.assertEqual(status['writeReadiness'], 'unavailable')
+            self.assertIn('problem', status)
+            self.assertTrue((await client.call_tool('clearings_list_checklists')).is_error)
+        self.assertEqual(before, self.bridge.handoff_path().read_bytes())
+
     async def test_two_declared_actors_task_handoff_new_list_and_conflict(self):
         async with self.client("Linden", write=True) as a:
             tools = {tool.name: tool for tool in (await a.list_tools()).tools}
-            self.assertEqual(len(tools), 7)
+            self.assertEqual(len(tools), 15)
+            guide = payload(await a.call_tool("clearings_get_guide", {"topic": "collaboration"}))
+            self.assertTrue(guide["writeEnabled"])
+            self.assertEqual(guide["actor"], "Linden")
             self.assertTrue(tools["clearings_commit_proposal"].annotations.destructive_hint)
             self.assertTrue(tools["clearings_withdraw_proposal"].annotations.destructive_hint)
             read = payload(await a.call_tool("clearings_read_checklist",

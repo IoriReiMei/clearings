@@ -45,7 +45,7 @@ import subprocess
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSION = "0.4.6"
+VERSION = "0.4.7"
 
 
 def source_files() -> list[Path]:
@@ -72,8 +72,8 @@ def source_files() -> list[Path]:
     extra = actual - set(manifest) - {"MANIFEST.json"}
     if extra:
         raise ValueError(f"Unlisted public source file: {sorted(extra)[0]}")
-    if b"appVersion:'0.4.6'" not in (ROOT / "index.html").read_bytes():
-        raise ValueError("The public app version is not 0.4.6")
+    if b"appVersion:'0.4.7'" not in (ROOT / "index.html").read_bytes():
+        raise ValueError("The public app version is not 0.4.7")
     return files
 
 
@@ -119,7 +119,8 @@ def main() -> None:
     command = [sys.executable, "-I", "-m", "PyInstaller", "--noconfirm", "--clean",
                "--onedir", "--name", "Clearings", "--distpath", str(output),
                "--workpath", str(output / "build"), "--specpath", str(output / "spec"),
-               "--add-data", str(ROOT / "index.html") + os.pathsep + "."]
+               "--add-data", str(ROOT / "index.html") + os.pathsep + ".",
+               "--add-data", str(ROOT / "clearings.json") + os.pathsep + "."]
     if sys.platform == "win32":
         icon = ROOT / "assets" / "Clearings.ico"
         command += ["--icon", str(icon), "--add-data", str(icon) + os.pathsep + "assets"]

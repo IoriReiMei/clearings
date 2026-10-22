@@ -1,0 +1,47 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 The Hermit. See LICENSE for the full MIT notice.
+name: Source checks
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, windows-2025, macos-15]
+        python: ['3.10', '3.14']
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ matrix.python }}
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24.21.0'
+          package-manager-cache: false
+      - name: Check source setup, updates and data contract
+        shell: bash
+        run: |
+          python -B clearings.py --check
+          python -B -m unittest discover -s tests -p test_clearings_source_setup.py
+          python -B -m unittest discover -s tests -p test_clearings_updates.py
+          python -B -m unittest discover -s tests -p test_clearings_agent.py
+          node tests/contract.test.cjs
+          node tests/merge.test.cjs
+      - name: Check advertised MCP tools with fictional workspaces
+        shell: bash
+        run: |
+          python -m pip install --disable-pip-version-check -r tools/requirements-mcp.txt
+          python -B -m unittest discover -s tests -p test_clearings_mcp.py
+      - name: Package and verify a clean copy
+        shell: bash
+        run: |
+          python -B tools/make_share_package.py --output "$RUNNER_TEMP/clearings-source-review.zip"
+          python -m zipfile -e "$RUNNER_TEMP/clearings-source-review.zip" "$RUNNER_TEMP/clearings-source-review"
+          python -B tools/make_share_package.py --verify-dir "$RUNNER_TEMP/clearings-source-review"
+          python -B "$RUNNER_TEMP/clearings-source-review/clearings.py" --check

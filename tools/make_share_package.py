@@ -44,10 +44,20 @@ ROOT = Path(__file__).resolve().parents[1]
 # Local source -> public package name. The public app gets a generic filename.
 FILES = {
     '.gitattributes': '.gitattributes',
+    'clearings.py': 'clearings.py',
+    'clearings.json': 'clearings.json',
+    'clearings.json.license': 'clearings.json.license',
+    'Start_Clearings.sh': 'Start_Clearings.sh',
+    'docs/QUICKSTART.md': 'docs/QUICKSTART.md',
+    'CONTRIBUTING.md': 'CONTRIBUTING.md',
+    'tests/test_clearings_source_setup.py': 'tests/test_clearings_source_setup.py',
+    '.github/workflows/source-checks.yml': '.github/workflows/source-checks.yml',
     'LC_CHECKLIST.html': 'index.html',
     'docs/GITHUB_RELEASE_README.md': 'README.md',
     'AI_CHECKLIST_GUIDE.md': 'AI_CHECKLIST_GUIDE.md',
-    'docs/RELEASE_VERIFICATION_0_4_6.md': 'CLEARINGS_VERIFICATION.md',
+    'AI_START_HERE.md': 'AI_START_HERE.md',
+    'AGENTS.md': 'AGENTS.md',
+    'docs/RELEASE_VERIFICATION_0_4_7.md': 'CLEARINGS_VERIFICATION.md',
     'LICENSE': 'LICENSE',
     'LICENSE_SCOPE.md': 'LICENSE_SCOPE.md',
     'THIRD_PARTY_NOTES.md': 'THIRD_PARTY_NOTES.md',
@@ -74,9 +84,16 @@ FILES = {
     'tests/test_clearings_tray.py': 'tests/test_clearings_tray.py',
     'tools/clearings_commit.py': 'tools/clearings_commit.py',
     'tools/clearings_mcp.py': 'tools/clearings_mcp.py',
+    'tools/clearings_agent.py': 'tools/clearings_agent.py',
+    'tests/test_clearings_agent.py': 'tests/test_clearings_agent.py',
+    'tests/agent_context_browser.test.cjs': 'tests/agent_context_browser.test.cjs',
     'tools/requirements-mcp.txt': 'tools/requirements-mcp.txt',
     'docs/CLEARINGS_MCP.md': 'docs/CLEARINGS_MCP.md',
     'tests/test_clearings_mcp.py': 'tests/test_clearings_mcp.py',
+    'tests/test_clearings_search.py': 'tests/test_clearings_search.py',
+    'tests/test_clearings_coordination.py': 'tests/test_clearings_coordination.py',
+    'tests/coordination.test.cjs': 'tests/coordination.test.cjs',
+    'docs/COORDINATION_AND_RECOVERY.md': 'docs/COORDINATION_AND_RECOVERY.md',
     'tools/make_share_package.py': 'tools/make_share_package.py',
     'tools/sync_templates.py': 'tools/sync_templates.py',
     'tests/contract.test.cjs': 'tests/contract.test.cjs',
@@ -107,6 +124,7 @@ FILES.update({
     'tests/test_clearings_commit.py':'tests/test_clearings_commit.py',
     'tests/test_clearings_delivery.py':'tests/test_clearings_delivery.py',
     'tests/test_clearings_security.py':'tests/test_clearings_security.py',
+    'tests/test_clearings_updates.py':'tests/test_clearings_updates.py',
     'tests/test_clearings_startup.py':'tests/test_clearings_startup.py',
     'tests/test_clearings_capacity.py':'tests/test_clearings_capacity.py',
     'tests/test_clearings_auto_rollover.py':'tests/test_clearings_auto_rollover.py',
@@ -169,9 +187,11 @@ def main() -> None:
         parser.error(f'Output exists: {output}. Choose another name or explicitly pass --force.')
     app_source = ROOT/'LC_CHECKLIST.html'
     if not app_source.exists(): app_source = ROOT/'index.html'
-    if b"appVersion:'0.4.6'" not in app_source.read_bytes():
-        raise ValueError('This packager is for Clearings 0.4.6 only; review the allowlist and release note for another version.')
+    if b"appVersion:'0.4.7'" not in app_source.read_bytes():
+        raise ValueError('This packager is for Clearings 0.4.7 only; review the allowlist and release note for another version.')
     assert_current(app_source, ROOT)
+    from clearings_local import read_release_config, embed_release_config
+    release_config = read_release_config(ROOT)
     payload: dict[str,bytes]={}
     extracted_release = app_source.name == 'index.html'
     for source,destination in FILES.items():
@@ -185,10 +205,12 @@ def main() -> None:
         # Binary artwork must keep its exact bytes for the public manifest.
         if destination not in {'docs/preview.png','assets/Clearings.png','assets/Clearings.ico'}:
             data=data.replace(b'\r\n',b'\n')
+        if destination == 'index.html':
+            data = embed_release_config(data.decode('utf-8'), release_config).encode('utf-8')
         payload[destination]=data
-    payload['.gitignore']=b'# SPDX-License-Identifier: MIT\n# Keep personal libraries under data/ and review before sharing.\n/data/\n/checklist_index.json\n/checklist-*.json\n/program_overview.json\n/build-output/\n/artifacts/\n*.zip\n*.dmg\n*.run\n__pycache__/\n'
+    payload['.gitignore']=b'# SPDX-License-Identifier: MIT\n# Keep personal libraries under data/ and review before sharing.\n/data/\n/checklist_index.json\n/checklist-*.json\n/program_overview.json\n/build-output/\n/artifacts/\n/.venv/\n/.clearings-test/\n/clearings_handoff.json\n/recovery/\n/session.json\n*.zip\n*.dmg\n*.run\n__pycache__/\n'
     payload['.nojekyll']=b''
-    payload['RELEASE_NOTE.txt']=b'SPDX-License-Identifier: MIT\nClearings 0.4.6 - nested change indicators, protected local sessions and MIT licensing.\nCollapsed groups, tracked shortcuts and the outline show changes inside.\nAssistants can create and edit signed shared work before browser Refresh.\nMove to and explicit same-list deletion use shared task rules.\nWindows includes a console CLI and an installer that stops its own helper before upgrade or uninstall.\nThe local helper protects session credentials and supports a bounded 64 MiB aggregate handoff with automatic pressure rollover of unchanged resolved history and explicit archival.\nThe app contains no model, account, telemetry or external runtime download.\nNative binaries bundle Python; this source ZIP is also usable as a standalone browser app.\nOlder exports remain readable; attribution-enriched exports need 0.4.3 or newer.\nSigning and platform verification limits are documented in CLEARINGS_VERIFICATION.md.\nOnly allowlisted source, docs, tests and fictional examples are included.\nSee LICENSE, LICENSE_SCOPE.md and THIRD_PARTY_NOTES.md.\n'
+    payload['RELEASE_NOTE.txt']=b'SPDX-License-Identifier: MIT\nClearings 0.4.7 - public release, MIT licensed.\nFocused AI edits, paged briefings, honest connection status, readable proposal previews and context handoffs.\nShort context notes can stay in task descriptions; longer notes can be ordinary child items.\nQuiet editors, review and assignment fields, human-only undo, joined change brackets and smoother grabbers.\nPortable source setup and opt-out automatic GitHub update checks; installation remains manual.\nCompatible data-engine updates preserve the helper listener; host/tool changes still need a safe restart or reconnect.\nNormal stops preserve a local recovery backup of the last successful sync, with its app version.\nNo network hosting or automatic cross-device or model-context synchronization in this version.\nOptional Windows sign-in startup and tray double-click opening.\nSee CLEARINGS_VERIFICATION.md and the v0.4.7 release notes for exact build results and remaining limits.\nOnly explicitly allowlisted source, docs, tests and fictional examples are included.\nSee LICENSE, LICENSE_SCOPE.md and THIRD_PARTY_NOTES.md.\n'
     manifest={name:hashlib.sha256(data).hexdigest() for name,data in payload.items()}
     payload['MANIFEST.json']=(json.dumps(manifest,indent=2)+'\n').encode()
     output.parent.mkdir(parents=True,exist_ok=True)
