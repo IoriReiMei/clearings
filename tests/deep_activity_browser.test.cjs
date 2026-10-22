@@ -87,7 +87,7 @@ async function run(){
   assert.equal(await page.locator('#pageContent [data-root-group="shape"] > .group-header .scope-tag').innerText(),'2 CHANGES INSIDE');
   assert.equal(await page.locator('#mapTree .scope-tag').count()>0,true);
   await page.locator('#libraryList [data-library-id="example-overview"] [data-menu="checklist"]').click();
-  await page.locator('#menu [data-command="mark-indicator-seen"]').click();
+  await page.locator('#menu [data-command="clear-scope-indicators"]').click();
   assert.equal(await page.locator('.scope-tag').count(),0);
   assert.equal(await page.locator('#trackedUnread').isVisible(),false);
   const result=await page.evaluate(()=>Clearings.snapshot());

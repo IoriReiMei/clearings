@@ -37,6 +37,7 @@ const browserPath=process.env.CHROMIUM_EXECUTABLE;
 
 (async()=>{
  const browser=await chromium.launch({headless:true,...(browserPath?{executablePath:browserPath}:{})});
+ try{
  const page=await browser.newPage({viewport:{width:1440,height:980},bypassCSP:true});
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.exposeFunction('__digest',bytes=>[...createHash('sha256').update(Buffer.from(bytes)).digest()]);
@@ -59,8 +60,8 @@ const browserPath=process.env.CHROMIUM_EXECUTABLE;
  if(process.env.CLEARINGS_PREVIEW){await page.emulateMedia({colorScheme:'dark'});await page.screenshot({path:process.env.CLEARINGS_PREVIEW,animations:'disabled'});}
  assert.equal(await page.locator('#libraryList .library-row').count(),2);
  assert.equal(await page.locator('#libraryList .grip[data-drag="library"]').count(),2);
- assert.equal(await page.locator('#libraryList .progress-track').first().evaluate(e=>e.getBoundingClientRect().width),58);
- assert.equal(await page.locator('#trackedList .progress-track').first().evaluate(e=>e.getBoundingClientRect().width),58);
+ assert.equal(await page.locator('#libraryList .progress-pie').first().evaluate(e=>e.getBoundingClientRect().width),15);
+ assert.equal(await page.locator('#trackedList .progress-pie').first().evaluate(e=>e.getBoundingClientRect().width),15);
  assert.equal(await page.locator('#addItemButton').innerText(),'New item');
  assert.equal(await page.locator('.new-list .add-plus').count(),2);
  await page.emulateMedia({reducedMotion:'no-preference'});
@@ -316,7 +317,7 @@ const browserPath=process.env.CHROMIUM_EXECUTABLE;
  await page.locator('#trackedLabel').click();
  assert.equal(await page.locator('#trackedList').isVisible(),true);
  await page.locator('#libraryList [data-library-id="example-overview"] [data-menu="checklist"]').click();
- await page.locator('#menu [data-command="mark-indicator-seen"]').click();
+ await page.locator('#menu [data-command="clear-scope-indicators"]').click();
  assert.equal(await page.locator('#trackedUnread').isVisible(),false);
  assert.equal(await page.locator('#checklistUnread').isVisible(),false);
  assert.ok((await page.evaluate(()=>Clearings.snapshot())).index.activity.some(a=>a.itemId==='purpose'&&!a.highlight&&!a.unread));
@@ -400,6 +401,8 @@ const browserPath=process.env.CHROMIUM_EXECUTABLE;
  await itemPage.locator('#breadcrumbs [data-action="open-checklist"]').click();
  await itemPage.locator('[data-root-group="make"] > .group-header [data-menu="step"]').click();
  await itemPage.locator('#menu [data-command="edit-step"]').click();
+ assert.equal(await itemPage.locator('#dialogFields .optional-details').evaluate(e=>e.open),false);
+ await itemPage.locator('#dialogFields .optional-details > summary').click();
  await itemPage.locator('#dialogFields .optional-details details > summary').click();
  await itemPage.locator('#dialogFields [name="requires"][value="purpose"]').check();
  await itemPage.locator('#dialogApply').click();
@@ -469,6 +472,6 @@ const browserPath=process.env.CHROMIUM_EXECUTABLE;
  validateWorkspace(templateState);
  await templatePage.close();
  assert.deepEqual(errors,[]);
- await browser.close();
  console.log('Clearings 0.4 isolated browser checks passed (native Firefox file persistence is separate).');
+ }finally{await browser.close()}
 })().catch(error=>{console.error(error);process.exitCode=1});

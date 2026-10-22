@@ -38,6 +38,12 @@ Verified on Windows with a staged source copy and disposable fictional workspace
   context child imports into the page, starts folded, preserves the source task,
   safely renders supplied markup as text and exports the updated AI instructions.
   This uses simulated in-memory storage and blocked requests, not a real profile.
+- Publication browser checks passed for the current overview, context import,
+  deep activity indicators, mixed-root paging and the local handoff rehearsal.
+  The handoff rehearsal uses a disposable real Chromium profile and temporary
+  helper: automatic recovery, independent signed edits, conflict decisions,
+  stale-browser refusal and save-before-shutdown are covered. Its private-session
+  protection is simulated; native session protection is checked separately.
 
 The owner workspace and running helpers were excluded. MCP and loopback tests
 used isolated test subprocesses. This does not establish native installer,

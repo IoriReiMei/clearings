@@ -268,7 +268,9 @@ class StartupRegistration(unittest.TestCase):
             with patch.object(local.sys,'executable',str(python)),patch.object(local.sys,'frozen',False,create=True), \
                     patch.dict(local.os.environ,{'LOCALAPPDATA':str(root/'Default data'),'CLEARINGS_CONFIG_DIR':str(custom)}):
                 registration=local.windows_startup(local.config_dir(),12345)
-            self.assertIn('"'+str(python.with_name('pythonw.exe'))+'"',registration.command)
+            # Windows runners may spell TEMP with an 8.3 user-directory alias.
+            # The launcher deliberately resolves it to its canonical path.
+            self.assertIn('"'+str(python.resolve().with_name('pythonw.exe'))+'"',registration.command)
             self.assertIn('--config-dir "'+str(custom.resolve())+'"',registration.command)
             self.assertIn('--port 12345',registration.command)
             self.assertIn('serve --no-browser',registration.command)

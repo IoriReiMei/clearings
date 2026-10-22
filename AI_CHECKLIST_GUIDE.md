@@ -28,8 +28,8 @@ For orientation, teaching another user, or leaving a useful handoff, begin with
 [AI_START_HERE.md](AI_START_HERE.md). This longer guide is the data and workflow
 reference. A connected assistant can request either through `clearings_get_guide`.
 
-This guide describes the 0.4.7 source candidate. Previously published
-installers do not acquire later source additions automatically. Check the actual
+This guide describes Clearings 0.4.7. Older installations do not acquire
+new features until updated. Check the actual
 tools and controls before promising a feature, and preserve existing work when
 adopting an update. [MCP setup](docs/CLEARINGS_MCP.md) describes connection changes;
 [coordination and recovery](docs/COORDINATION_AND_RECOVERY.md) describes newer fields.

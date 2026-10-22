@@ -59,7 +59,7 @@ def main():
     args=parser.parse_args()
     installer=args.installer.resolve()
     with tempfile.TemporaryDirectory(prefix='clearings-installer-check-') as temp:
-        root=Path(temp);install=root/'Program';config=root/'Settings'
+        root=Path(temp).resolve();install=root/'Program';config=root/'Settings'
         config.mkdir();home=root/'Home';home.mkdir()
         (config/'settings.json').write_text(json.dumps({'home':str(home)}),'utf-8')
         env=dict(os.environ,CLEARINGS_CONFIG_DIR=str(config))
